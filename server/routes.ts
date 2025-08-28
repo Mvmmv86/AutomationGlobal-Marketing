@@ -25,42 +25,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
   });
 
-  // Database status check
-  app.get('/api/database/status', async (req, res) => {
+  // Database connection test
+  app.get('/api/database/test-connection', async (req, res) => {
     try {
+      console.log('🔍 Testing Supabase connection...');
+      
       const postgres = await import('postgres');
       const sql = postgres.default(process.env.DATABASE_URL!, {
         ssl: 'require',
         max: 1,
+        connect_timeout: 30,
+      });
+
+      // Simple connection test
+      const result = await sql`SELECT NOW() as current_time, version() as postgres_version`;
+      
+      console.log('✅ Supabase connection successful');
+      
+      await sql.end();
+
+      res.json({
+        success: true,
+        message: 'Supabase connection successful!',
+        currentTime: result[0].current_time,
+        postgresVersion: result[0].postgres_version,
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('❌ Supabase connection failed:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        details: error.code || 'Unknown error',
+        timestamp: new Date().toISOString() 
+      });
+    }
+  });
+
+  // Database status check
+  app.get('/api/database/status', async (req, res) => {
+    try {
+      console.log('📊 Checking database tables...');
+      
+      const postgres = await import('postgres');
+      const sql = postgres.default(process.env.DATABASE_URL!, {
+        ssl: 'require',
+        max: 1,
+        connect_timeout: 30,
       });
 
       // Check if tables exist
       const tables = await sql`
-        SELECT table_name 
+        SELECT table_name, table_type
         FROM information_schema.tables 
         WHERE table_schema = 'public' 
-        AND table_name IN (
-          'users', 'organizations', 'organization_users',
-          'modules', 'organization_modules', 'ai_providers',
-          'ai_configurations', 'ai_usage_logs', 'automations',
-          'automation_executions', 'integrations', 
-          'organization_integrations', 'activity_logs', 'system_notifications'
-        )
         ORDER BY table_name
       `;
+
+      // Check specific required tables
+      const requiredTables = [
+        'users', 'organizations', 'organization_users',
+        'modules', 'organization_modules', 'ai_providers',
+        'ai_configurations', 'ai_usage_logs', 'automations',
+        'automation_executions', 'integrations', 
+        'organization_integrations', 'activity_logs', 'system_notifications'
+      ];
+
+      const foundTables = tables.map((t: any) => t.table_name);
+      const missingTables = requiredTables.filter(table => !foundTables.includes(table));
 
       await sql.end();
 
       res.json({
         success: true,
-        tablesFound: tables.length,
-        totalRequired: 14,
-        isComplete: tables.length === 14,
-        tables: tables.map((t: any) => t.table_name),
+        totalTablesInDB: tables.length,
+        requiredTables: requiredTables.length,
+        foundRequiredTables: requiredTables.length - missingTables.length,
+        isSchemaComplete: missingTables.length === 0,
+        allTables: foundTables,
+        missingTables,
         timestamp: new Date().toISOString()
       });
 
     } catch (error: any) {
+      console.error('❌ Database status check failed:', error.message);
       res.status(500).json({ 
         success: false, 
         error: error.message,
