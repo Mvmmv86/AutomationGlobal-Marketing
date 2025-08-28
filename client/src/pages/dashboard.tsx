@@ -8,7 +8,7 @@ import RecentAutomations from "@/components/dashboard/recent-automations";
 import QuickActions from "@/components/dashboard/quick-actions";
 import SystemStatus from "@/components/dashboard/system-status";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, Shield } from "lucide-react";
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);

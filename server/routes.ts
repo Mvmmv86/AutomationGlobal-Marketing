@@ -7,6 +7,7 @@ import { requireAuth, requireOrganization, requirePermission } from "./middlewar
 import { loadOrganizationContext, requireActiveOrganization } from "./middleware/tenant";
 import type { AuthenticatedRequest, TenantRequest } from "./middleware/auth";
 import { storage, db } from "./storage";
+import { securityManager } from "./database/security-policies";
 import * as schema from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -268,6 +269,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: error.message
+      });
+    }
+  });
+
+  // Security and RLS endpoints
+  app.post('/api/security/apply-policies', async (req, res) => {
+    try {
+      console.log('🔒 Applying Row Level Security policies...');
+      const result = await securityManager.applyAllPolicies();
+      
+      res.json({
+        success: result.success,
+        message: result.message,
+        appliedPolicies: result.appliedPolicies,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to apply security policies:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get('/api/security/validate', async (req, res) => {
+    try {
+      console.log('🔍 Validating security policies...');
+      const result = await securityManager.validateSecurityPolicies();
+      
+      res.json({
+        success: result.success,
+        message: result.message,
+        tests: result.tests,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Security validation failed:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get('/api/security/status', async (req, res) => {
+    try {
+      const status = await securityManager.getSecurityStatus();
+      
+      res.json({
+        success: true,
+        security: status,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to get security status:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
       });
     }
   });
