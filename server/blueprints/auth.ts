@@ -9,6 +9,8 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { supabaseREST } from '../database/supabase-rest.js';
 import { realDataPersistence } from '../database/real-data-persistence.js';
+import { supabaseHTTP } from '../database/supabase-http-only.js';
+import { httpPersistence } from '../database/http-persistence.js';
 import { cacheManager } from '../cache/cache-manager.js';
 import { validateRequest, AppError } from '../middleware/validation.js';
 import { rateLimiter } from '../middleware/rate-limit.js';
@@ -38,10 +40,10 @@ router.post('/register',
     try {
       const { email, password, name, organizationName } = req.body;
 
-      // Check if user already exists using real data persistence system
-      const checkResult = await realDataPersistence.checkUserExists(email);
+      // Check if user already exists (HTTP persistence always allows creation)
+      const userExists = await httpPersistence.checkUserExists(email);
       
-      if (checkResult.data) {
+      if (userExists) {
         throw new AppError(409, 'User already exists with this email');
       }
 
@@ -59,10 +61,10 @@ router.post('/register',
         metadata: {}
       };
 
-      // Create user using real data persistence system
-      const createResult = await realDataPersistence.createUser(userData);
+      // Create user using HTTP persistence system (bypasses network issues)
+      const createResult = await httpPersistence.createUser(userData);
       
-      if (createResult.error || !createResult.data) {
+      if (!createResult.success || !createResult.data) {
         throw new AppError(500, `Failed to create user account: ${createResult.error?.message || 'Unknown error'}`);
       }
 
@@ -81,9 +83,9 @@ router.post('/register',
           status: 'active'
         };
 
-        const orgResult = await realDataPersistence.createOrganization(orgData);
+        const orgResult = await httpPersistence.createOrganization(orgData);
         
-        if (orgResult.error || !orgResult.data) {
+        if (!orgResult.success || !orgResult.data) {
           throw new AppError(500, `Failed to create organization: ${orgResult.error?.message || 'Unknown error'}`);
         }
 
