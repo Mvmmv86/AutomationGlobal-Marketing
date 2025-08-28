@@ -292,7 +292,7 @@ export class QueueManager {
    */
   private async processFallbackJobs(): Promise<void> {
     setInterval(async () => {
-      for (const [queueName, jobs] of this.fallbackJobs.entries()) {
+      for (const [queueName, jobs] of Array.from(this.fallbackJobs.entries())) {
         if (jobs.length > 0) {
           const job = jobs.shift()!;
           
@@ -319,7 +319,7 @@ export class QueueManager {
     };
 
     if (this.isRedisAvailable) {
-      for (const [name, queue] of this.queues.entries()) {
+      for (const [name, queue] of Array.from(this.queues.entries())) {
         try {
           const waiting = await queue.getWaiting();
           const active = await queue.getActive();
@@ -338,7 +338,7 @@ export class QueueManager {
         }
       }
     } else {
-      for (const [name, jobs] of this.fallbackJobs.entries()) {
+      for (const [name, jobs] of Array.from(this.fallbackJobs.entries())) {
         stats.queues[name] = {
           waiting: jobs.length,
           mode: 'memory_fallback'
@@ -415,7 +415,7 @@ export class QueueManager {
    * Cleanup and close queues
    */
   async close(): Promise<void> {
-    for (const queue of this.queues.values()) {
+    for (const queue of Array.from(this.queues.values())) {
       await queue.close();
     }
     this.queues.clear();
