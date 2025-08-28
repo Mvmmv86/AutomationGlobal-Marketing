@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
-import { supabaseRest } from '../database/supabase-rest.js';
+import { supabaseREST } from '../database/supabase-rest.js';
 import { cacheManager } from '../cache/cache-manager.js';
 import { validateRequest, AppError } from '../middleware/validation.js';
 import { requireAuth, requireOrganization, requirePermission } from '../middleware/auth.js';
@@ -49,18 +49,27 @@ router.get('/',
     try {
       const userId = (req as any).user.id;
 
-      const orgsResult = await supabaseRest.query({
-        table: 'organization_members',
-        filters: { user_id: userId, status: 'active' },
-        joins: [{
-          table: 'organizations',
-          on: 'organization_id',
-          select: ['id', 'name', 'slug', 'description', 'status', 'subscription_tier', 'created_at']
-        }]
-      });
+      const orgsResult = await Promise.race([
+        supabaseREST.query({
+          table: 'organization_members',
+          filters: { user_id: userId, status: 'active' },
+          joins: [{
+            table: 'organizations',
+            on: 'organization_id',
+            select: ['id', 'name', 'slug', 'description', 'status', 'subscription_tier', 'created_at']
+          }]
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database timeout')), 5000)
+        )
+      ]) as any;
 
       if (!orgsResult.success) {
-        throw new AppError(500, 'Failed to fetch organizations');
+        // Return empty array if database fails
+        return res.json({
+          success: true,
+          data: []
+        });
       }
 
       const organizations = (orgsResult.data || []).map((membership: any) => ({

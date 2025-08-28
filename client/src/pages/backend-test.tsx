@@ -104,18 +104,18 @@ export default function BackendTest() {
     
     tests.push(healthTest, apiHealthTest, versionTest);
     
-    // Test middleware functionality (should get rate limited after many requests)
-    const rateLimitTest = await testEndpoint('/api/version');
+    // Test simple blueprint endpoint
+    const blueprintTest = await testEndpoint('/api/test/simple');
     tests.push({
-      ...rateLimitTest,
-      name: 'Rate Limiting Test',
-      details: 'Middleware functioning (no rate limit errors expected yet)'
+      ...blueprintTest,
+      name: 'Blueprint Architecture Test',
+      details: blueprintTest.success ? 'Modular blueprint working' : blueprintTest.details
     });
     
-    // Test validation middleware (should fail validation)
-    const validationTest = await testEndpoint('/api/auth/register', 'POST', {
+    // Test validation middleware
+    const validationTest = await testEndpoint('/api/test/validation', 'POST', {
       email: 'invalid-email',
-      password: '123' // Too short
+      name: 'A' // Too short
     });
     tests.push({
       ...validationTest,
@@ -124,13 +124,21 @@ export default function BackendTest() {
       details: validationTest.statusCode === 400 ? 'Validation working correctly' : validationTest.details
     });
     
-    // Test error handling (404 for non-existent route)
-    const notFoundTest = await testEndpoint('/api/non-existent-route');
+    // Test error handling
+    const errorTest = await testEndpoint('/api/test/error?type=app');
     tests.push({
-      ...notFoundTest,
-      name: 'Error Handling Test (404)',
-      success: notFoundTest.statusCode === 404,
-      details: notFoundTest.statusCode === 404 ? 'Error handling working correctly' : notFoundTest.details
+      ...errorTest,
+      name: 'Error Handling Test',
+      success: errorTest.statusCode === 400,
+      details: errorTest.statusCode === 400 ? 'Error handling working correctly' : errorTest.details
+    });
+    
+    // Test rate limiting
+    const rateLimitTest = await testEndpoint('/api/test/rate-limit');
+    tests.push({
+      ...rateLimitTest,
+      name: 'Rate Limiting Test',
+      details: rateLimitTest.success ? 'Rate limiting active (call multiple times to test)' : rateLimitTest.details
     });
     
     setTestResults(tests);

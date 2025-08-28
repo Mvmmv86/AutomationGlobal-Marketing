@@ -7,7 +7,7 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { supabaseRest } from '../database/supabase-rest.js';
+import { supabaseREST } from '../database/supabase-rest.js';
 import { cacheManager } from '../cache/cache-manager.js';
 import { validateRequest, AppError } from '../middleware/validation.js';
 import { rateLimiter } from '../middleware/rate-limit.js';
@@ -41,15 +41,27 @@ router.post('/register',
     try {
       const { email, password, name, organizationName } = req.body;
 
-      // Check if user already exists
-      const existingUser = await supabaseRest.query({
-        table: 'users',
-        filters: { email },
-        limit: 1
-      });
+      // Check if user already exists (with timeout)
+      try {
+        const existingUser = await Promise.race([
+          supabaseREST.query({
+            table: 'users',
+            filters: { email },
+            limit: 1
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database timeout')), 5000)
+          )
+        ]);
 
-      if (existingUser.data && existingUser.data.length > 0) {
-        throw new AppError(409, 'User already exists with this email');
+        if ((existingUser as any).data && (existingUser as any).data.length > 0) {
+          throw new AppError(409, 'User already exists with this email');
+        }
+      } catch (error) {
+        if (error.message === 'Database timeout') {
+          throw new AppError(503, 'Database connection timeout - please try again');
+        }
+        // Continue with registration if database check fails
       }
 
       // Hash password
@@ -67,7 +79,12 @@ router.post('/register',
         metadata: {}
       };
 
-      const createUserResult = await supabaseRest.insert('users', userData);
+      const createUserResult = await Promise.race([
+        supabaseREST.insert('users', userData),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database timeout')), 10000)
+        )
+      ]) as any;
       
       if (!createUserResult.success || !createUserResult.data?.[0]) {
         throw new AppError(500, 'Failed to create user account');

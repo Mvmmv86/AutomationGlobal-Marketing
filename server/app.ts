@@ -13,6 +13,7 @@ import { apiRateLimit } from "./middleware/rate-limit.js";
 // Import blueprints
 import authBlueprint from "./blueprints/auth.js";
 import organizationsBlueprint from "./blueprints/organizations.js";
+import testBlueprint from "./blueprints/test.js";
 
 // Import existing routes
 import { registerRoutes } from "./routes.js";
@@ -84,6 +85,7 @@ export function createApp() {
   // Register blueprints (modular API structure)
   app.use('/api/auth', authBlueprint);
   app.use('/api/organizations', organizationsBlueprint);
+  app.use('/api/test', testBlueprint);
 
   // Register existing routes (legacy and additional endpoints)
   registerRoutes(app);
