@@ -203,6 +203,84 @@ export const systemNotifications = pgTable("system_notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Analytics and ML Tables
+export const analyticsDatasets = pgTable("analytics_datasets", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  dataSource: text("data_source").notNull(), // 'automation_logs', 'ai_usage', 'custom', etc.
+  schema: jsonb("schema").notNull(), // Column definitions and types
+  filters: jsonb("filters").default({}),
+  isActive: boolean("is_active").default(true),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const mlModels = pgTable("ml_models", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  datasetId: uuid("dataset_id").references(() => analyticsDatasets.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'classification', 'regression', 'clustering', 'anomaly_detection'
+  algorithm: text("algorithm").notNull(), // 'random_forest', 'neural_network', 'kmeans', etc.
+  parameters: jsonb("parameters").notNull(),
+  trainingData: jsonb("training_data"),
+  modelData: jsonb("model_data"), // Serialized model
+  metrics: jsonb("metrics"), // Accuracy, precision, recall, etc.
+  status: text("status").default('draft'), // 'draft', 'training', 'trained', 'deployed', 'error'
+  trainedAt: timestamp("trained_at"),
+  deployedAt: timestamp("deployed_at"),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const mlPredictions = pgTable("ml_predictions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  modelId: uuid("model_id").references(() => mlModels.id).notNull(),
+  inputData: jsonb("input_data").notNull(),
+  prediction: jsonb("prediction").notNull(),
+  confidence: decimal("confidence", { precision: 5, scale: 4 }),
+  executedAt: timestamp("executed_at").defaultNow(),
+  createdBy: uuid("created_by").references(() => users.id)
+});
+
+export const analyticsReports = pgTable("analytics_reports", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // 'dashboard', 'scheduled', 'alert', 'insight'
+  configuration: jsonb("configuration").notNull(), // Charts, filters, ML model refs
+  schedule: text("schedule"), // Cron expression for scheduled reports
+  recipients: text("recipients").array(), // Email addresses for scheduled reports
+  lastGenerated: timestamp("last_generated"),
+  nextScheduled: timestamp("next_scheduled"),
+  isActive: boolean("is_active").default(true),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const analyticsInsights = pgTable("analytics_insights", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  reportId: uuid("report_id").references(() => analyticsReports.id),
+  modelId: uuid("model_id").references(() => mlModels.id),
+  type: text("type").notNull(), // 'trend', 'anomaly', 'prediction', 'recommendation'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  data: jsonb("data").notNull(), // Supporting data and charts
+  confidence: decimal("confidence", { precision: 5, scale: 4 }),
+  impact: text("impact"), // 'low', 'medium', 'high', 'critical'
+  actionable: boolean("actionable").default(false),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -237,6 +315,34 @@ export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit({
   createdAt: true,
 });
 
+export const insertAnalyticsDatasetSchema = createInsertSchema(analyticsDatasets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMlModelSchema = createInsertSchema(mlModels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMlPredictionSchema = createInsertSchema(mlPredictions).omit({
+  id: true,
+  executedAt: true,
+});
+
+export const insertAnalyticsReportSchema = createInsertSchema(analyticsReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -260,3 +366,18 @@ export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 export type SystemNotification = typeof systemNotifications.$inferSelect;
+
+export type AnalyticsDataset = typeof analyticsDatasets.$inferSelect;
+export type InsertAnalyticsDataset = z.infer<typeof insertAnalyticsDatasetSchema>;
+
+export type MlModel = typeof mlModels.$inferSelect;
+export type InsertMlModel = z.infer<typeof insertMlModelSchema>;
+
+export type MlPrediction = typeof mlPredictions.$inferSelect;
+export type InsertMlPrediction = z.infer<typeof insertMlPredictionSchema>;
+
+export type AnalyticsReport = typeof analyticsReports.$inferSelect;
+export type InsertAnalyticsReport = z.infer<typeof insertAnalyticsReportSchema>;
+
+export type AnalyticsInsight = typeof analyticsInsights.$inferSelect;
+export type InsertAnalyticsInsight = z.infer<typeof insertAnalyticsInsightSchema>;
