@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { DatabaseMigrations } from "./database/migrations";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,23 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database migrations before starting server (non-blocking)
+  console.log('🚀 Starting Automation Global v4.0...');
+  
+  // Try migrations but don't block server startup if they fail
+  try {
+    const migrations = new DatabaseMigrations();
+    await Promise.race([
+      migrations.runMigrations(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Migration timeout')), 10000))
+    ]);
+    await migrations.close();
+    console.log('✅ Database migrations completed');
+  } catch (error: any) {
+    console.warn('⚠️ Migration skipped (will retry at runtime):', error.message);
+    // Don't exit - let server start anyway
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

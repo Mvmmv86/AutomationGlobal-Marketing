@@ -25,61 +25,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
   });
 
-  // Schema setup endpoint using application database connection
-  app.post('/api/setup-schema', async (req, res) => {
+  // Database status check
+  app.get('/api/database/status', async (req, res) => {
     try {
-      const { readFileSync } = await import('fs');
-      const { join } = await import('path');
       const postgres = await import('postgres');
-      
-      console.log('🔧 Executing database schema setup...');
-      
-      // Use the same connection config as the application
       const sql = postgres.default(process.env.DATABASE_URL!, {
         ssl: 'require',
-        max: 1, // Single connection for migration
+        max: 1,
       });
 
-      // Read migration file
-      const migrationPath = join(process.cwd(), 'migrations', '0000_tough_runaways.sql');
-      const migrationSQL = readFileSync(migrationPath, 'utf-8');
-      
-      // Split into statements
-      const statements = migrationSQL
-        .split('--> statement-breakpoint')
-        .map(stmt => stmt.trim())
-        .filter(stmt => stmt.length > 0);
-
-      console.log(`📝 Executing ${statements.length} statements...`);
-
-      let successCount = 0;
-      let errorCount = 0;
-      const results: string[] = [];
-
-      for (const statement of statements) {
-        try {
-          await sql.unsafe(statement);
-          successCount++;
-          
-          if (statement.includes('CREATE TYPE')) {
-            const typeName = statement.match(/"([^"]+)"/)?.[1];
-            results.push(`✅ Created ENUM: ${typeName}`);
-          } else if (statement.includes('CREATE TABLE')) {
-            const tableName = statement.match(/CREATE TABLE "([^"]+)"/)?.[1];
-            results.push(`✅ Created table: ${tableName}`);
-          }
-        } catch (error: any) {
-          if (error.message.includes('already exists')) {
-            results.push(`⚠️ Already exists: ${statement.substring(12, 40)}...`);
-          } else {
-            errorCount++;
-            results.push(`❌ Error: ${error.message.substring(0, 50)}...`);
-          }
-        }
-      }
-
-      // Verify tables
-      const verification = await sql`
+      // Check if tables exist
+      const tables = await sql`
         SELECT table_name 
         FROM information_schema.tables 
         WHERE table_schema = 'public' 
@@ -95,29 +51,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await sql.end();
 
-      const response = {
-        success: errorCount === 0,
-        message: errorCount === 0 
-          ? 'Schema setup completed successfully!' 
-          : `Setup completed with ${errorCount} errors`,
-        stats: {
-          total: statements.length,
-          successful: successCount,
-          errors: errorCount,
-          tablesCreated: verification.length
-        },
-        tables: verification.map((t: any) => t.table_name),
-        details: results
-      };
-
-      console.log('Schema setup result:', response);
-      res.json(response);
+      res.json({
+        success: true,
+        tablesFound: tables.length,
+        totalRequired: 14,
+        isComplete: tables.length === 14,
+        tables: tables.map((t: any) => t.table_name),
+        timestamp: new Date().toISOString()
+      });
 
     } catch (error: any) {
-      console.error('❌ Schema setup error:', error.message);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString() 
+      });
     }
   });
+
+  // Schema setup endpoint for manual migration
+  app.post('/api/setup-database', async (req, res) => {
+    try {
+      console.log('🔧 Running manual database setup...');
+      
+      const { DatabaseMigrations } = await import('./database/migrations');
+      const migrations = new DatabaseMigrations();
+      
+      await migrations.runMigrations();
+      await migrations.close();
+      
+      console.log('✅ Manual database setup completed successfully');
+      res.json({ 
+        success: true, 
+        message: 'Database schema created successfully!',
+        timestamp: new Date().toISOString() 
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Manual database setup error:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString() 
+      });
+    }
+  });
+
+
 
   // Authentication Routes
   app.post('/api/auth/register', async (req, res) => {
