@@ -208,13 +208,17 @@ export class QueueManager {
     // Simulate AI processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Update progress
-    job.progress(50);
+    // Update progress (safe check for Bull vs fallback jobs)
+    if (typeof job.progress === 'function') {
+      job.progress(50);
+    }
     
     // Simulate more processing
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    job.progress(100);
+    if (typeof job.progress === 'function') {
+      job.progress(100);
+    }
     
     return {
       success: true,
