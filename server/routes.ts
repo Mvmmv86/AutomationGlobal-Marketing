@@ -25,6 +25,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
   });
 
+  // Temporary schema setup endpoint  
+  app.post('/api/setup-schema', async (req, res) => {
+    try {
+      console.log('🔧 Starting database schema setup...');
+      
+      // Import the storage to get the database connection
+      const { storage } = await import('./storage');
+      
+      res.json({
+        success: true,
+        message: 'Schema setup endpoint created - use drizzle-kit to push schema',
+        info: 'Run: npx drizzle-kit push'
+      });
+
+    } catch (error: any) {
+      console.error('❌ Schema setup error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Authentication Routes
   app.post('/api/auth/register', async (req, res) => {
     try {

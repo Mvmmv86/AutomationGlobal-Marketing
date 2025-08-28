@@ -14,13 +14,14 @@
   - [x] Template .env documentado
   - [x] Script de validação de variáveis
   - [x] Carregamento e teste de todas as variáveis
-- [x] Task 1.3: Criação Completa do Schema Supabase
+- [!] Task 1.3: Criação Completa do Schema Supabase
   - [x] Tabelas Core (users, organizations, etc.)
   - [x] Tabelas de IA (providers, models, usage, etc.)
   - [x] Tabelas de Módulos (marketing, support, trading)
   - [x] Tabelas de Automações
   - [x] Tabelas de Integrações
   - [x] Tabelas de Sistema e Billing
+  - [!] **PENDING**: Drizzle-kit timeout - tables need manual creation in Supabase
 - [x] Task 1.4: Configuração RLS e Políticas de Segurança
   - [x] Row Level Security configurado
   - [x] Políticas multi-tenant por tabela
