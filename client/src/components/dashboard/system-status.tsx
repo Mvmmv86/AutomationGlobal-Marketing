@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { 
   Server, 
   Database, 
@@ -178,6 +180,16 @@ export default function SystemStatus({ status }: SystemStatusProps) {
               <p className="text-xs text-muted-foreground">Active Incidents</p>
             </div>
           </div>
+        </div>
+
+        {/* Database Test Link */}
+        <div className="mt-4 text-center border-t border-border pt-4">
+          <Link href="/database-connection">
+            <Button variant="outline" size="sm" data-testid="button-database-test">
+              <Database className="mr-2 h-4 w-4" />
+              Test Database Connection
+            </Button>
+          </Link>
         </div>
 
         {/* Last Updated */}
