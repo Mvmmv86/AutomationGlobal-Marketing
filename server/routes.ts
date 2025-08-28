@@ -6,6 +6,8 @@ import { aiService } from "./services/ai";
 import { requireAuth, requireOrganization, requirePermission } from "./middleware/auth";
 import { loadOrganizationContext, requireActiveOrganization } from "./middleware/tenant";
 import type { AuthenticatedRequest, TenantRequest } from "./middleware/auth";
+import { storage, db } from "./storage";
+import * as schema from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -23,6 +25,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check
   app.get('/api/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  });
+
+  // Simple table check (works with manually created tables)
+  app.get('/api/database/simple-check', async (req, res) => {
+    try {
+      console.log('🔍 Testing database connection for table access...');
+      console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+      console.log('DB object exists:', !!db);
+      
+      if (!db) {
+        throw new Error('Database connection not initialized. Check DATABASE_URL configuration.');
+      }
+      
+      // Try a simple query to check if tables exist and are accessible
+      console.log('📋 Querying modules table...');
+      const modules = await db.select().from(schema.modules).limit(3);
+      console.log('📋 Querying aiProviders table...');  
+      const providers = await db.select().from(schema.aiProviders).limit(2);
+      
+      console.log('✅ Database query successful');
+      
+      res.json({ 
+        success: true, 
+        message: 'Database tables are accessible and working!',
+        data: {
+          modulesCount: modules.length,
+          providersCount: providers.length,
+          sampleModule: modules[0]?.name || 'None',
+          sampleProvider: providers[0]?.name || 'None'
+        },
+        timestamp: new Date().toISOString() 
+      });
+    } catch (error: any) {
+      console.error('❌ Database check failed:', error.message);
+      res.json({ 
+        success: false, 
+        error: error.message,
+        hint: 'Please run the SQL setup in Supabase console first. Check docs/SUPABASE-MANUAL-SETUP.md',
+        debug: {
+          hasDb: !!db,
+          hasDatabaseUrl: !!process.env.DATABASE_URL
+        },
+        timestamp: new Date().toISOString() 
+      });
+    }
   });
 
   // Database connection test

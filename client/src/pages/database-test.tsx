@@ -15,10 +15,10 @@ interface TestResult {
 export default function DatabaseTest() {
   const [tests, setTests] = useState<TestResult[]>([
     { name: 'Health Check', status: 'idle' },
+    { name: 'Simple Table Check', status: 'idle' },
     { name: 'Database Connection', status: 'idle' },
     { name: 'Schema Status', status: 'idle' },
-    { name: 'Drizzle Setup (Recommended)', status: 'idle' },
-    { name: 'Replit Setup (Manual SQL)', status: 'idle' }
+    { name: 'Drizzle Setup (Recommended)', status: 'idle' }
   ]);
 
   const updateTest = (index: number, updates: Partial<TestResult>) => {
@@ -97,10 +97,10 @@ export default function DatabaseTest() {
   const runAllTests = async () => {
     const testConfigs = [
       { name: 'Health Check', endpoint: '/api/health' },
+      { name: 'Simple Table Check', endpoint: '/api/database/simple-check' },
       { name: 'Database Connection', endpoint: '/api/database/test-connection' },
       { name: 'Schema Status', endpoint: '/api/database/status' },
-      { name: 'Drizzle Setup (Recommended)', endpoint: '/api/drizzle-setup' },
-      { name: 'Replit Setup (Manual SQL)', endpoint: '/api/replit-setup' }
+      { name: 'Drizzle Setup (Recommended)', endpoint: '/api/drizzle-setup' }
     ];
 
     for (let i = 0; i < testConfigs.length; i++) {
