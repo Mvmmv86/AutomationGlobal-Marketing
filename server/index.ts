@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { createApp } from "./app";
 import { setupVite, serveStatic, log } from "./vite";
 import { DatabaseMigrations } from "./database/migrations";
 

@@ -39,11 +39,11 @@
   - [x] Retry policies implementadas
 
 ### SEMANA 2: BACKEND E AUTENTICAÇÃO COMPLETA
-- [ ] Task 2.1: Backend Flask Estruturado Completo
-  - [ ] API blueprints organizados
-  - [ ] Estrutura modular implementada
-  - [ ] Middleware configurado
-  - [ ] Error handling robusto
+- [x] Task 2.1: Backend Express.js Estruturado Completo
+  - [x] API blueprints organizados
+  - [x] Estrutura modular implementada
+  - [x] Middleware configurado
+  - [x] Error handling robusto
 - [ ] Task 2.2: Sistema de Autenticação Robusto
   - [ ] Supabase Auth integrado
   - [ ] JWT implementation completo
