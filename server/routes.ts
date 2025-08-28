@@ -8,6 +8,8 @@ import { loadOrganizationContext, requireActiveOrganization } from "./middleware
 import type { AuthenticatedRequest, TenantRequest } from "./middleware/auth";
 import { storage, db } from "./storage";
 import { securityManager } from "./database/security-policies";
+import { cacheManager } from "./cache/cache-manager";
+import { queueManager } from "./queue/queue-manager";
 import * as schema from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -327,6 +329,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('❌ Failed to get security status:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Cache and Queue Management endpoints
+  app.get('/api/cache/status', async (req, res) => {
+    try {
+      const stats = await cacheManager.getCacheStats();
+      res.json({
+        success: true,
+        cache: stats,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to get cache status:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/cache/test', async (req, res) => {
+    try {
+      console.log('🧪 Testing cache functionality...');
+      const result = await cacheManager.testCache();
+      
+      res.json({
+        success: result.success,
+        message: result.success ? 'Cache tests completed successfully' : 'Some cache tests failed',
+        tests: result.tests,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Cache test failed:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get('/api/queue/status', async (req, res) => {
+    try {
+      const stats = await queueManager.getQueueStats();
+      res.json({
+        success: true,
+        queues: stats,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to get queue status:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/queue/test', async (req, res) => {
+    try {
+      console.log('🧪 Testing queue functionality...');
+      const result = await queueManager.testQueues();
+      
+      res.json({
+        success: result.success,
+        message: result.success ? 'Queue tests completed successfully' : 'Some queue tests failed',
+        tests: result.tests,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Queue test failed:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/queue/add-job', async (req, res) => {
+    try {
+      const { queueName, jobData, options } = req.body;
+      
+      if (!queueName || !jobData) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: queueName, jobData',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      console.log(`🔄 Adding job to queue '${queueName}'...`);
+      const jobId = await queueManager.addJob(queueName, jobData, options);
+      
+      res.json({
+        success: true,
+        message: `Job added to queue '${queueName}'`,
+        jobId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('❌ Failed to add job to queue:', error);
       res.status(500).json({
         success: false,
         error: error.message,
