@@ -399,6 +399,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick Supabase REST API Test
+  app.get('/api/database/test-connection', async (req, res) => {
+    try {
+      console.log('🔬 Testing Supabase REST API...');
+      
+      // Quick test without complex initialization
+      const hasCredentials = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+      
+      if (!hasCredentials) {
+        res.json({
+          success: false,
+          connected: false,
+          method: 'None',
+          error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY',
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+
+      // Try simple REST API call
+      const { createClient } = await import('@supabase/supabase-js');
+      const client = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_ANON_KEY
+      );
+
+      // Quick test query
+      const { data, error } = await client
+        .from('users')
+        .select('count')
+        .limit(1)
+        .maybeSingle();
+
+      res.json({
+        success: !error,
+        connected: !error,
+        method: 'Supabase REST API',
+        supabaseUrl: process.env.SUPABASE_URL,
+        testResult: error ? `Error: ${error.message}` : 'Connection successful',
+        note: !error ? 
+          '✅ Successfully connected to Supabase via REST API!' : 
+          '⚠️ REST API available but table access failed (may need to run SQL setup)',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error: any) {
+      console.error('Test connection error:', error);
+      res.status(500).json({
+        success: false,
+        connected: false,
+        method: 'Error',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Hybrid Database Status - Instant Response
   app.get('/api/database/status', async (req, res) => {
     try {
