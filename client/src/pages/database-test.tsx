@@ -17,8 +17,8 @@ export default function DatabaseTest() {
     { name: 'Health Check', status: 'idle' },
     { name: 'Database Connection', status: 'idle' },
     { name: 'Schema Status', status: 'idle' },
-    { name: 'Replit Setup (Create Tables)', status: 'idle' },
-    { name: 'Production Initialize', status: 'idle' }
+    { name: 'Drizzle Setup (Recommended)', status: 'idle' },
+    { name: 'Replit Setup (Manual SQL)', status: 'idle' }
   ]);
 
   const updateTest = (index: number, updates: Partial<TestResult>) => {
@@ -99,8 +99,8 @@ export default function DatabaseTest() {
       { name: 'Health Check', endpoint: '/api/health' },
       { name: 'Database Connection', endpoint: '/api/database/test-connection' },
       { name: 'Schema Status', endpoint: '/api/database/status' },
-      { name: 'Replit Setup (Create Tables)', endpoint: '/api/replit-setup' },
-      { name: 'Production Initialize', endpoint: '/api/initialize-production' }
+      { name: 'Drizzle Setup (Recommended)', endpoint: '/api/drizzle-setup' },
+      { name: 'Replit Setup (Manual SQL)', endpoint: '/api/replit-setup' }
     ];
 
     for (let i = 0; i < testConfigs.length; i++) {

@@ -146,6 +146,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Drizzle-powered database setup
+  app.post('/api/drizzle-setup', async (req, res) => {
+    try {
+      console.log('🚀 Starting Drizzle-powered database setup...');
+      
+      const { DrizzleMigrationSystem } = await import('./database/drizzle-migration');
+      const migration = new DrizzleMigrationSystem();
+      
+      // Test connection first
+      const connected = await migration.testConnection();
+      if (!connected) {
+        throw new Error('Failed to connect to Supabase database');
+      }
+      
+      // Push schema using drizzle-kit
+      console.log('📋 Pushing Drizzle schema to database...');
+      const schemaPushed = await migration.pushSchema();
+      
+      if (!schemaPushed) {
+        throw new Error('Failed to push schema to database');
+      }
+      
+      // Check if tables were created
+      const schemaStatus = await migration.getSchemaStatus();
+      
+      // Seed initial data
+      await migration.seedInitialData();
+      
+      // Create super admin if provided
+      const { email, password } = req.body;
+      if (email && password) {
+        await migration.createSuperAdmin(email, password);
+      }
+      
+      await migration.close();
+      
+      console.log('✅ Drizzle database setup completed successfully');
+      res.json({ 
+        success: true, 
+        message: 'Database setup completed successfully with Drizzle ORM!',
+        schemaStatus,
+        timestamp: new Date().toISOString() 
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Drizzle setup error:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString() 
+      });
+    }
+  });
+
   // Replit-optimized database setup
   app.post('/api/replit-setup', async (req, res) => {
     try {
