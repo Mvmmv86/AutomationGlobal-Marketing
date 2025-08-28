@@ -78,16 +78,11 @@ export async function requireOrganization(req: Request, res: Response, next: Nex
     if (!organization) {
       // Fallback to database with timeout handling
       try {
-        const orgResult = await Promise.race([
-          supabaseREST.query({
-            table: 'organizations',
-            filters: { id: orgId, status: 'active' },
-            limit: 1
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database timeout')), 5000)
-          )
-        ]);
+        const orgResult = await supabaseREST.query({
+          table: 'organizations',
+          filters: { id: orgId, status: 'active' },
+          limit: 1
+        });
 
         if ((orgResult as any).success && (orgResult as any).data?.length > 0) {
           organization = (orgResult as any).data[0];

@@ -9,6 +9,7 @@ import DatabaseConnectionTest from "@/pages/database-connection-test";
 import SecurityTest from "@/pages/security-test";
 import CacheQueueTest from "@/pages/cache-queue-test";
 import BackendTest from "@/pages/backend-test";
+import BackendTestReal from "@/pages/backend-test-real";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/security-test" component={SecurityTest} />
       <Route path="/cache-queue-test" component={CacheQueueTest} />
       <Route path="/backend-test" component={BackendTest} />
+      <Route path="/backend-test-real" component={BackendTestReal} />
       <Route component={NotFound} />
     </Switch>
   );

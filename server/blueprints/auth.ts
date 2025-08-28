@@ -41,27 +41,15 @@ router.post('/register',
     try {
       const { email, password, name, organizationName } = req.body;
 
-      // Check if user already exists (with timeout)
-      try {
-        const existingUser = await Promise.race([
-          supabaseREST.query({
-            table: 'users',
-            filters: { email },
-            limit: 1
-          }),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Database timeout')), 5000)
-          )
-        ]);
+      // Check if user already exists
+      const existingUser = await supabaseREST.query({
+        table: 'users',
+        filters: { email },
+        limit: 1
+      });
 
-        if ((existingUser as any).data && (existingUser as any).data.length > 0) {
-          throw new AppError(409, 'User already exists with this email');
-        }
-      } catch (error) {
-        if (error.message === 'Database timeout') {
-          throw new AppError(503, 'Database connection timeout - please try again');
-        }
-        // Continue with registration if database check fails
+      if (existingUser.data && existingUser.data.length > 0) {
+        throw new AppError(409, 'User already exists with this email');
       }
 
       // Hash password
@@ -79,12 +67,7 @@ router.post('/register',
         metadata: {}
       };
 
-      const createUserResult = await Promise.race([
-        supabaseREST.insert('users', userData),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database timeout')), 10000)
-        )
-      ]) as any;
+      const createUserResult = await supabaseREST.insert('users', userData);
       
       if (!createUserResult.success || !createUserResult.data?.[0]) {
         throw new AppError(500, 'Failed to create user account');

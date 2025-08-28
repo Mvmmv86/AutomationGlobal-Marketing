@@ -49,27 +49,18 @@ router.get('/',
     try {
       const userId = (req as any).user.id;
 
-      const orgsResult = await Promise.race([
-        supabaseREST.query({
-          table: 'organization_members',
-          filters: { user_id: userId, status: 'active' },
-          joins: [{
-            table: 'organizations',
-            on: 'organization_id',
-            select: ['id', 'name', 'slug', 'description', 'status', 'subscription_tier', 'created_at']
-          }]
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Database timeout')), 5000)
-        )
-      ]) as any;
+      const orgsResult = await supabaseREST.query({
+        table: 'organization_members',
+        filters: { user_id: userId, status: 'active' },
+        joins: [{
+          table: 'organizations',
+          on: 'organization_id',
+          select: ['id', 'name', 'slug', 'description', 'status', 'subscription_tier', 'created_at']
+        }]
+      });
 
       if (!orgsResult.success) {
-        // Return empty array if database fails
-        return res.json({
-          success: true,
-          data: []
-        });
+        throw new AppError(500, 'Failed to fetch organizations');
       }
 
       const organizations = (orgsResult.data || []).map((membership: any) => ({
