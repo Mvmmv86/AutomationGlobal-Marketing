@@ -8,9 +8,14 @@ import { apiRequest } from '@/lib/queryClient';
 
 interface DatabaseStatus {
   connected: boolean;
-  tablesCount: number;
-  tables: string[];
+  mode?: string;
+  database?: {
+    tablesCount: number;
+    tables: string[];
+    status: string;
+  };
   error?: string;
+  note?: string;
 }
 
 interface TestResult {
@@ -28,6 +33,20 @@ export default function DatabaseConnectionTest() {
     queryKey: ['/api/database/status'],
     retry: 3,
     retryDelay: 2000
+  });
+
+  // Test real data creation in Supabase
+  const createRealDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/test/create-real-data', {});
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      addTestResult('Real Data Creation', 'success', data.message, data);
+    },
+    onError: (error: any) => {
+      addTestResult('Real Data Creation', 'error', error.message || 'Failed to create real data');
+    }
   });
 
   // Test Task 1 functionality (User & Organization Creation)
@@ -69,7 +88,8 @@ export default function DatabaseConnectionTest() {
     try {
       await refetchDB();
       if (dbStatus?.connected) {
-        addTestResult('Database Connection', 'success', `Connected with ${dbStatus.tablesCount} tables`);
+        const tablesCount = dbStatus.database?.tablesCount || 0;
+        addTestResult('Database Connection', 'success', `Connected via ${dbStatus.mode} with ${tablesCount} tables`);
       } else {
         addTestResult('Database Connection', 'error', dbStatus?.error || 'Connection failed - using simulation mode');
       }
@@ -133,10 +153,10 @@ export default function DatabaseConnectionTest() {
                 <span className="font-medium">Connected Successfully</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Found {dbStatus.tablesCount} tables in database
+                Found {dbStatus.database?.tablesCount || 0} tables in database
               </p>
               <div className="flex flex-wrap gap-1 mt-2">
-                {dbStatus.tables.map((table) => (
+                {dbStatus.database?.tables?.map((table) => (
                   <Badge key={table} variant="secondary" className="text-xs">
                     {table}
                   </Badge>
@@ -176,21 +196,47 @@ export default function DatabaseConnectionTest() {
             Execute comprehensive database functionality tests
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={runFullTest}
-            disabled={testTask1Mutation.isPending || validateSchemaMutation.isPending}
-            data-testid="button-run-full-test"
-          >
-            {testTask1Mutation.isPending || validateSchemaMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Running Tests...
-              </>
-            ) : (
-              'Run Complete System Test'
-            )}
-          </Button>
+        <CardContent className="space-y-4">
+          <div>
+            <Button 
+              onClick={() => createRealDataMutation.mutate()}
+              disabled={createRealDataMutation.isPending}
+              className="w-full"
+              variant="default"
+              data-testid="button-create-real-data"
+            >
+              {createRealDataMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Real Data...
+                </>
+              ) : (
+                '🚀 Create Real Data in Supabase'
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              This will create real user and organization records in your Supabase database
+            </p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <Button 
+              onClick={runFullTest}
+              disabled={testTask1Mutation.isPending || validateSchemaMutation.isPending}
+              data-testid="button-run-full-test"
+              variant="outline"
+              className="w-full"
+            >
+              {testTask1Mutation.isPending || validateSchemaMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Running Tests...
+                </>
+              ) : (
+                'Run Complete System Test'
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

@@ -27,6 +27,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
   });
 
+  // Real Supabase Data Creation Test
+  app.post('/api/test/create-real-data', async (req, res) => {
+    try {
+      console.log('🚀 Creating real data in Supabase...');
+      
+      const { supabaseREST } = await import('./database/supabase-rest');
+      
+      // Create real user
+      const userData = {
+        email: `test_${Date.now()}@automation.global`,
+        username: `user_${Date.now()}`,
+        firstName: 'Real',
+        lastName: 'User',
+        password: '$2b$10$hashedpassword'
+      };
+      
+      const createdUser = await supabaseREST.createUser(userData);
+      console.log('User created:', createdUser);
+      
+      // Create real organization
+      const orgData = {
+        name: `Real Organization ${new Date().toISOString()}`,
+        slug: `real-org-${Date.now()}`,
+        description: 'Real organization created in Supabase',
+        type: 'marketing'
+      };
+      
+      const createdOrg = await supabaseREST.createOrganization(orgData);
+      console.log('Organization created:', createdOrg);
+      
+      res.json({
+        success: true,
+        message: 'Real data created successfully in Supabase!',
+        data: {
+          user: createdUser,
+          organization: createdOrg
+        },
+        note: 'Check your Supabase dashboard to see the new records',
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Real data creation failed:', error.message);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Hybrid Task 1 Test - Production Ready
   app.post('/api/test/simulate-task1', async (req, res) => {
     try {
