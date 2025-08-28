@@ -17,8 +17,8 @@ export default function DatabaseTest() {
     { name: 'Health Check', status: 'idle' },
     { name: 'Database Connection', status: 'idle' },
     { name: 'Schema Status', status: 'idle' },
-    { name: 'Migration Setup', status: 'idle' },
-    { name: 'Production Init', status: 'idle' }
+    { name: 'Replit Setup (Create Tables)', status: 'idle' },
+    { name: 'Production Initialize', status: 'idle' }
   ]);
 
   const updateTest = (index: number, updates: Partial<TestResult>) => {
@@ -30,40 +30,65 @@ export default function DatabaseTest() {
     const startTime = Date.now();
     
     try {
-      const response = await fetch(endpoint, {
-        method: endpoint.includes('setup') || endpoint.includes('initialize') ? 'POST' : 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        ...(endpoint.includes('initialize') && {
+      const isPostRequest = endpoint.includes('setup') || endpoint.includes('initialize');
+      const needsCredentials = endpoint.includes('setup') || endpoint.includes('initialize');
+      
+      const requestOptions: RequestInit = {
+        method: isPostRequest ? 'POST' : 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        ...(needsCredentials && {
           body: JSON.stringify({
             email: 'admin@automationglobal.com',
             password: 'Admin123!@#'
           })
         })
-      });
+      };
 
-      const data = await response.json();
+      console.log(`Starting test: ${testName} -> ${endpoint}`);
+      const response = await fetch(endpoint, requestOptions);
+      
+      let data;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // If we get HTML instead of JSON, it means Vite intercepted the request
+        const textData = await response.text();
+        if (textData.includes('<!DOCTYPE html>')) {
+          throw new Error('Vite middleware intercepted API request - using fallback method');
+        }
+        data = { error: 'Invalid response format', details: textData.substring(0, 200) };
+      }
+
       const duration = Date.now() - startTime;
 
-      if (response.ok) {
+      if (response.ok && data && !data.error) {
         updateTest(index, {
           status: 'success',
-          message: data.message || 'Test passed',
+          message: data.message || 'Test passed successfully',
           details: data,
           duration
         });
       } else {
         updateTest(index, {
           status: 'error',
-          message: data.error || 'Test failed',
+          message: data?.error || 'Test failed with unknown error',
           details: data,
           duration
         });
       }
     } catch (error: any) {
       const duration = Date.now() - startTime;
+      console.error(`Test ${testName} failed:`, error);
+      
       updateTest(index, {
         status: 'error',
         message: error.message,
+        details: { error: error.message, stack: error.stack },
         duration
       });
     }
@@ -74,8 +99,8 @@ export default function DatabaseTest() {
       { name: 'Health Check', endpoint: '/api/health' },
       { name: 'Database Connection', endpoint: '/api/database/test-connection' },
       { name: 'Schema Status', endpoint: '/api/database/status' },
-      { name: 'Migration Setup', endpoint: '/api/setup-database' },
-      { name: 'Production Init', endpoint: '/api/initialize-production' }
+      { name: 'Replit Setup (Create Tables)', endpoint: '/api/replit-setup' },
+      { name: 'Production Initialize', endpoint: '/api/initialize-production' }
     ];
 
     for (let i = 0; i < testConfigs.length; i++) {

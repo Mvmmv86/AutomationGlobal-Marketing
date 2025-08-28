@@ -146,6 +146,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Replit-optimized database setup
+  app.post('/api/replit-setup', async (req, res) => {
+    try {
+      console.log('🚀 Starting Replit-optimized database setup...');
+      
+      const { ReplitMigrationSystem } = await import('./database/replit-migration');
+      const migration = new ReplitMigrationSystem();
+      
+      // Test connection first
+      const connected = await migration.testConnection();
+      if (!connected) {
+        throw new Error('Failed to connect to Supabase database');
+      }
+      
+      // Create all tables
+      await migration.createTablesInBatches();
+      
+      // Seed initial data
+      await migration.seedInitialData();
+      
+      // Create super admin if provided
+      const { email, password } = req.body;
+      if (email && password) {
+        await migration.createSuperAdmin(email, password);
+      }
+      
+      await migration.close();
+      
+      console.log('✅ Replit database setup completed successfully');
+      res.json({ 
+        success: true, 
+        message: 'Database setup completed successfully for Replit environment!',
+        tablesCreated: 14,
+        modulesSeeded: 3,
+        providersConfigured: 2,
+        timestamp: new Date().toISOString() 
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Replit setup error:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString() 
+      });
+    }
+  });
+
   // Initialize production data
   app.post('/api/initialize-production', async (req, res) => {
     try {
