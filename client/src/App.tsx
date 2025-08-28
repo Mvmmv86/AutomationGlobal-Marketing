@@ -10,6 +10,7 @@ import SecurityTest from "@/pages/security-test";
 import CacheQueueTest from "@/pages/cache-queue-test";
 import BackendTest from "@/pages/backend-test";
 import BackendTestReal from "@/pages/backend-test-real";
+import RealDataTest from "@/pages/real-data-test";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/cache-queue-test" component={CacheQueueTest} />
       <Route path="/backend-test" component={BackendTest} />
       <Route path="/backend-test-real" component={BackendTestReal} />
+      <Route path="/real-data-test" component={RealDataTest} />
       <Route component={NotFound} />
     </Switch>
   );

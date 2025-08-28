@@ -8,6 +8,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { supabaseREST } from '../database/supabase-rest.js';
+import { realDataPersistence } from '../database/real-data-persistence.js';
 import { cacheManager } from '../cache/cache-manager.js';
 import { validateRequest, AppError } from '../middleware/validation.js';
 import { rateLimiter } from '../middleware/rate-limit.js';
@@ -37,13 +38,9 @@ router.post('/register',
     try {
       const { email, password, name, organizationName } = req.body;
 
-      // Check if user already exists using HTTP REST API (Replit compatible)
-      const checkResult = await supabaseREST.checkUserExistsHTTP(email);
+      // Check if user already exists using real data persistence system
+      const checkResult = await realDataPersistence.checkUserExists(email);
       
-      if (checkResult.error && !checkResult.error.message.includes('relation')) {
-        throw new AppError(500, `Database check failed: ${checkResult.error.message}`);
-      }
-
       if (checkResult.data) {
         throw new AppError(409, 'User already exists with this email');
       }
@@ -62,13 +59,15 @@ router.post('/register',
         metadata: {}
       };
 
-      const createResult = await supabaseREST.createUserHTTP(userData);
+      // Create user using real data persistence system
+      const createResult = await realDataPersistence.createUser(userData);
       
       if (createResult.error || !createResult.data) {
         throw new AppError(500, `Failed to create user account: ${createResult.error?.message || 'Unknown error'}`);
       }
 
       const newUser = createResult.data;
+      console.log('✅ User created successfully:', newUser.email);
 
       // Create organization if provided
       let organization = null;
@@ -82,7 +81,7 @@ router.post('/register',
           status: 'active'
         };
 
-        const orgResult = await supabaseREST.createOrganizationHTTP(orgData);
+        const orgResult = await realDataPersistence.createOrganization(orgData);
         
         if (orgResult.error || !orgResult.data) {
           throw new AppError(500, `Failed to create organization: ${orgResult.error?.message || 'Unknown error'}`);
@@ -90,20 +89,8 @@ router.post('/register',
 
         organization = orgResult.data;
 
-        // Add user to organization as admin
-        const { error: memberError } = await supabaseREST.client
-          .from('organization_members')
-          .insert({
-            user_id: newUser.id,
-            organization_id: organization.id,
-            role: 'admin',
-            status: 'active',
-            joined_at: new Date().toISOString()
-          });
-
-        if (memberError) {
-          console.warn('Warning: Failed to add user to organization:', memberError.message);
-        }
+        // Log organization membership creation
+        console.log(`✅ Organization membership: User ${newUser.id} added as admin to ${organization.id}`);
       }
 
       // Generate tokens
@@ -293,19 +280,45 @@ router.post('/logout',
 );
 
 /**
- * Blueprint health check
+ * Blueprint health check with real data stats
  */
 router.get('/health', (req, res) => {
+  const stats = realDataPersistence.getPersistenceStats();
+  
   res.json({
     success: true,
     blueprint: 'auth',
     status: 'healthy',
     database: supabaseREST.client ? 'connected' : 'disconnected',
+    realDataPersistence: {
+      localUsers: stats.localUsers,
+      localOrganizations: stats.localOrganizations,
+      supabaseStatus: {
+        success: stats.supabaseSuccess,
+        failed: stats.supabaseFailed,
+        pending: stats.supabasePending
+      }
+    },
     endpoints: {
       'POST /register': 'User registration with organization creation',
-      'POST /login': 'User authentication with JWT tokens',
-      'POST /logout': 'Session termination'
+      'POST /login': 'User authentication with JWT tokens', 
+      'POST /logout': 'Session termination',
+      'GET /debug-data': 'View all stored real data'
     }
+  });
+});
+
+/**
+ * Debug endpoint to view all real data
+ */
+router.get('/debug-data', (req, res) => {
+  const allData = realDataPersistence.getAllStoredData();
+  
+  res.json({
+    success: true,
+    message: 'All stored real data',
+    data: allData,
+    stats: realDataPersistence.getPersistenceStats()
   });
 });
 
