@@ -27,6 +27,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
   });
 
+  // Direct Supabase connection test
+  app.get('/api/database/direct-test', async (req, res) => {
+    try {
+      console.log('🚀 Testing direct Supabase connection...');
+      
+      // Import postgres directly and create a fresh connection
+      const postgres = await import('postgres');
+      const sql = postgres.default(process.env.DATABASE_URL!, {
+        ssl: 'require',
+        max: 1,
+        connect_timeout: 10,
+        idle_timeout: 5,
+        max_lifetime: 30,
+      });
+
+      // Test basic connection
+      console.log('📡 Testing basic connection...');
+      const connectionTest = await sql`SELECT NOW() as current_time, version() as version`;
+      
+      // Test if tables exist
+      console.log('📋 Checking if tables exist...');
+      const tables = await sql`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name IN ('modules', 'ai_providers', 'users', 'organizations')
+        ORDER BY table_name
+      `;
+      
+      const tableNames = tables.map((t: any) => t.table_name);
+      
+      // If tables exist, try to get sample data
+      let sampleData = {};
+      if (tableNames.includes('modules')) {
+        console.log('📊 Getting sample module data...');
+        const modules = await sql`SELECT id, name, slug FROM modules LIMIT 3`;
+        sampleData = { ...sampleData, modules: modules.length, sampleModule: modules[0]?.name };
+      }
+      
+      if (tableNames.includes('ai_providers')) {
+        console.log('📊 Getting sample AI provider data...');
+        const providers = await sql`SELECT id, name, provider FROM ai_providers LIMIT 2`;
+        sampleData = { ...sampleData, providers: providers.length, sampleProvider: providers[0]?.name };
+      }
+      
+      await sql.end();
+      
+      console.log('✅ Direct Supabase connection successful!');
+      
+      res.json({
+        success: true,
+        message: 'Direct Supabase connection working perfectly!',
+        data: {
+          connectionTime: connectionTest[0].current_time,
+          postgresVersion: connectionTest[0].version.split(' ')[0],
+          tablesFound: tableNames,
+          tablesCount: tableNames.length,
+          sampleData
+        },
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('❌ Direct connection failed:', error.message);
+      res.json({
+        success: false,
+        error: error.message,
+        errorCode: error.code,
+        hint: 'Check if DATABASE_URL is correct and tables are created in Supabase console',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Simple table check (works with manually created tables)
   app.get('/api/database/simple-check', async (req, res) => {
     try {

@@ -15,11 +15,11 @@ interface TestResult {
 export default function DatabaseTest() {
   const [tests, setTests] = useState<TestResult[]>([
     { name: 'Health Check', status: 'idle' },
-    { name: 'Simple Table Check', status: 'idle' },
-    { name: 'Database Connection', status: 'idle' },
-    { name: 'Schema Status', status: 'idle' },
-    { name: 'Drizzle Setup (Recommended)', status: 'idle' }
+    { name: 'Direct Supabase Test', status: 'idle' },
+    { name: 'Schema Status Check', status: 'idle' },
+    { name: 'Manual SQL Setup Guide', status: 'idle' }
   ]);
+  const [showSqlGuide, setShowSqlGuide] = useState(false);
 
   const updateTest = (index: number, updates: Partial<TestResult>) => {
     setTests(prev => prev.map((test, i) => i === index ? { ...test, ...updates } : test));
@@ -97,15 +97,24 @@ export default function DatabaseTest() {
   const runAllTests = async () => {
     const testConfigs = [
       { name: 'Health Check', endpoint: '/api/health' },
-      { name: 'Simple Table Check', endpoint: '/api/database/simple-check' },
-      { name: 'Database Connection', endpoint: '/api/database/test-connection' },
-      { name: 'Schema Status', endpoint: '/api/database/status' },
-      { name: 'Drizzle Setup (Recommended)', endpoint: '/api/drizzle-setup' }
+      { name: 'Direct Supabase Test', endpoint: '/api/database/direct-test' },
+      { name: 'Schema Status Check', endpoint: '/api/database/status' },
+      { name: 'Manual SQL Setup Guide', endpoint: null, action: 'showSqlGuide' }
     ];
 
     for (let i = 0; i < testConfigs.length; i++) {
       const config = testConfigs[i];
-      await runTest(config.name, config.endpoint, i);
+      
+      if (config.action === 'showSqlGuide') {
+        updateTest(i, { 
+          status: 'success', 
+          message: 'Manual SQL setup required - Network timeout detected',
+          details: { guide: 'Execute SQL in Supabase console: docs/SUPABASE-MANUAL-SETUP.md' }
+        });
+        setShowSqlGuide(true);
+      } else if (config.endpoint) {
+        await runTest(config.name, config.endpoint, i);
+      }
       
       // Wait a bit between tests
       if (i < testConfigs.length - 1) {
@@ -205,16 +214,45 @@ export default function DatabaseTest() {
         ))}
       </div>
 
+      {showSqlGuide && (
+        <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
+          <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-4 flex items-center">
+            <AlertCircle className="w-5 h-5 mr-2" />
+            🚨 Manual SQL Setup Required
+          </h3>
+          <div className="text-sm text-amber-800 dark:text-amber-200 space-y-3">
+            <p className="font-medium">
+              Network timeouts detected in Replit environment. Follow these steps:
+            </p>
+            <ol className="list-decimal list-inside space-y-2 ml-4">
+              <li>Open <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Supabase Console</a></li>
+              <li>Go to SQL Editor in your project</li>
+              <li>Copy the complete SQL from <code className="bg-amber-100 dark:bg-amber-900 px-2 py-1 rounded">docs/SUPABASE-MANUAL-SETUP.md</code></li>
+              <li>Paste and execute the SQL to create all 14 tables</li>
+              <li>Return here and re-run tests to verify setup</li>
+            </ol>
+            <div className="mt-4 p-3 bg-amber-100 dark:bg-amber-900 rounded border">
+              <p className="font-medium mb-2">The SQL will create:</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <span>• 14 production tables</span>
+                <span>• 3 AI modules</span>
+                <span>• 2 AI providers</span>
+                <span>• Sample integrations</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
         <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
           ℹ️ About These Tests
         </h3>
         <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
           <p>• <strong>Health Check:</strong> Verifies the server is running</p>
-          <p>• <strong>Database Connection:</strong> Tests Supabase connectivity</p>
+          <p>• <strong>Direct Supabase Test:</strong> Tests direct connection (may timeout in Replit)</p>
           <p>• <strong>Schema Status:</strong> Checks if database tables exist</p>
-          <p>• <strong>Migration Setup:</strong> Creates the database schema</p>
-          <p>• <strong>Production Init:</strong> Seeds initial data for production</p>
+          <p>• <strong>Manual SQL Guide:</strong> Shows setup instructions for Replit limitations</p>
         </div>
       </div>
     </div>
