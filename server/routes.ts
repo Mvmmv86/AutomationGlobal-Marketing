@@ -456,28 +456,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Hybrid Database Status - Instant Response
+  // Database Status - REST API Priority
   app.get('/api/database/status', async (req, res) => {
     try {
-      console.log('📊 Getting hybrid database status...');
+      console.log('📊 Getting database status...');
       
-      const { hybridDB } = await import('./database/hybrid-system');
-      const status = hybridDB.getSystemStatus();
+      // Use REST API adapter first
+      const { supabaseREST } = await import('./database/supabase-rest');
+      const status = await supabaseREST.getStatus();
       
       res.json(status);
 
     } catch (error: any) {
-      console.error('❌ Hybrid status check failed:', error.message);
+      console.error('❌ Status check failed:', error.message);
       
-      // Ultimate fallback
-      res.json({
-        success: true,
-        connected: false,
-        mode: 'emergency',
-        database: { tablesCount: 14, status: 'error' },
-        note: 'Emergency mode active',
-        timestamp: new Date().toISOString()
-      });
+      // Fallback to hybrid system
+      try {
+        const { hybridDB } = await import('./database/hybrid-system');
+        const fallbackStatus = hybridDB.getSystemStatus();
+        res.json(fallbackStatus);
+      } catch {
+        res.json({
+          success: true,
+          connected: false,
+          mode: 'emergency',
+          database: { tablesCount: 14, status: 'error' },
+          note: 'Emergency mode active',
+          timestamp: new Date().toISOString()
+        });
+      }
     }
   });
 
