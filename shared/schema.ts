@@ -222,6 +222,16 @@ export const insertAutomationSchema = createInsertSchema(automations).omit({
   updatedAt: true,
 });
 
+export const insertOrganizationUserSchema = createInsertSchema(organizationUsers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertAiUsageLogSchema = createInsertSchema(aiUsageLogs).omit({
   id: true,
   createdAt: true,
@@ -235,6 +245,10 @@ export type Organization = typeof organizations.$inferSelect;
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 
 export type OrganizationUser = typeof organizationUsers.$inferSelect;
+export type InsertOrganizationUser = z.infer<typeof insertOrganizationUserSchema>;
+
+export type Module = typeof modules.$inferSelect;
+export type OrganizationModule = typeof organizationModules.$inferSelect;
 
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect;
 export type InsertAiUsageLog = z.infer<typeof insertAiUsageLogSchema>;
@@ -243,4 +257,6 @@ export type Automation = typeof automations.$inferSelect;
 export type InsertAutomation = z.infer<typeof insertAutomationSchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+
 export type SystemNotification = typeof systemNotifications.$inferSelect;

@@ -97,6 +97,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize production data
+  app.post('/api/initialize-production', async (req, res) => {
+    try {
+      console.log('🚀 Initializing production data...');
+      
+      const { DatabaseSeeder } = await import('./database/seed-data');
+      const seeder = new DatabaseSeeder();
+      
+      await seeder.seedInitialData();
+      
+      const { email, password } = req.body;
+      if (email && password) {
+        await seeder.createFirstSuperAdmin(email, password);
+      }
+      
+      console.log('✅ Production initialization completed successfully');
+      res.json({ 
+        success: true, 
+        message: 'Production data initialized successfully!',
+        timestamp: new Date().toISOString() 
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Production initialization error:', error.message);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString() 
+      });
+    }
+  });
+
 
 
   // Authentication Routes

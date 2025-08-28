@@ -56,7 +56,6 @@ class AuthService {
         slug: this.generateSlug(data.organizationName),
         type: 'marketing', // default type
         subscriptionPlan: 'starter',
-        ownerId: user.id,
       });
 
       // Add user as organization owner
