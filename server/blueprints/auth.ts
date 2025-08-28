@@ -1,6 +1,6 @@
 /**
  * Authentication Blueprint - Automation Global v4.0
- * Handles user authentication, registration, and session management
+ * Real Supabase integration for user registration and authentication
  */
 
 import { Router } from 'express';
@@ -17,9 +17,9 @@ const router = Router();
 // Validation schemas
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  organizationName: z.string().optional()
+  organizationName: z.string().min(2, 'Organization name must be at least 2 characters').optional()
 });
 
 const loginSchema = z.object({
@@ -27,36 +27,31 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required')
 });
 
-const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required')
-});
-
 /**
- * User Registration
+ * User Registration with Real Supabase Integration
  */
-router.post('/register', 
-  rateLimiter('auth', 5, 900), // 5 attempts per 15 minutes
+router.post('/register',
+  rateLimiter('auth_register', 3, 300), // 3 attempts per 5 minutes
   validateRequest(registerSchema),
   async (req, res, next) => {
     try {
       const { email, password, name, organizationName } = req.body;
 
-      // Check if user already exists
-      const existingUser = await supabaseREST.query({
-        table: 'users',
-        filters: { email },
-        limit: 1
-      });
+      // Check if user already exists using HTTP REST API (Replit compatible)
+      const checkResult = await supabaseREST.checkUserExistsHTTP(email);
+      
+      if (checkResult.error && !checkResult.error.message.includes('relation')) {
+        throw new AppError(500, `Database check failed: ${checkResult.error.message}`);
+      }
 
-      if (existingUser.data && existingUser.data.length > 0) {
+      if (checkResult.data) {
         throw new AppError(409, 'User already exists with this email');
       }
 
       // Hash password
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Create user
+      // Prepare user data
       const userData = {
         email,
         password_hash: hashedPassword,
@@ -67,13 +62,13 @@ router.post('/register',
         metadata: {}
       };
 
-      const createUserResult = await supabaseREST.insert('users', userData);
+      const createResult = await supabaseREST.createUserHTTP(userData);
       
-      if (!createUserResult.success || !createUserResult.data?.[0]) {
-        throw new AppError(500, 'Failed to create user account');
+      if (createResult.error || !createResult.data) {
+        throw new AppError(500, `Failed to create user account: ${createResult.error?.message || 'Unknown error'}`);
       }
 
-      const newUser = createUserResult.data[0];
+      const newUser = createResult.data;
 
       // Create organization if provided
       let organization = null;
@@ -87,19 +82,27 @@ router.post('/register',
           status: 'active'
         };
 
-        const createOrgResult = await supabaseRest.insert('organizations', orgData);
+        const orgResult = await supabaseREST.createOrganizationHTTP(orgData);
         
-        if (createOrgResult.success && createOrgResult.data?.[0]) {
-          organization = createOrgResult.data[0];
+        if (orgResult.error || !orgResult.data) {
+          throw new AppError(500, `Failed to create organization: ${orgResult.error?.message || 'Unknown error'}`);
+        }
 
-          // Add user to organization as admin
-          await supabaseRest.insert('organization_members', {
+        organization = orgResult.data;
+
+        // Add user to organization as admin
+        const { error: memberError } = await supabaseREST.client
+          .from('organization_members')
+          .insert({
             user_id: newUser.id,
             organization_id: organization.id,
             role: 'admin',
             status: 'active',
             joined_at: new Date().toISOString()
           });
+
+        if (memberError) {
+          console.warn('Warning: Failed to add user to organization:', memberError.message);
         }
       }
 
@@ -135,7 +138,7 @@ router.post('/register',
             id: newUser.id,
             email: newUser.email,
             name: newUser.name,
-            emailVerified: newUser.email_verified
+            email_verified: newUser.email_verified
           },
           organization: organization ? {
             id: organization.id,
@@ -144,8 +147,7 @@ router.post('/register',
           } : null,
           tokens: {
             accessToken,
-            refreshToken,
-            expiresIn: 3600
+            refreshToken
           }
         }
       });
@@ -157,54 +159,74 @@ router.post('/register',
 );
 
 /**
- * User Login
+ * User Login with Real Supabase Authentication
  */
 router.post('/login',
-  rateLimiter('auth', 10, 900), // 10 attempts per 15 minutes
+  rateLimiter('auth_login', 5, 300), // 5 attempts per 5 minutes
   validateRequest(loginSchema),
   async (req, res, next) => {
     try {
       const { email, password } = req.body;
 
-      // Get user by email
-      const userResult = await supabaseRest.query({
-        table: 'users',
-        filters: { email, status: 'active' },
-        limit: 1
-      });
+      if (!supabaseREST.client) {
+        throw new AppError(503, 'Database connection not available');
+      }
 
-      if (!userResult.success || !userResult.data || userResult.data.length === 0) {
+      // Find user by email
+      const { data: user, error: userError } = await supabaseREST.client
+        .from('users')
+        .select('id, email, name, password_hash, status')
+        .eq('email', email)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (userError) {
+        throw new AppError(500, `Database query failed: ${userError.message}`);
+      }
+
+      if (!user) {
         throw new AppError(401, 'Invalid email or password');
       }
 
-      const user = userResult.data[0];
-
       // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      if (!isValidPassword) {
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+      if (!passwordMatch) {
         throw new AppError(401, 'Invalid email or password');
       }
 
       // Get user's organizations
-      const orgsResult = await supabaseRest.query({
-        table: 'organization_members',
-        filters: { user_id: user.id, status: 'active' },
-        joins: [{
-          table: 'organizations',
-          on: 'organization_id',
-          select: ['id', 'name', 'slug', 'status']
-        }]
-      });
+      const { data: memberships, error: memberError } = await supabaseREST.client
+        .from('organization_members')
+        .select(`
+          organization_id,
+          role,
+          organizations (
+            id,
+            name,
+            slug,
+            subscription_tier
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active');
 
-      const organizations = orgsResult.data || [];
-      const primaryOrg = organizations.length > 0 ? organizations[0].organizations : null;
+      const organizations = memberships?.map((membership: any) => ({
+        id: membership.organizations.id,
+        name: membership.organizations.name,
+        slug: membership.organizations.slug,
+        role: membership.role,
+        subscription_tier: membership.organizations.subscription_tier
+      })) || [];
 
       // Generate tokens
+      const primaryOrgId = organizations[0]?.id || null;
+      
       const accessToken = jwt.sign(
         { 
           userId: user.id, 
           email: user.email,
-          organizationId: primaryOrg?.id 
+          organizationId: primaryOrgId 
         },
         process.env.JWT_SECRET!,
         { expiresIn: '1h' }
@@ -220,18 +242,8 @@ router.post('/login',
       await cacheManager.cacheSession(refreshToken, {
         userId: user.id,
         email: user.email,
-        organizationId: primaryOrg?.id,
-        organizations
+        organizationId: primaryOrgId
       }, 604800); // 7 days
-
-      // Cache user data
-      await cacheManager.cacheUser(user.id, {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        emailVerified: user.email_verified,
-        lastLogin: new Date().toISOString()
-      });
 
       res.json({
         success: true,
@@ -240,79 +252,13 @@ router.post('/login',
           user: {
             id: user.id,
             email: user.email,
-            name: user.name,
-            emailVerified: user.email_verified
+            name: user.name
           },
-          organization: primaryOrg,
-          organizations: organizations.map(org => org.organizations),
+          organizations,
           tokens: {
             accessToken,
-            refreshToken,
-            expiresIn: 3600
+            refreshToken
           }
-        }
-      });
-
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * Refresh Token
- */
-router.post('/refresh',
-  rateLimiter('auth', 20, 900), // 20 attempts per 15 minutes
-  validateRequest(refreshTokenSchema),
-  async (req, res, next) => {
-    try {
-      const { refreshToken } = req.body;
-
-      // Verify refresh token
-      let decoded;
-      try {
-        decoded = jwt.verify(refreshToken, process.env.JWT_SECRET!) as any;
-      } catch (error) {
-        throw new AppError(401, 'Invalid refresh token');
-      }
-
-      // Get session from cache
-      const session = await cacheManager.getSession(refreshToken);
-      if (!session) {
-        throw new AppError(401, 'Session expired or invalid');
-      }
-
-      // Get fresh user data
-      const userResult = await supabaseRest.query({
-        table: 'users',
-        filters: { id: decoded.userId, status: 'active' },
-        limit: 1
-      });
-
-      if (!userResult.success || !userResult.data || userResult.data.length === 0) {
-        throw new AppError(401, 'User not found or inactive');
-      }
-
-      const user = userResult.data[0];
-
-      // Generate new access token
-      const newAccessToken = jwt.sign(
-        { 
-          userId: user.id, 
-          email: user.email,
-          organizationId: session.organizationId 
-        },
-        process.env.JWT_SECRET!,
-        { expiresIn: '1h' }
-      );
-
-      res.json({
-        success: true,
-        message: 'Token refreshed successfully',
-        data: {
-          accessToken: newAccessToken,
-          expiresIn: 3600
         }
       });
 
@@ -325,72 +271,42 @@ router.post('/refresh',
 /**
  * Logout
  */
-router.post('/logout', async (req, res, next) => {
-  try {
-    const refreshToken = req.body.refreshToken || req.headers.authorization?.replace('Bearer ', '');
-    
-    if (refreshToken) {
-      await cacheManager.invalidateSession(refreshToken);
-    }
+router.post('/logout',
+  rateLimiter('auth_logout', 10, 300),
+  async (req, res, next) => {
+    try {
+      const refreshToken = req.body.refreshToken;
+      
+      if (refreshToken) {
+        await cacheManager.deleteSession(refreshToken);
+      }
 
-    res.json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Get Current User Profile
- */
-router.get('/profile', async (req, res, next) => {
-  try {
-    // This route requires authentication middleware to be applied
-    const userId = (req as any).user?.id;
-    
-    if (!userId) {
-      throw new AppError(401, 'Authentication required');
-    }
-
-    // Try cache first
-    let user = await cacheManager.getUser(userId);
-    
-    if (!user) {
-      // Get from database
-      const userResult = await supabaseRest.query({
-        table: 'users',
-        filters: { id: userId, status: 'active' },
-        limit: 1
+      res.json({
+        success: true,
+        message: 'Logged out successfully'
       });
 
-      if (!userResult.success || !userResult.data || userResult.data.length === 0) {
-        throw new AppError(404, 'User not found');
-      }
-
-      user = userResult.data[0];
-      
-      // Cache for future requests
-      await cacheManager.cacheUser(userId, user);
+    } catch (error) {
+      next(error);
     }
-
-    res.json({
-      success: true,
-      data: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        emailVerified: user.email_verified,
-        preferences: user.preferences || {},
-        createdAt: user.created_at
-      }
-    });
-
-  } catch (error) {
-    next(error);
   }
+);
+
+/**
+ * Blueprint health check
+ */
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    blueprint: 'auth',
+    status: 'healthy',
+    database: supabaseREST.client ? 'connected' : 'disconnected',
+    endpoints: {
+      'POST /register': 'User registration with organization creation',
+      'POST /login': 'User authentication with JWT tokens',
+      'POST /logout': 'Session termination'
+    }
+  });
 });
 
 export default router;

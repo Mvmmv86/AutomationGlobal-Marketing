@@ -49,21 +49,32 @@ router.get('/',
     try {
       const userId = (req as any).user.id;
 
-      const orgsResult = await supabaseREST.query({
-        table: 'organization_members',
-        filters: { user_id: userId, status: 'active' },
-        joins: [{
-          table: 'organizations',
-          on: 'organization_id',
-          select: ['id', 'name', 'slug', 'description', 'status', 'subscription_tier', 'created_at']
-        }]
-      });
-
-      if (!orgsResult.success) {
-        throw new AppError(500, 'Failed to fetch organizations');
+      if (!supabaseREST.client) {
+        throw new AppError(503, 'Database connection not available');
       }
 
-      const organizations = (orgsResult.data || []).map((membership: any) => ({
+      const { data: memberships, error: memberError } = await supabaseREST.client
+        .from('organization_members')
+        .select(`
+          role,
+          organizations (
+            id,
+            name,
+            slug,
+            description,
+            status,
+            subscription_tier,
+            created_at
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active');
+
+      if (memberError) {
+        throw new AppError(500, `Failed to fetch organizations: ${memberError.message}`);
+      }
+
+      const organizations = (memberships || []).map((membership: any) => ({
         id: membership.organizations.id,
         name: membership.organizations.name,
         slug: membership.organizations.slug,

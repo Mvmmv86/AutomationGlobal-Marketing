@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Adaptador otimizado para REST API do Supabase
 class SupabaseRESTAdapter {
-  private client: SupabaseClient | null = null;
+  public client: SupabaseClient | null = null;
   private isReady: boolean = false;
 
   constructor() {
@@ -20,14 +20,117 @@ class SupabaseRESTAdapter {
         process.env.SUPABASE_URL,
         process.env.SUPABASE_ANON_KEY,
         {
-          auth: { persistSession: false }
+          auth: { persistSession: false },
+          db: {
+            schema: 'public'
+          }
         }
       );
       
       this.isReady = true;
-      console.log('✅ Supabase REST API client ready!');
+      console.log('✅ Supabase REST API client initialized - testing HTTP access...');
+      this.testHTTPConnection();
     } catch (error: any) {
       console.error('❌ Failed to initialize Supabase client:', error.message);
+    }
+  }
+
+  private async testHTTPConnection(): Promise<void> {
+    try {
+      // Test HTTP connection directly
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/users?limit=1`, {
+        method: 'GET',
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok || response.status === 406) { // 406 = table not found but connection works
+        console.log('✅ Supabase HTTP REST API connection verified!');
+        this.isReady = true;
+      } else {
+        console.log('⚠️ Supabase HTTP test failed, using client-based approach');
+      }
+    } catch (error) {
+      console.log('⚠️ HTTP test failed, continuing with Supabase client');
+    }
+  }
+
+  // HTTP-based operations for Replit network compatibility
+  async createUserHTTP(userData: any): Promise<any> {
+    try {
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/users`, {
+        method: 'POST',
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ [HTTP] User created: ${data[0]?.email}`);
+        return { data: data[0], error: null };
+      } else {
+        const error = await response.text();
+        return { data: null, error: { message: error } };
+      }
+    } catch (error) {
+      return { data: null, error: { message: error.message } };
+    }
+  }
+
+  async createOrganizationHTTP(orgData: any): Promise<any> {
+    try {
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/organizations`, {
+        method: 'POST',
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(orgData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`✅ [HTTP] Organization created: ${data[0]?.name}`);
+        return { data: data[0], error: null };
+      } else {
+        const error = await response.text();
+        return { data: null, error: { message: error } };
+      }
+    } catch (error) {
+      return { data: null, error: { message: error.message } };
+    }
+  }
+
+  async checkUserExistsHTTP(email: string): Promise<any> {
+    try {
+      const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}&limit=1`, {
+        method: 'GET',
+        headers: {
+          'apikey': process.env.SUPABASE_ANON_KEY!,
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return { data: data.length > 0 ? data[0] : null, error: null };
+      } else {
+        const error = await response.text();
+        return { data: null, error: { message: error } };
+      }
+    } catch (error) {
+      return { data: null, error: { message: error.message } };
     }
   }
 

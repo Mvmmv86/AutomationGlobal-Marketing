@@ -376,8 +376,8 @@ export default function BackendTestReal() {
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Importante:</strong> Estes testes criam dados reais no Supabase. 
-              Todos os usuários e organizações criados durante os testes serão persistidos na base de dados.
+              <strong>Sistema HTTP Real:</strong> Agora usando REST API HTTP direto do Supabase para contornar limitações de rede do Replit.
+              Todos os dados são criados e persistidos na base de dados real.
             </AlertDescription>
           </Alert>
         </CardContent>
