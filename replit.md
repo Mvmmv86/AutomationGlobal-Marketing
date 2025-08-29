@@ -84,10 +84,11 @@ The architecture is designed for future expansion with webhook support, real-tim
 The Replit network limitations (CONNECT_TIMEOUT on port 5432) were definitively resolved through Supabase REST API integration. Task 1 (user and organization creation) has been successfully tested with real data creation.
 
 ### Database Connection Status - RESOLVED
-- **PostgreSQL Direct**: ❌ Blocked by Replit network limitations
-- **Supabase REST API**: ✅ **FULLY FUNCTIONAL** - Real data creation confirmed
-- **Hybrid System**: Intelligent detection with automatic fallback
-- **Test Results**: Real user and organization created in production Supabase database
+- **PostgreSQL Direct**: ❌ Blocked by Replit network limitations on port 5432
+- **Drizzle ORM + Supabase Pooler**: ✅ **FULLY FUNCTIONAL** - Port 6543 works perfectly in Replit
+- **Supabase REST API**: ✅ Backup solution for edge cases
+- **CRITICAL**: Always use Drizzle ORM for database connections (aws-1-us-east-1.pooler.supabase.com:6543)
+- **Test Results**: Real organizations and multi-tenant operations confirmed working
 
 ### Production-Ready Infrastructure Complete
 - **14 Production Tables**: All tables accessible via REST API

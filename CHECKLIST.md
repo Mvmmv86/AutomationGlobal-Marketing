@@ -44,16 +44,17 @@
   - [x] Estrutura modular implementada
   - [x] Middleware configurado
   - [x] Error handling robusto
-- [ ] Task 2.2: Sistema de Autenticação Robusto
-  - [ ] Supabase Auth integrado
-  - [ ] JWT implementation completo
-  - [ ] Session management
-  - [ ] OAuth providers configurados
-- [ ] Task 2.3: Sistema Multi-Tenant Avançado
-  - [ ] Row-level security implementado
-  - [ ] Organization context middleware
-  - [ ] Data isolation completo
-  - [ ] Tenant switching funcional
+- [x] Task 2.2: Sistema de Autenticação Robusto
+  - [x] JWT token system (1h access + 7d refresh)
+  - [x] Auth service com bcrypt e token management
+  - [x] Supabase Auth integrado com fallback local
+  - [x] Session management e middleware completo
+- [x] Task 2.3: Sistema Multi-Tenant Avançado
+  - [x] Organization service com CRUD completo
+  - [x] Tenant middleware com contexto automático
+  - [x] Data isolation via organizationId
+  - [x] Tenant switching dinâmico funcional
+  - [!] **IMPORTANTE**: Sempre usar Drizzle ORM para conexões DB (porta 6543 Supabase pooler funciona no Replit)
 - [ ] Task 2.4: Gestão de Permissões Granular
   - [ ] Roles hierarchy implementado
   - [ ] Permissions system robusto
