@@ -290,13 +290,16 @@ router.post('/:organizationId/users', async (req, res) => {
       const validatedData = addUserSchema.parse(req.body);
 
       // Adicionar usuário
-      const membership = await organizationService.addUserToOrganization(
-        validatedData.userId,
+      await organizationService.addUserToOrganization(
         organizationId,
+        validatedData.userId,
         validatedData.role || 'user',
-        validatedData.permissions || [],
+        validatedData.permissions || {},
         req.user!.id
       );
+
+      // Buscar membership criado para retornar
+      const membership = await organizationService.getUserMembership(validatedData.userId, organizationId);
 
       res.status(201).json({
         success: true,

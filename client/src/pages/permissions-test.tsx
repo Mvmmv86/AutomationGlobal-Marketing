@@ -38,6 +38,7 @@ export default function PermissionsTest() {
     email: 'auth-local@automation.global',
     password: '123456'
   });
+  const [simulateRole, setSimulateRole] = useState<string | null>(null);
 
   const addTestResult = (test: string, status: 'success' | 'error' | 'pending', message: string, data?: any) => {
     const result: TestResult = {
