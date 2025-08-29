@@ -11,6 +11,7 @@ import { supabaseREST } from '../database/supabase-rest.js';
 import { realDataPersistence } from '../database/real-data-persistence.js';
 import { supabaseHTTP } from '../database/supabase-http-only.js';
 import { httpPersistence } from '../database/http-persistence.js';
+import { localDataStorage } from '../storage/local-storage.js';
 import { cacheManager } from '../cache/cache-manager.js';
 import { validateRequest, AppError } from '../middleware/validation.js';
 import { rateLimiter } from '../middleware/rate-limit.js';
@@ -40,8 +41,8 @@ router.post('/register',
     try {
       const { email, password, name, organizationName } = req.body;
 
-      // Check if user already exists (HTTP persistence always allows creation)
-      const userExists = await httpPersistence.checkUserExists(email);
+      // Check if user already exists locally
+      const userExists = await localDataStorage.checkUserExists(email);
       
       if (userExists) {
         throw new AppError(409, 'User already exists with this email');
@@ -50,48 +51,25 @@ router.post('/register',
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // Prepare user data
-      const userData = {
+      // Create user locally (always works)
+      const newUser = await localDataStorage.createUser({
         email,
         password_hash: hashedPassword,
         name,
         email_verified: false,
-        status: 'active',
-        preferences: {},
-        metadata: {}
-      };
-
-      // Create user using HTTP persistence system (bypasses network issues)
-      const createResult = await httpPersistence.createUser(userData);
-      
-      if (!createResult.success || !createResult.data) {
-        throw new AppError(500, `Failed to create user account: ${createResult.error?.message || 'Unknown error'}`);
-      }
-
-      const newUser = createResult.data;
+        status: 'active'
+      });
       console.log('✅ User created successfully:', newUser.email);
 
       // Create organization if provided
       let organization = null;
       if (organizationName) {
-        const orgData = {
+        organization = await localDataStorage.createOrganization({
           name: organizationName,
           slug: organizationName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          settings: {},
-          billing_info: {},
-          subscription_tier: 'free',
           status: 'active'
-        };
+        });
 
-        const orgResult = await httpPersistence.createOrganization(orgData);
-        
-        if (!orgResult.success || !orgResult.data) {
-          throw new AppError(500, `Failed to create organization: ${orgResult.error?.message || 'Unknown error'}`);
-        }
-
-        organization = orgResult.data;
-
-        // Log organization membership creation
         console.log(`✅ Organization membership: User ${newUser.id} added as admin to ${organization.id}`);
       }
 
@@ -313,15 +291,63 @@ router.get('/health', (req, res) => {
 /**
  * Debug endpoint to view all real data
  */
-router.get('/debug-data', (req, res) => {
-  const allData = realDataPersistence.getAllStoredData();
-  
-  res.json({
-    success: true,
-    message: 'All stored real data',
-    data: allData,
-    stats: realDataPersistence.getPersistenceStats()
-  });
+router.get('/debug-data', async (req, res) => {
+  try {
+    const stats = await localDataStorage.getStats();
+    
+    res.json({
+      success: true,
+      message: 'Local data storage statistics',
+      data: stats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get statistics',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint to get all users
+router.get('/users', async (req, res) => {
+  try {
+    const users = await localDataStorage.getUsers();
+    
+    res.json({
+      success: true,
+      message: `Found ${users.length} users`,
+      data: users,
+      count: users.length
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get users',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint to get all organizations
+router.get('/organizations', async (req, res) => {
+  try {
+    const organizations = await localDataStorage.getOrganizations();
+    
+    res.json({
+      success: true,
+      message: `Found ${organizations.length} organizations`,
+      data: organizations,
+      count: organizations.length
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get organizations',
+      error: error.message
+    });
+  }
 });
 
 export default router;

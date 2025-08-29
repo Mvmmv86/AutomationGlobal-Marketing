@@ -91,7 +91,7 @@ export default function RealDataTest() {
         console.warn('Health check failed:', error);
       }
 
-      // Test debug endpoint
+      // Test debug endpoint to get current data
       try {
         const debugResponse = await fetch('/api/auth/debug-data', {
           headers: { 'Accept': 'application/json' }
@@ -99,10 +99,37 @@ export default function RealDataTest() {
         
         if (debugResponse.ok) {
           const debugData = await debugResponse.json();
-          results.supabaseAttempt = debugData.stats;
+          results.supabaseAttempt = debugData.data;
         }
       } catch (error) {
         console.warn('Debug check failed:', error);
+      }
+
+      // Get actual users and organizations created
+      try {
+        const usersResponse = await fetch('/api/auth/users', {
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          results.allUsers = usersData.data;
+        }
+      } catch (error) {
+        console.warn('Users fetch failed:', error);
+      }
+
+      try {
+        const orgsResponse = await fetch('/api/auth/organizations', {
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (orgsResponse.ok) {
+          const orgsData = await orgsResponse.json();
+          results.allOrganizations = orgsData.data;
+        }
+      } catch (error) {
+        console.warn('Organizations fetch failed:', error);
       }
 
       setTestResults(results);
@@ -260,33 +287,81 @@ export default function RealDataTest() {
                   </Card>
                 )}
 
-                {/* Estatísticas de Persistência */}
-                {testResults.persistence && (
+                {/* Estatísticas de Armazenamento */}
+                {testResults.supabaseAttempt && (
                   <Card className="border-slate-600 bg-slate-700/50">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-lg">
                         <Database className="h-5 w-5" />
-                        Estatísticas de Persistência
+                        Estatísticas de Armazenamento Local
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
                         <div className="bg-slate-800 p-3 rounded">
-                          <div className="text-2xl font-bold text-blue-400">{testResults.persistence.localUsers}</div>
-                          <div className="text-sm text-slate-400">Usuários Locais</div>
+                          <div className="text-2xl font-bold text-blue-400">{testResults.supabaseAttempt.totalUsers}</div>
+                          <div className="text-sm text-slate-400">Total Usuários</div>
                         </div>
                         <div className="bg-slate-800 p-3 rounded">
-                          <div className="text-2xl font-bold text-green-400">{testResults.persistence.localOrganizations}</div>
-                          <div className="text-sm text-slate-400">Organizações Locais</div>
+                          <div className="text-2xl font-bold text-green-400">{testResults.supabaseAttempt.totalOrganizations}</div>
+                          <div className="text-sm text-slate-400">Total Organizações</div>
                         </div>
                         <div className="bg-slate-800 p-3 rounded">
-                          <div className="text-2xl font-bold text-green-400">{testResults.persistence.supabaseStatus?.success || 0}</div>
-                          <div className="text-sm text-slate-400">Supabase Sucesso</div>
+                          <div className="text-sm text-slate-400 mb-1">Última Criação</div>
+                          <div className="text-xs text-slate-300">
+                            {new Date(testResults.supabaseAttempt.lastCreated).toLocaleString('pt-BR')}
+                          </div>
                         </div>
-                        <div className="bg-slate-800 p-3 rounded">
-                          <div className="text-2xl font-bold text-red-400">{testResults.persistence.supabaseStatus?.failed || 0}</div>
-                          <div className="text-sm text-slate-400">Supabase Falha</div>
-                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Lista de Usuários Criados */}
+                {testResults.allUsers && testResults.allUsers.length > 0 && (
+                  <Card className="border-slate-600 bg-slate-700/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <User className="h-5 w-5" />
+                        Usuários Criados ({testResults.allUsers.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 max-h-64 overflow-y-auto">
+                      <div className="space-y-2">
+                        {testResults.allUsers.map((user: any) => (
+                          <div key={user.id} className="bg-slate-800 p-3 rounded text-sm">
+                            <div className="font-semibold text-blue-400">{user.name}</div>
+                            <div className="text-slate-300">{user.email}</div>
+                            <div className="text-xs text-slate-400">
+                              ID: {user.id} | Criado: {new Date(user.created_at).toLocaleString('pt-BR')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Lista de Organizações Criadas */}
+                {testResults.allOrganizations && testResults.allOrganizations.length > 0 && (
+                  <Card className="border-slate-600 bg-slate-700/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Building className="h-5 w-5" />
+                        Organizações Criadas ({testResults.allOrganizations.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 max-h-64 overflow-y-auto">
+                      <div className="space-y-2">
+                        {testResults.allOrganizations.map((org: any) => (
+                          <div key={org.id} className="bg-slate-800 p-3 rounded text-sm">
+                            <div className="font-semibold text-green-400">{org.name}</div>
+                            <div className="text-slate-300">Slug: {org.slug}</div>
+                            <div className="text-xs text-slate-400">
+                              ID: {org.id} | Criado: {new Date(org.created_at).toLocaleString('pt-BR')}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
