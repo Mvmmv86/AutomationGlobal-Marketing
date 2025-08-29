@@ -89,13 +89,38 @@ export const requireTenant = async (req: Request, res: Response, next: NextFunct
     });
   }
 
+  // Se não tem tenant context, tentar extrair automaticamente
   if (!req.tenant) {
-    return res.status(400).json({
-      success: false,
-      message: 'Organization context required. Provide X-Organization-ID header or org_id parameter.',
-      code: 'ORGANIZATION_CONTEXT_REQUIRED',
-      availableOrganizations: await organizationService.getUserOrganizations(req.user.id)
-    });
+    try {
+      const userOrgs = await organizationService.getUserOrganizations(req.user.id);
+      if (userOrgs.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'User has no organization access',
+          code: 'NO_ORGANIZATION_ACCESS'
+        });
+      }
+
+      // Auto-selecionar primeira organização disponível
+      const tenantContext = await organizationService.switchOrganizationContext(req.user.id, userOrgs[0].organization.id);
+      
+      req.tenant = {
+        organization: tenantContext.organization,
+        membership: tenantContext.membership,
+        organizationId: tenantContext.organization.id,
+        userId: req.user.id,
+        role: tenantContext.membership.role,
+        permissions: tenantContext.membership.permissions
+      };
+
+      console.log(`🔄 Auto-selected tenant context: ${req.tenant.organization.name} (${req.tenant.role})`);
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: 'Active organization required',
+        code: 'ORGANIZATION_CONTEXT_REQUIRED'
+      });
+    }
   }
 
   next();

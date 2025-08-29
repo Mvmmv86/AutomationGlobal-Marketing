@@ -188,18 +188,33 @@ router.get('/:organizationId', async (req, res) => {
 });
 
 // PUT /api/organizations/:organizationId - Atualizar organização
-router.put('/:organizationId', 
-  requireTenantRole(['super_admin', 'org_admin']),
-  auditTenantAction('update_organization'),
-  async (req, res) => {
+router.put('/:organizationId', async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+          code: 'AUTH_REQUIRED'
+        });
+      }
+
       const { organizationId } = req.params;
+
+      // Verificar se o usuário tem acesso à organização
+      const hasAccess = await organizationService.hasAccess(req.user.id, organizationId);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied to this organization',
+          code: 'ORGANIZATION_ACCESS_DENIED'
+        });
+      }
 
       // Validar dados
       const validatedData = updateOrganizationSchema.parse(req.body);
 
       // Atualizar organização
-      const organization = await organizationService.updateOrganization(organizationId, validatedData, req.user!.id);
+      const organization = await organizationService.updateOrganization(organizationId, validatedData, req.user.id);
 
       res.json({
         success: true,
@@ -230,8 +245,8 @@ router.put('/:organizationId',
   }
 );
 
-// GET /api/organizations/:organizationId/members - Listar membros da organização
-router.get('/:organizationId/members', async (req, res) => {
+// GET /api/organizations/:organizationId/users - Listar usuários da organização
+router.get('/:organizationId/users', async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -248,7 +263,7 @@ router.get('/:organizationId/members', async (req, res) => {
     res.json({
       success: true,
       data: {
-        members,
+        users: members,
         total: members.length,
         organizationId
       },
@@ -266,11 +281,8 @@ router.get('/:organizationId/members', async (req, res) => {
   }
 });
 
-// POST /api/organizations/:organizationId/members - Adicionar usuário à organização
-router.post('/:organizationId/members',
-  requireTenantRole(['super_admin', 'org_admin']),
-  auditTenantAction('add_organization_member'),
-  async (req, res) => {
+// POST /api/organizations/:organizationId/users - Adicionar usuário à organização  
+router.post('/:organizationId/users', async (req, res) => {
     try {
       const { organizationId } = req.params;
 

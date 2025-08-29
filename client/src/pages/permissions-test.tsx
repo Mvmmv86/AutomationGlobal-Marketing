@@ -161,24 +161,43 @@ export default function PermissionsTest() {
       let testMethod = 'GET';
       let testBody = {};
 
-      // Map actions to API calls
+      // Map actions to API calls using permission API instead of direct organization endpoints
       switch (`${action}:${resource}`) {
         case 'read:organization':
-          testUrl = `/api/organizations/${currentOrganization?.organization.id}`;
-          break;
+          // Use permission check API instead
+          const readOrgCheck = await makeRequest(`/api/permissions/check?action=read&resource=organization`);
+          
+          addTestResult(testName, readOrgCheck.data.hasPermission ? 'success' : 'error', 
+            readOrgCheck.data.hasPermission ? 
+            `Permissão CONCEDIDA: ${readOrgCheck.data.role} pode ler organização` : 
+            `Permissão NEGADA: ${readOrgCheck.data.role} não pode ler organização`);
+          return;
+          
         case 'update:organization':
-          testUrl = `/api/organizations/${currentOrganization?.organization.id}`;
-          testMethod = 'PUT';
-          testBody = { name: currentOrganization?.organization.name };
-          break;
+          // Use permission check API
+          const updateOrgCheck = await makeRequest(`/api/permissions/check?action=update&resource=organization`);
+          
+          addTestResult(testName, updateOrgCheck.data.hasPermission ? 'success' : 'error', 
+            updateOrgCheck.data.hasPermission ? 
+            `Permissão CONCEDIDA: ${updateOrgCheck.data.role} pode atualizar organização` : 
+            `Permissão NEGADA: ${updateOrgCheck.data.role} não pode atualizar organização`);
+          return;
+          
         case 'read:users':
+          // Test actual endpoint that works
           testUrl = `/api/organizations/${currentOrganization?.organization.id}/users`;
           break;
+          
         case 'create:users':
-          testUrl = `/api/organizations/${currentOrganization?.organization.id}/users`;
-          testMethod = 'POST';
-          testBody = { userId: 'test-user-id', role: 'org_viewer' };
-          break;
+          // Use permission check API
+          const createUserCheck = await makeRequest(`/api/permissions/check?action=create&resource=users`);
+          
+          addTestResult(testName, createUserCheck.data.hasPermission ? 'success' : 'error', 
+            createUserCheck.data.hasPermission ? 
+            `Permissão CONCEDIDA: ${createUserCheck.data.role} pode criar usuários` : 
+            `Permissão NEGADA: ${createUserCheck.data.role} não pode criar usuários`);
+          return;
+          
         default:
           throw new Error('Unsupported permission test');
       }

@@ -1147,6 +1147,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/permissions', permissionsBlueprint);
   console.log('✅ Permissions blueprint registered at /api/permissions');
 
+  // Simple test router for permission validation (removed due to ES module issues)
+  // Will debug permissions directly in the page interface
+
   // Supabase Connection Manager API Routes
   app.get('/api/supabase/health', async (req, res) => {
     try {
