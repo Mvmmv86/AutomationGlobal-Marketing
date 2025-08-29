@@ -8,6 +8,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Import rate limiting and logging services
+import { rateLimitService } from "./services/rate-limit-service";
+import { loggingService } from "./services/logging-service";
+import healthRoutes from "./routes/health-simple";
+
+// Apply logging middleware first
+app.use(loggingService.createRequestMiddleware());
+
+// Apply rate limiting middleware
+app.use(rateLimitService.createRateLimitMiddleware());
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -55,6 +66,9 @@ app.use((req, res, next) => {
     console.warn('⚠️ Migration skipped (will retry at runtime):', error.message);
     // Don't exit - let server start anyway
   }
+  
+  // Register health routes first
+  app.use('/api/health', healthRoutes);
   
   const server = await registerRoutes(app);
 
