@@ -151,70 +151,27 @@ export default function PermissionsTest() {
     }
   };
 
-  const testSpecificPermission = async (action: string, resource: string) => {
+  const testSpecificPermission = async (action: string, resource: string): Promise<boolean> => {
     try {
       const testName = `Permission: ${action}:${resource}`;
       addTestResult(testName, 'pending', `Testando permissão ${action} em ${resource}...`);
       
-      // Create a test endpoint call that would require this permission
-      let testUrl = '/api/organizations';
-      let testMethod = 'GET';
-      let testBody = {};
-
-      // Map actions to API calls using permission API instead of direct organization endpoints
-      switch (`${action}:${resource}`) {
-        case 'read:organization':
-          // Use permission check API instead
-          const readOrgCheck = await makeRequest(`/api/permissions/check?action=read&resource=organization`);
-          
-          addTestResult(testName, readOrgCheck.data.hasPermission ? 'success' : 'error', 
-            readOrgCheck.data.hasPermission ? 
-            `Permissão CONCEDIDA: ${readOrgCheck.data.role} pode ler organização` : 
-            `Permissão NEGADA: ${readOrgCheck.data.role} não pode ler organização`);
-          return;
-          
-        case 'update:organization':
-          // Use permission check API
-          const updateOrgCheck = await makeRequest(`/api/permissions/check?action=update&resource=organization`);
-          
-          addTestResult(testName, updateOrgCheck.data.hasPermission ? 'success' : 'error', 
-            updateOrgCheck.data.hasPermission ? 
-            `Permissão CONCEDIDA: ${updateOrgCheck.data.role} pode atualizar organização` : 
-            `Permissão NEGADA: ${updateOrgCheck.data.role} não pode atualizar organização`);
-          return;
-          
-        case 'read:users':
-          // Test actual endpoint that works
-          testUrl = `/api/organizations/${currentOrganization?.organization.id}/users`;
-          break;
-          
-        case 'create:users':
-          // Use permission check API
-          const createUserCheck = await makeRequest(`/api/permissions/check?action=create&resource=users`);
-          
-          addTestResult(testName, createUserCheck.data.hasPermission ? 'success' : 'error', 
-            createUserCheck.data.hasPermission ? 
-            `Permissão CONCEDIDA: ${createUserCheck.data.role} pode criar usuários` : 
-            `Permissão NEGADA: ${createUserCheck.data.role} não pode criar usuários`);
-          return;
-          
-        default:
-          throw new Error('Unsupported permission test');
-      }
-
-      const result = await makeRequest(testUrl, {
-        method: testMethod,
-        ...(testMethod !== 'GET' && { body: JSON.stringify(testBody) })
-      });
-
-      addTestResult(testName, 'success', `Permissão ${action}:${resource} PERMITIDA`);
-      return true;
+      // Always use the permission check API for consistency
+      const permissionCheck = await makeRequest(`/api/permissions/check?action=${action}&resource=${resource}`);
+      const hasPermission = permissionCheck.data.hasPermission;
+      
+      addTestResult(testName, hasPermission ? 'success' : 'error', 
+        hasPermission ? 
+        `Permissão CONCEDIDA: ${permissionCheck.data.role} pode ${action} em ${resource}` : 
+        `Permissão NEGADA: ${permissionCheck.data.role} não pode ${action} em ${resource}`
+      );
+      
+      return hasPermission;
     } catch (error: any) {
-      const isPermissionError = error.message.includes('Permission') || error.message.includes('Forbidden');
       addTestResult(
         `Permission: ${action}:${resource}`, 
-        isPermissionError ? 'error' : 'error',
-        isPermissionError ? `Permissão ${action}:${resource} NEGADA` : `Erro no teste: ${error.message}`
+        'error',
+        `Erro no teste: ${error.message}`
       );
       return false;
     }
@@ -248,11 +205,22 @@ export default function PermissionsTest() {
     
     for (const perm of permissions) {
       try {
-        const allowed = await testSpecificPermission(perm.action, perm.resource);
+        // Use the actual permission check API for all tests
+        const permissionCheck = await makeRequest(`/api/permissions/check?action=${perm.action}&resource=${perm.resource}`);
+        const allowed = permissionCheck.data.hasPermission;
+        
         results.push({ ...perm, allowed });
         
+        addTestResult(
+          `Permission: ${perm.action}:${perm.resource}`, 
+          allowed ? 'success' : 'error', 
+          allowed ? 
+            `Permissão CONCEDIDA: ${permissionCheck.data.role} pode ${perm.action} em ${perm.resource}` : 
+            `Permissão NEGADA: ${permissionCheck.data.role} não pode ${perm.action} em ${perm.resource}`
+        );
+        
         // Small delay to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
       } catch (error) {
         results.push({ ...perm, allowed: false, reason: 'Test failed' });
       }
