@@ -1127,6 +1127,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', authBlueprint.default);
   console.log('✅ Auth blueprint registered at /api/auth');
 
+  // Supabase Connection Manager API Routes
+  app.get('/api/supabase/health', async (req, res) => {
+    try {
+      const { healthCheckSupabase } = await import('./database/supabase-connection-manager.js');
+      const connected = await healthCheckSupabase();
+      
+      res.json({
+        success: true,
+        connected,
+        message: connected ? 'Supabase connection healthy' : 'Supabase connection issues',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        connected: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/supabase/create-user', async (req, res) => {
+    try {
+      const { createUserDirectWithRetry } = await import('./database/supabase-connection-manager.js');
+      const { email, password, name } = req.body;
+
+      // Hash password
+      const bcrypt = await import('bcrypt');
+      const password_hash = await bcrypt.hash(password, 12);
+
+      const userData = {
+        email,
+        password_hash,
+        name,
+        email_verified: false,
+        status: 'active'
+      };
+
+      const user = await createUserDirectWithRetry(userData);
+      
+      res.json({
+        success: true,
+        data: user,
+        message: 'User created successfully in Supabase',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create user in Supabase',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post('/api/supabase/create-organization', async (req, res) => {
+    try {
+      const { createOrganizationWithRetry } = await import('./database/supabase-connection-manager.js');
+      const orgData = req.body;
+
+      const organization = await createOrganizationWithRetry({
+        ...orgData,
+        type: orgData.type || 'marketing'
+      });
+      
+      res.json({
+        success: true,
+        data: organization,
+        message: 'Organization created successfully in Supabase',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create organization in Supabase',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

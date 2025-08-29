@@ -350,7 +350,102 @@ router.get('/organizations', async (req, res) => {
   }
 });
 
-// Simple test endpoint for quick registration
+// Hybrid registration: Local + Supabase with Connection Manager
+router.post('/hybrid-register', async (req, res) => {
+  console.log('🚀 Hybrid registration started...');
+  
+  try {
+    const { email, password, name, organizationName } = req.body;
+    
+    console.log('📝 Data received:', { email, name, organizationName });
+
+    // Hash password
+    const password_hash = await bcrypt.hash(password || '123456', 10);
+    
+    // Create user data
+    const userData = {
+      email: email || `user-${Date.now()}@automation.global`,
+      password_hash,
+      name: name || 'Hybrid User',
+      email_verified: false,
+      status: 'active' as const
+    };
+    
+    console.log('👤 Creating user locally...');
+    const localUser = await localDataStorage.createUser(userData);
+    console.log('✅ Local user created:', localUser.id);
+    
+    // Create organization
+    const orgData = {
+      name: organizationName || 'Hybrid Organization',
+      slug: `org-${Date.now()}`,
+      status: 'active' as const
+    };
+    
+    console.log('🏢 Creating organization locally...');
+    const localOrg = await localDataStorage.createOrganization(orgData);
+    console.log('✅ Local organization created:', localOrg.id);
+
+    // Try to sync with Supabase using Connection Manager
+    let supabaseResults = {
+      userSynced: false,
+      orgSynced: false,
+      error: null
+    };
+
+    try {
+      console.log('🔄 Attempting Supabase sync with Connection Manager...');
+      
+      // Import the connection manager
+      const { createUserDirectWithRetry, createOrganizationWithRetry } = await import('../database/supabase-connection-manager.js');
+      
+      // Sync user to Supabase
+      const supabaseUser = await createUserDirectWithRetry(userData);
+      console.log('✅ Supabase user synced:', supabaseUser.id);
+      supabaseResults.userSynced = true;
+
+      // Sync organization to Supabase
+      const supabaseOrg = await createOrganizationWithRetry({
+        name: orgData.name,
+        slug: orgData.slug,
+        description: `Organization created via hybrid system`,
+        type: 'marketing'
+      });
+      console.log('✅ Supabase organization synced:', supabaseOrg.id);
+      supabaseResults.orgSynced = true;
+
+    } catch (supabaseError: any) {
+      console.warn('⚠️ Supabase sync failed, but local data is safe:', supabaseError.message);
+      supabaseResults.error = supabaseError.message;
+    }
+    
+    console.log('✅ Hybrid registration completed');
+    
+    res.json({
+      success: true,
+      message: 'Hybrid registration successful',
+      data: {
+        local: {
+          user: localUser,
+          organization: localOrg
+        },
+        supabase: supabaseResults
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Hybrid registration failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Hybrid registration failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Simple test endpoint for quick registration (mantido para compatibilidade)
 router.post('/quick-register', async (req, res) => {
   console.log('🚀 Quick register started...');
   

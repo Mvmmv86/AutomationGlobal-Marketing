@@ -49,7 +49,7 @@ export default function RealDataTest() {
           email: `test-${uniqueId}@automation.global`
         };
 
-        const response = await fetch('/api/auth/quick-register', {
+        const response = await fetch('/api/auth/hybrid-register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
