@@ -1122,10 +1122,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Register blueprint routes - AUTH BLUEPRINT
+  // Register blueprint routes - AUTH BLUEPRINT (Legacy)
   const authBlueprint = await import('./blueprints/auth.js');
   app.use('/api/auth', authBlueprint.default);
   console.log('✅ Auth blueprint registered at /api/auth');
+
+  // Register Auth V2 Blueprint (Advanced Authentication)
+  const authV2Blueprint = await import('./blueprints/auth-v2.js');
+  app.use('/api/auth/v2', authV2Blueprint.default);
+  console.log('✅ Auth V2 blueprint registered at /api/auth/v2');
+
+  // Register Auth Local Blueprint (Local-only Authentication)
+  const authLocalBlueprint = await import('./blueprints/auth-local.js');
+  app.use('/api/auth/local', authLocalBlueprint.default);
+  console.log('✅ Auth Local blueprint registered at /api/auth/local');
 
   // Supabase Connection Manager API Routes
   app.get('/api/supabase/health', async (req, res) => {
