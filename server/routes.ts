@@ -1122,6 +1122,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Register blueprint routes - AUTH BLUEPRINT
+  const authBlueprint = await import('./blueprints/auth.js');
+  app.use('/api/auth', authBlueprint.default);
+  console.log('✅ Auth blueprint registered at /api/auth');
+
   const httpServer = createServer(app);
   return httpServer;
 }

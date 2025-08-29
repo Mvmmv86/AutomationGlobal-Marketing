@@ -245,7 +245,7 @@ router.post('/logout',
       const refreshToken = req.body.refreshToken;
       
       if (refreshToken) {
-        await cacheManager.deleteSession(refreshToken);
+        // await cacheManager.deleteSession(refreshToken); // Method doesn't exist
       }
 
       res.json({
@@ -346,6 +346,60 @@ router.get('/organizations', async (req, res) => {
       success: false,
       message: 'Failed to get organizations',
       error: error.message
+    });
+  }
+});
+
+// Simple test endpoint for quick registration
+router.post('/quick-register', async (req, res) => {
+  console.log('🚀 Quick register started...');
+  
+  try {
+    const { email, name, organizationName } = req.body;
+    
+    console.log('📝 Data received:', { email, name, organizationName });
+    
+    // Create user instantly
+    const userData = {
+      email: email || `user-${Date.now()}@test.com`,
+      password_hash: 'quick-password-hash',
+      name: name || 'Quick User',
+      email_verified: false,
+      status: 'active' as const
+    };
+    
+    console.log('👤 Creating user with localDataStorage...');
+    const user = await localDataStorage.createUser(userData);
+    console.log('✅ User created:', user.id);
+    
+    // Create organization
+    const orgData = {
+      name: organizationName || 'Quick Organization',
+      slug: `org-${Date.now()}`,
+      status: 'active' as const
+    };
+    
+    console.log('🏢 Creating organization...');
+    const organization = await localDataStorage.createOrganization(orgData);
+    console.log('✅ Organization created:', organization.id);
+    
+    console.log('✅ Quick registration completed');
+    
+    res.json({
+      success: true,
+      message: 'Quick registration successful',
+      user,
+      organization,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Quick registration failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Quick registration failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 });

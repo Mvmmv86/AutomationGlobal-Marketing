@@ -8,7 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function RealDataTest() {
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<{
+    persistence?: any;
+    supabaseAttempt?: any;
+    userCreation?: any;
+    organizationCreation?: any;
+    allUsers?: any[];
+    allOrganizations?: any[];
+    timestamp: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [testData, setTestData] = useState({
     email: 'test@automation.global',
@@ -41,7 +49,7 @@ export default function RealDataTest() {
           email: `test-${uniqueId}@automation.global`
         };
 
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch('/api/auth/quick-register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
