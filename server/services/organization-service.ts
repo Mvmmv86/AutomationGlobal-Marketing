@@ -271,6 +271,65 @@ class OrganizationService {
     }
   }
 
+  // Adicionar usuário à organização
+  async addUserToOrganization(
+    organizationId: string, 
+    userId: string, 
+    role: string = 'org_user', 
+    permissions: Record<string, any> = {},
+    invitedBy?: string
+  ): Promise<void> {
+    try {
+      console.log(`👥 Adding user ${userId} to organization ${organizationId} with role ${role}`);
+
+      // Verificar se o usuário já é membro
+      const existingMembership = await this.getUserMembership(userId, organizationId);
+      if (existingMembership) {
+        throw new Error('User is already a member of this organization');
+      }
+
+      // Adicionar à organização
+      await db
+        .insert(organizationUsers)
+        .values({
+          userId,
+          organizationId,
+          role,
+          permissions,
+          invitedBy,
+          isActive: true
+        });
+
+      console.log(`✅ User ${userId} added to organization ${organizationId}`);
+    } catch (error: any) {
+      console.error('❌ Error adding user to organization:', error.message);
+      throw error;
+    }
+  }
+
+  // Remover usuário da organização
+  async removeUserFromOrganization(organizationId: string, userId: string): Promise<void> {
+    try {
+      console.log(`👥 Removing user ${userId} from organization ${organizationId}`);
+
+      // Marcar como inativo em vez de deletar (soft delete)
+      await db
+        .update(organizationUsers)
+        .set({
+          isActive: false
+        })
+        .where(and(
+          eq(organizationUsers.organizationId, organizationId),
+          eq(organizationUsers.userId, userId)
+        ));
+
+      console.log(`✅ User ${userId} removed from organization ${organizationId}`);
+    } catch (error: any) {
+      console.error('❌ Error removing user from organization:', error.message);
+      throw error;
+    }
+  }
+
   // Switch context para uma organização
   async switchOrganizationContext(userId: string, organizationId: string): Promise<UserOrganization> {
     try {

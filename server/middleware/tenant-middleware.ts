@@ -73,7 +73,7 @@ export const extractTenantContext = async (req: Request, res: Response, next: Ne
     }
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.warn('⚠️ Tenant context extraction error (continuing):', error.message);
     next(); // Continua sem tenant context
   }

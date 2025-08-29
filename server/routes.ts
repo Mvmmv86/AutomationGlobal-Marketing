@@ -1142,6 +1142,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/organizations', organizationsBlueprint.default);
   console.log('✅ Organizations blueprint registered at /api/organizations');
 
+  // Permissions blueprint
+  const { permissionsBlueprint } = await import('./blueprints/permissions');
+  app.use('/api/permissions', permissionsBlueprint);
+  console.log('✅ Permissions blueprint registered at /api/permissions');
+
   // Supabase Connection Manager API Routes
   app.get('/api/supabase/health', async (req, res) => {
     try {
