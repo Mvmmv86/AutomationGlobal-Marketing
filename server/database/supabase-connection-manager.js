@@ -1,4 +1,4 @@
-// supabase/connectionManager.js
+// server/database/supabase-connection-manager.js
 import { createClient } from '@supabase/supabase-js'
 
 class SupabaseConnectionManager {
@@ -12,39 +12,139 @@ class SupabaseConnectionManager {
     this.connectionPool = [];
     this.requestQueue = [];
     this.isProcessingQueue = false;
+
+    // Configurações específicas para Replit
+    this.REPLIT_CONFIG = {
+      CONNECT_TIMEOUT: 30000,
+      REQUEST_TIMEOUT: 25000,
+      RETRY_ATTEMPTS: 5,
+      RETRY_DELAY: 2000,
+      MAX_CONNECTIONS: 3,
+      CONNECTION_IDLE_TIME: 10000,
+      KEEP_ALIVE: false,
+      DISABLE_CACHE: true
+    };
   }
 
   // Inicializar cliente com configurações otimizadas para Replit
   initialize() {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and Key são obrigatórios');
+      throw new Error('❌ Supabase URL e Key são obrigatórios');
     }
 
-    console.log('🔄 Inicializando Supabase Connection Manager...');
+    console.log('🔧 Inicializando Supabase com configurações otimizadas para Replit...');
 
     this.client = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: false, // Desabilitar para evitar problemas no Replit
+        storageKey: 'supabase-auth'
       },
-      realtime: {
-        params: {
-          eventsPerSecond: 2 // Reduzir eventos em tempo real
-        }
-      },
+      
+      // Configurações globais de fetch otimizadas para Replit
       global: {
         headers: {
-          'Connection': 'keep-alive',
-          'Keep-Alive': 'timeout=5, max=1000'
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal', // Reduzir payload
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache', // Evitar cache no Replit
+          'Connection': 'close', // Não usar keep-alive no Replit
+        },
+        
+        // Fetch customizado com retry para Replit
+        fetch: this.createReplitOptimizedFetch()
+      },
+      
+      // Realtime desabilitado para reduzir conexões
+      realtime: {
+        params: {
+          eventsPerSecond: 1
         }
+      },
+      
+      // Configurações do PostgREST
+      db: {
+        schema: 'public'
       }
     });
 
+    console.log('✅ Supabase inicializado com sucesso para Replit');
     return this.client;
+  }
+
+  // Fetch customizado com retry e timeouts para Replit
+  createReplitOptimizedFetch() {
+    return async (url, options = {}) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log(`⏰ Timeout na requisição para: ${url}`);
+        controller.abort();
+      }, this.REPLIT_CONFIG.REQUEST_TIMEOUT);
+
+      // Configurações específicas para Replit
+      const fetchOptions = {
+        ...options,
+        signal: controller.signal,
+        
+        // Headers otimizados para Replit
+        headers: {
+          ...options.headers,
+          'Connection': 'close', // Crucial para Replit
+          'User-Agent': 'Replit-App/1.0',
+          'Keep-Alive': 'timeout=5, max=1000',
+        },
+
+        // Configurações de rede
+        keepalive: false, // Desabilitar keep-alive
+        cache: 'no-store' // Forçar sem cache
+      };
+
+      let lastError;
+      
+      // Retry com backoff exponencial
+      for (let attempt = 1; attempt <= this.REPLIT_CONFIG.RETRY_ATTEMPTS; attempt++) {
+        try {
+          console.log(`🔄 [Tentativa ${attempt}/${this.REPLIT_CONFIG.RETRY_ATTEMPTS}] ${url.split('/').pop()}`);
+          
+          const response = await fetch(url, fetchOptions);
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          console.log(`✅ Sucesso na tentativa ${attempt}`);
+          return response;
+          
+        } catch (error) {
+          lastError = error;
+          console.warn(`⚠️ Falha na tentativa ${attempt}: ${error.message}`);
+          
+          clearTimeout(timeoutId);
+          
+          if (attempt < this.REPLIT_CONFIG.RETRY_ATTEMPTS) {
+            const delay = this.REPLIT_CONFIG.RETRY_DELAY * Math.pow(2, attempt - 1);
+            console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa...`);
+            await this.sleep(delay);
+            
+            // Recriar controller para próxima tentativa
+            const newController = new AbortController();
+            fetchOptions.signal = newController.signal;
+            setTimeout(() => newController.abort(), this.REPLIT_CONFIG.REQUEST_TIMEOUT);
+          }
+        }
+      }
+      
+      throw new Error(`Falha após ${this.REPLIT_CONFIG.RETRY_ATTEMPTS} tentativas: ${lastError.message}`);
+    };
+  }
+
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   // Função de delay exponencial para retry
@@ -56,26 +156,28 @@ class SupabaseConnectionManager {
 
   // Wrapper para requisições com retry automático
   async executeWithRetry(operation, context = 'operação') {
+    if (!this.client) this.initialize();
+
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
-        console.log(`[Supabase] Tentativa ${attempt + 1} para ${context}`);
+        console.log(`🚀 [${context}] Tentativa ${attempt + 1}`);
         
         const result = await Promise.race([
           operation(),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 25000) // 25s timeout
+            setTimeout(() => reject(new Error('Timeout da operação')), this.REPLIT_CONFIG.REQUEST_TIMEOUT)
           )
         ]);
 
-        console.log(`[Supabase] ✅ Sucesso em ${context}`);
+        console.log(`✅ [${context}] Concluído com sucesso`);
         this.retryAttempts = 0; // Reset counter on success
         return result;
 
       } catch (error) {
-        console.error(`[Supabase] ❌ Erro na tentativa ${attempt + 1}:`, error.message);
+        console.error(`❌ [${context}] Erro na tentativa ${attempt + 1}:`, error.message);
 
         if (attempt === this.maxRetries) {
-          throw new Error(`Falha após ${this.maxRetries + 1} tentativas: ${error.message}`);
+          throw new Error(`[${context}] Falha após ${this.maxRetries + 1} tentativas: ${error.message}`);
         }
 
         // Verificar se é erro de rede/timeout para retry
@@ -84,6 +186,7 @@ class SupabaseConnectionManager {
           error.message.includes('network') ||
           error.message.includes('ECONNRESET') ||
           error.message.includes('fetch') ||
+          error.message.includes('ECONNREFUSED') ||
           error.code === 'PGRST301' ||
           error.status >= 500;
 
@@ -92,7 +195,7 @@ class SupabaseConnectionManager {
         }
 
         const delay = this.calculateDelay(attempt);
-        console.log(`[Supabase] ⏳ Aguardando ${Math.round(delay)}ms antes da próxima tentativa...`);
+        console.log(`⏳ [${context}] Aguardando ${Math.round(delay)}ms antes da próxima tentativa...`);
         
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -131,16 +234,14 @@ class SupabaseConnectionManager {
       }
 
       // Pequeno delay entre requisições para não sobrecarregar
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     this.isProcessingQueue = false;
   }
 
-  // Métodos específicos para operações comuns
+  // **LINHA 145** - Criação de usuário otimizada
   async createUser(userData) {
-    if (!this.client) this.initialize();
-
     return this.addToQueue(async () => {
       const { data, error } = await this.client.auth.signUp({
         email: userData.email,
@@ -158,9 +259,8 @@ class SupabaseConnectionManager {
     }, `criar usuário ${userData.email}`);
   }
 
+  // **LINHA 165** - Criação de organização otimizada
   async createOrganization(orgData) {
-    if (!this.client) this.initialize();
-
     return this.addToQueue(async () => {
       const { data, error } = await this.client
         .from('organizations')
@@ -172,9 +272,8 @@ class SupabaseConnectionManager {
     }, `criar organização ${orgData.name}`);
   }
 
+  // **LINHA 179** - Login otimizado
   async signIn(credentials) {
-    if (!this.client) this.initialize();
-
     return this.addToQueue(async () => {
       const { data, error } = await this.client.auth.signInWithPassword({
         email: credentials.email,
@@ -186,9 +285,8 @@ class SupabaseConnectionManager {
     }, `login ${credentials.email}`);
   }
 
+  // **LINHA 193** - Logout otimizado
   async signOut() {
-    if (!this.client) this.initialize();
-
     return this.executeWithRetry(async () => {
       const { error } = await this.client.auth.signOut();
       if (error) throw error;
@@ -196,25 +294,42 @@ class SupabaseConnectionManager {
     }, 'logout');
   }
 
-  // Verificar saúde da conexão
+  // **LINHA 205** - Health check otimizado
   async healthCheck() {
-    if (!this.client) this.initialize();
-
-    try {
-      const { data, error } = await Promise.race([
-        this.client.from('organizations').select('count', { count: 'exact', head: true }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Health check timeout')), 5000)
-        )
-      ]);
+    return this.executeWithRetry(async () => {
+      const { data, error } = await this.client
+        .from('organizations')
+        .select('count', { count: 'exact', head: true });
 
       this.isConnected = !error;
       return !error;
-    } catch (error) {
-      console.error('[Supabase] Health check failed:', error);
-      this.isConnected = false;
-      return false;
-    }
+    }, 'health check');
+  }
+
+  // **LINHA 244** - Criação direta de usuário (bypass auth)
+  async createUserDirect(userData) {
+    return this.addToQueue(async () => {
+      const { data, error } = await this.client
+        .from('users')
+        .insert([userData])
+        .select();
+
+      if (error) throw error;
+      return data;
+    }, `criar usuário direto ${userData.email || userData.name}`);
+  }
+
+  // **LINHA 265** - Criação de membership
+  async createOrganizationMember(memberData) {
+    return this.addToQueue(async () => {
+      const { data, error } = await this.client
+        .from('organization_members')
+        .insert([memberData])
+        .select();
+
+      if (error) throw error;
+      return data;
+    }, `criar membership para org ${memberData.organization_id}`);
   }
 
   // Reconectar se necessário
@@ -222,7 +337,7 @@ class SupabaseConnectionManager {
     const isHealthy = await this.healthCheck();
     
     if (!isHealthy) {
-      console.log('[Supabase] 🔄 Reconectando...');
+      console.log('🔄 Reconectando...');
       this.client = null;
       this.initialize();
     }
@@ -232,44 +347,9 @@ class SupabaseConnectionManager {
 
   // Obter cliente (com verificação de conexão)
   async getClient() {
+    if (!this.client) this.initialize();
     await this.ensureConnection();
     return this.client;
-  }
-
-  // Método otimizado para criar usuário via REST API (evitando auth complexa)
-  async createUserDirect(userData) {
-    if (!this.client) this.initialize();
-
-    return this.addToQueue(async () => {
-      const { data, error } = await this.client
-        .from('users')
-        .insert([{
-          email: userData.email,
-          password_hash: userData.password_hash,
-          name: userData.name,
-          email_verified: userData.email_verified || false,
-          status: userData.status || 'active'
-        }])
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    }, `criar usuário direto ${userData.email}`);
-  }
-
-  // Método para criar membership
-  async createMembership(membershipData) {
-    if (!this.client) this.initialize();
-
-    return this.addToQueue(async () => {
-      const { data, error } = await this.client
-        .from('organization_members')
-        .insert([membershipData])
-        .select();
-
-      if (error) throw error;
-      return data[0];
-    }, `criar membership ${membershipData.user_id}`);
   }
 }
 
@@ -278,12 +358,12 @@ const supabaseManager = new SupabaseConnectionManager();
 
 export default supabaseManager;
 
-// Helper functions para usar em toda a aplicação
-export const createUserWithRetry = (userData) => supabaseManager.createUser(userData);
-export const createUserDirectWithRetry = (userData) => supabaseManager.createUserDirect(userData);
-export const createOrganizationWithRetry = (orgData) => supabaseManager.createOrganization(orgData);
-export const createMembershipWithRetry = (membershipData) => supabaseManager.createMembership(membershipData);
-export const signInWithRetry = (credentials) => supabaseManager.signIn(credentials);
-export const signOutWithRetry = () => supabaseManager.signOut();
+// Export das funções para manter compatibilidade
+export const createUser = (userData) => supabaseManager.createUser(userData);
+export const createOrganization = (orgData) => supabaseManager.createOrganization(orgData);
+export const signIn = (credentials) => supabaseManager.signIn(credentials);
+export const signOut = () => supabaseManager.signOut();
+export const healthCheck = () => supabaseManager.healthCheck();
+export const createUserDirect = (userData) => supabaseManager.createUserDirect(userData);
+export const createOrganizationMember = (memberData) => supabaseManager.createOrganizationMember(memberData);
 export const getSupabaseClient = () => supabaseManager.getClient();
-export const healthCheckSupabase = () => supabaseManager.healthCheck();

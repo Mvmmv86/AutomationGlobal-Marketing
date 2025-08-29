@@ -397,15 +397,15 @@ router.post('/hybrid-register', async (req, res) => {
       console.log('🔄 Attempting Supabase sync with Connection Manager...');
       
       // Import the connection manager
-      const { createUserDirectWithRetry, createOrganizationWithRetry } = await import('../database/supabase-connection-manager.js');
+      const { createUserDirect, createOrganization } = await import('../database/supabase-connection-manager.js');
       
       // Sync user to Supabase
-      const supabaseUser = await createUserDirectWithRetry(userData);
+      const supabaseUser = await createUserDirect(userData);
       console.log('✅ Supabase user synced:', supabaseUser.id);
       supabaseResults.userSynced = true;
 
       // Sync organization to Supabase
-      const supabaseOrg = await createOrganizationWithRetry({
+      const supabaseOrg = await createOrganization({
         name: orgData.name,
         slug: orgData.slug,
         description: `Organization created via hybrid system`,

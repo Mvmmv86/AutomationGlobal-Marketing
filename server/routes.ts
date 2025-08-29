@@ -1130,8 +1130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Supabase Connection Manager API Routes
   app.get('/api/supabase/health', async (req, res) => {
     try {
-      const { healthCheckSupabase } = await import('./database/supabase-connection-manager.js');
-      const connected = await healthCheckSupabase();
+      const { healthCheck } = await import('./database/supabase-connection-manager.js');
+      const connected = await healthCheck();
       
       res.json({
         success: true,
@@ -1151,7 +1151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/supabase/create-user', async (req, res) => {
     try {
-      const { createUserDirectWithRetry } = await import('./database/supabase-connection-manager.js');
+      const { createUserDirect } = await import('./database/supabase-connection-manager.js');
       const { email, password, name } = req.body;
 
       // Hash password
@@ -1166,7 +1166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'active'
       };
 
-      const user = await createUserDirectWithRetry(userData);
+      const user = await createUserDirect(userData);
       
       res.json({
         success: true,
@@ -1186,10 +1186,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/supabase/create-organization', async (req, res) => {
     try {
-      const { createOrganizationWithRetry } = await import('./database/supabase-connection-manager.js');
+      const { createOrganization } = await import('./database/supabase-connection-manager.js');
       const orgData = req.body;
 
-      const organization = await createOrganizationWithRetry({
+      const organization = await createOrganization({
         ...orgData,
         type: orgData.type || 'marketing'
       });
