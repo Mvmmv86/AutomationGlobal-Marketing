@@ -1210,6 +1210,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Drizzle Direct Connection Test Route
+  app.get('/api/drizzle/health', async (req, res) => {
+    try {
+      const { testDrizzleConnection } = await import('./database/drizzle-connection');
+      const connected = await testDrizzleConnection();
+      
+      res.json({
+        success: connected,
+        connected,
+        method: 'drizzle-postgres',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        connected: false,
+        method: 'drizzle-postgres',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Drizzle Create User Route
+  app.post('/api/drizzle/create-user', async (req, res) => {
+    try {
+      const { createUserDrizzle } = await import('./database/drizzle-connection');
+      const { email, password, name } = req.body;
+
+      // Hash password
+      const bcrypt = await import('bcrypt');
+      const password_hash = await bcrypt.hash(password, 12);
+
+      const userData = {
+        email,
+        password_hash,
+        name,
+        email_verified: false,
+        status: 'active' as const
+      };
+
+      const user = await createUserDrizzle(userData);
+      
+      res.json({
+        success: true,
+        data: user,
+        message: 'User created successfully via Drizzle',
+        method: 'drizzle-postgres',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create user via Drizzle',
+        method: 'drizzle-postgres',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Drizzle Create Organization Route
+  app.post('/api/drizzle/create-organization', async (req, res) => {
+    try {
+      const { createOrganizationDrizzle } = await import('./database/drizzle-connection');
+      const { name, slug } = req.body;
+
+      const orgData = {
+        name,
+        slug: slug || `org-${Date.now()}`,
+        status: 'active' as const
+      };
+
+      const organization = await createOrganizationDrizzle(orgData);
+      
+      res.json({
+        success: true,
+        data: organization,
+        message: 'Organization created successfully via Drizzle',
+        method: 'drizzle-postgres',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create organization via Drizzle',
+        method: 'drizzle-postgres',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

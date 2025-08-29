@@ -10,6 +10,7 @@ export const CONFIG = {
   
   // Database
   DATABASE_URL: process.env.DATABASE_URL || '',
+  SUPABASE_CONNECTION_STRING: process.env.SUPABASE_CONNECTION_STRING || '',
   
   // AI Services
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
