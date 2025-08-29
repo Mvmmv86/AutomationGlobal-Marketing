@@ -48,6 +48,13 @@ export default function MultiTenantTest() {
   const [currentContext, setCurrentContext] = useState<any>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<'valid' | 'invalid' | 'unknown'>('unknown');
+
+  // Login form state
+  const [loginData, setLoginData] = useState({
+    email: 'auth-local@automation.global',
+    password: '123456'
+  });
 
   // Form states
   const [newOrgData, setNewOrgData] = useState({
@@ -79,6 +86,8 @@ export default function MultiTenantTest() {
   };
 
   const makeRequest = async (url: string, options: RequestInit = {}) => {
+    console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
+    
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -88,13 +97,58 @@ export default function MultiTenantTest() {
       },
     });
 
+    console.log(`📡 Response: ${response.status} ${response.statusText}`);
+
     const data = await response.json();
     
     if (!response.ok) {
+      console.error('❌ API Error:', data);
+      
+      // Check if token is expired
+      if (response.status === 401 && data.code === 'INVALID_TOKEN') {
+        setTokenStatus('invalid');
+        addTestResult('Token Status', 'error', 'Token expirado! Faça login novamente.');
+      }
+      
       throw new Error(data.message || `HTTP ${response.status}`);
     }
 
+    setTokenStatus('valid');
+    console.log('✅ API Success:', data);
     return data;
+  };
+
+  const doLogin = async () => {
+    try {
+      addTestResult('Login', 'pending', 'Fazendo login...');
+      
+      const response = await fetch('/api/auth/local/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(loginData),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}`);
+      }
+
+      const newToken = data.data.accessToken;
+      setToken(newToken);
+      localStorage.setItem('auth_token', newToken);
+      setTokenStatus('valid');
+      
+      addTestResult('Login', 'success', `Login realizado com sucesso para ${loginData.email}`);
+      
+      // Automatically load organizations after successful login
+      await testListOrganizations();
+    } catch (error: any) {
+      console.error('❌ Erro no login:', error);
+      addTestResult('Login', 'error', error.message);
+    }
   };
 
   const testListOrganizations = async () => {
@@ -126,15 +180,20 @@ export default function MultiTenantTest() {
     try {
       addTestResult('Create Organization', 'pending', 'Criando nova organização...');
       
+      console.log('🚀 Criando organização:', newOrgData);
+      console.log('🔑 Token:', token ? 'Token presente' : 'Token ausente');
+      
       const result = await makeRequest('/api/organizations', {
         method: 'POST',
         body: JSON.stringify(newOrgData),
       });
       
+      console.log('✅ Organização criada:', result);
+      
       addTestResult(
         'Create Organization', 
         'success', 
-        `Organização "${result.data.organization.name}" criada com sucesso`,
+        `Organização "${result.data.organization.name}" criada com sucesso (ID: ${result.data.organization.id})`,
         result
       );
 
@@ -146,8 +205,11 @@ export default function MultiTenantTest() {
         type: 'marketing',
         subscriptionPlan: 'starter'
       });
+      
+      console.log('🔄 Recarregando lista de organizações...');
       await testListOrganizations();
     } catch (error: any) {
+      console.error('❌ Erro ao criar organização:', error);
       addTestResult('Create Organization', 'error', error.message);
     }
   };
@@ -284,36 +346,87 @@ export default function MultiTenantTest() {
           </p>
         </div>
 
-        {/* Token Input */}
-        <Card className="mb-6 bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              Token de Autenticação
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="token" className="text-slate-200">JWT Token</Label>
-              <Input
-                id="token"
-                data-testid="input-auth-token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="Cole seu JWT token aqui..."
-                className="bg-slate-700 border-slate-600 text-white"
-              />
-            </div>
-            <Button 
-              onClick={runAllTests} 
-              disabled={!token || loading}
-              className="bg-blue-600 hover:bg-blue-700"
-              data-testid="button-run-all-tests"
-            >
-              {loading ? 'Executando...' : 'Executar Todos os Testes'}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Login & Token */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Login Rápido
+              </CardTitle>
+              <CardDescription className="text-slate-300">
+                Fazer login para obter token válido automaticamente
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="login-email" className="text-slate-200">Email</Label>
+                <Input
+                  id="login-email"
+                  data-testid="input-login-email"
+                  value={loginData.email}
+                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="login-password" className="text-slate-200">Senha</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  data-testid="input-login-password"
+                  value={loginData.password}
+                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <Button 
+                onClick={doLogin} 
+                className="w-full bg-green-600 hover:bg-green-700"
+                data-testid="button-login"
+              >
+                Fazer Login
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Status do Token
+                {tokenStatus === 'valid' && <Badge className="bg-green-600">Válido</Badge>}
+                {tokenStatus === 'invalid' && <Badge className="bg-red-600">Expirado</Badge>}
+                {tokenStatus === 'unknown' && <Badge className="bg-gray-600">Desconhecido</Badge>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="token" className="text-slate-200">JWT Token (Opcional)</Label>
+                <Input
+                  id="token"
+                  data-testid="input-auth-token"
+                  value={token}
+                  onChange={(e) => {
+                    setToken(e.target.value);
+                    localStorage.setItem('auth_token', e.target.value);
+                    setTokenStatus('unknown');
+                  }}
+                  placeholder="Cole seu JWT token aqui ou faça login..."
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              <Button 
+                onClick={runAllTests} 
+                disabled={!token || loading || tokenStatus === 'invalid'}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                data-testid="button-run-all-tests"
+              >
+                {loading ? 'Executando...' : 'Executar Todos os Testes'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Current Context */}
         {currentContext && (
