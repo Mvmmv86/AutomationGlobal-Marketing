@@ -12,6 +12,7 @@ import BackendTest from "@/pages/backend-test";
 import BackendTestReal from "@/pages/backend-test-real";
 import RealDataTest from "@/pages/real-data-test";
 import AuthTest from "@/pages/auth-test";
+import MultiTenantTest from "@/pages/multi-tenant-test";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/backend-test-real" component={BackendTestReal} />
       <Route path="/real-data-test" component={RealDataTest} />
       <Route path="/auth-test" component={AuthTest} />
+      <Route path="/multi-tenant-test" component={MultiTenantTest} />
       <Route component={NotFound} />
     </Switch>
   );
