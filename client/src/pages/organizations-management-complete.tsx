@@ -42,7 +42,31 @@ import {
   AlertCircle,
   Clock,
   Zap,
-  Globe
+  Globe,
+  ArrowRight,
+  ArrowLeft,
+  Upload,
+  Megaphone,
+  Headphones,
+  TrendingDown,
+  Cpu,
+  Plug,
+  UserPlus,
+  FileCheck,
+  Star,
+  Crown,
+  Check,
+  X,
+  Info,
+  Sparkles,
+  Database,
+  Cloud,
+  Lock,
+  Wifi,
+  MessageSquare,
+  BookOpen,
+  Briefcase,
+  PieChart
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -93,6 +117,115 @@ interface GlobalStats {
   totalAiCost: number;
   growthRate: number;
 }
+
+// Wizard interfaces
+interface WizardData {
+  // Step 1: Informações Básicas
+  name: string;
+  email: string;
+  phone: string;
+  website: string;
+  description: string;
+  logo?: File;
+  
+  // Step 2: Tipo de Negócio
+  businessType: 'marketing' | 'support' | 'trading';
+  selectedModules: string[];
+  
+  // Step 3: Plano
+  plan: 'starter' | 'professional' | 'enterprise';
+  
+  // Step 4: IA Configuration
+  primaryAiProvider: 'openai' | 'anthropic';
+  backupAiProvider: 'openai' | 'anthropic';
+  aiModels: Record<string, string>;
+  aiLimits: Record<string, number>;
+  
+  // Step 5: Módulos
+  includedModules: string[];
+  optionalModules: string[];
+  moduleConfigs: Record<string, any>;
+  
+  // Step 6: Integrações
+  integrations: string[];
+  integrationConfigs: Record<string, any>;
+  
+  // Step 7: Equipe
+  adminUser: { name: string; email: string; role: string };
+  teamMembers: Array<{ name: string; email: string; role: string }>;
+  
+  // Step 8: Confirmação
+  acceptTerms: boolean;
+  billingInfo: any;
+}
+
+// Plan configurations
+const PLANS = {
+  starter: {
+    name: 'Starter',
+    price: 29,
+    users: 2,
+    aiRequests: 1000,
+    features: ['Basic AI', 'Email Support', '1 Integration'],
+    color: 'from-blue-600 to-cyan-600',
+    icon: Star
+  },
+  professional: {
+    name: 'Professional', 
+    price: 99,
+    users: 10,
+    aiRequests: 10000,
+    features: ['Advanced AI', 'Priority Support', '5 Integrations', 'Analytics'],
+    color: 'from-purple-600 to-pink-600',
+    icon: Zap
+  },
+  enterprise: {
+    name: 'Enterprise',
+    price: 299,
+    users: -1, // Unlimited
+    aiRequests: 100000,
+    features: ['Full AI Suite', '24/7 Support', 'Unlimited Integrations', 'Advanced Analytics', 'Custom Features'],
+    color: 'from-yellow-600 to-orange-600',
+    icon: Crown
+  }
+};
+
+// Business types and their modules
+const BUSINESS_TYPES = {
+  marketing: {
+    name: 'Agência de Marketing',
+    icon: Megaphone,
+    color: 'from-cyan-600 to-blue-600',
+    description: 'Automação completa para agências de marketing digital',
+    modules: [
+      { id: 'marketing-ai', name: 'Marketing AI', description: 'Criação automática de campanhas' },
+      { id: 'content-ai', name: 'Content AI', description: 'Geração de conteúdo inteligente' },
+      { id: 'analytics-ai', name: 'Analytics AI', description: 'Análise preditiva de campanhas' }
+    ]
+  },
+  support: {
+    name: 'Centro de Suporte',
+    icon: Headphones,
+    color: 'from-green-600 to-emerald-600',
+    description: 'Plataforma completa de atendimento ao cliente',
+    modules: [
+      { id: 'support-ai', name: 'Support AI', description: 'Atendimento automatizado' },
+      { id: 'chatbot-ai', name: 'Chatbot AI', description: 'Chat inteligente 24/7' },
+      { id: 'knowledge-ai', name: 'Knowledge AI', description: 'Base de conhecimento inteligente' }
+    ]
+  },
+  trading: {
+    name: 'Mesa de Trading',
+    icon: TrendingUp,
+    color: 'from-yellow-600 to-orange-600',
+    description: 'Plataforma avançada para trading automatizado',
+    modules: [
+      { id: 'trading-ai', name: 'Trading AI', description: 'Algoritmos de trading automatizado' },
+      { id: 'risk-ai', name: 'Risk AI', description: 'Análise de risco em tempo real' },
+      { id: 'market-ai', name: 'Market AI', description: 'Análise preditiva de mercado' }
+    ]
+  }
+};
 
 // Schemas de formulário
 const createOrgSchema = z.object({
@@ -198,6 +331,21 @@ export default function OrganizationsManagementComplete() {
   const [isAnalyticsDialogOpen, setIsAnalyticsDialogOpen] = useState(false);
   const [isBillingDialogOpen, setIsBillingDialogOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<string>('');
+  
+  // Wizard states
+  const [currentWizardStep, setCurrentWizardStep] = useState(1);
+  const [wizardData, setWizardData] = useState<Partial<WizardData>>({
+    selectedModules: [],
+    includedModules: [],
+    optionalModules: [],
+    integrations: [],
+    teamMembers: [],
+    aiModels: {},
+    aiLimits: {},
+    moduleConfigs: {},
+    integrationConfigs: {},
+    acceptTerms: false
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -309,6 +457,60 @@ export default function OrganizationsManagementComplete() {
   }, [filteredOrganizations, currentPage]);
 
   const totalPages = Math.ceil(filteredOrganizations.length / ITEMS_PER_PAGE);
+
+  // Wizard helper functions
+  const updateWizardData = (updates: Partial<WizardData>) => {
+    setWizardData(prev => ({ ...prev, ...updates }));
+  };
+
+  const nextWizardStep = () => {
+    if (currentWizardStep < 8) {
+      setCurrentWizardStep(prev => prev + 1);
+    }
+  };
+
+  const prevWizardStep = () => {
+    if (currentWizardStep > 1) {
+      setCurrentWizardStep(prev => prev - 1);
+    }
+  };
+
+  const getWizardStepIcon = (step: number) => {
+    const icons = [
+      Building2, // Step 1: Informações Básicas
+      Briefcase, // Step 2: Tipo de Negócio  
+      Crown, // Step 3: Plano
+      Brain, // Step 4: IA Configuration
+      Cpu, // Step 5: Módulos
+      Plug, // Step 6: Integrações
+      UserPlus, // Step 7: Equipe
+      FileCheck // Step 8: Confirmação
+    ];
+    return icons[step - 1] || Building2;
+  };
+
+  const isWizardStepValid = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        return !!(wizardData.name && wizardData.email);
+      case 2:
+        return !!(wizardData.businessType);
+      case 3:
+        return !!(wizardData.plan);
+      case 4:
+        return !!(wizardData.primaryAiProvider);
+      case 5:
+        return true; // Módulos sempre válidos
+      case 6:
+        return true; // Integrações sempre válidas
+      case 7:
+        return !!(wizardData.adminUser?.name && wizardData.adminUser?.email);
+      case 8:
+        return wizardData.acceptTerms === true;
+      default:
+        return false;
+    }
+  };
 
   // Helper functions
   const formatCurrency = (amount: number) => {
@@ -1017,134 +1219,405 @@ export default function OrganizationsManagementComplete() {
 
           </TabsContent>
 
-          {/* Create Organization Tab */}
+          {/* Create Organization Tab - Wizard */}
           <TabsContent value="create" className="space-y-6">
-            <Card className="glass-card neon-panel max-w-2xl mx-auto">
+            
+            {/* Wizard Progress */}
+            <Card className="glass-card neon-panel max-w-4xl mx-auto">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold gradient-text">Wizard de Criação</h2>
+                    <p className="text-gray-400 text-sm">Step {currentWizardStep} de 8</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-cyan-400">{Math.round((currentWizardStep / 8) * 100)}%</div>
+                  </div>
+                </div>
+                
+                {/* Progress Steps */}
+                <div className="flex items-center justify-between">
+                  {Array.from({ length: 8 }, (_, i) => {
+                    const stepNumber = i + 1;
+                    const StepIcon = getWizardStepIcon(stepNumber);
+                    const isActive = stepNumber === currentWizardStep;
+                    const isCompleted = stepNumber < currentWizardStep;
+                    
+                    return (
+                      <div key={stepNumber} className="flex flex-col items-center">
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-cyan-600 to-purple-600 ring-2 ring-cyan-500/50' 
+                              : isCompleted
+                              ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                              : 'bg-gray-700 border border-gray-600'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <Check className="w-5 h-5 text-white" />
+                          ) : (
+                            <StepIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                          )}
+                        </div>
+                        
+                        <div className="mt-1 text-center">
+                          <div className={`text-xs font-semibold ${isActive ? 'text-cyan-400' : isCompleted ? 'text-green-400' : 'text-gray-500'}`}>
+                            {stepNumber}
+                          </div>
+                        </div>
+                        
+                        {stepNumber < 8 && (
+                          <div className={`h-0.5 w-12 mt-2 ${isCompleted ? 'bg-gradient-to-r from-green-400 to-cyan-400' : 'bg-gray-700'}`}></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Main Wizard Card */}
+            <Card className="glass-card neon-panel max-w-4xl mx-auto min-h-[600px]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-2xl">
-                  <Plus className="w-6 h-6 text-purple-400" />
-                  <span className="gradient-text">Nova Organização</span>
+                  {currentWizardStep === 1 && <><Building2 className="w-6 h-6 text-cyan-400" /><span className="gradient-text">Informações Básicas</span></>}
+                  {currentWizardStep === 2 && <><Briefcase className="w-6 h-6 text-purple-400" /><span className="gradient-text">Tipo de Negócio</span></>}
+                  {currentWizardStep === 3 && <><Crown className="w-6 h-6 text-yellow-400" /><span className="gradient-text">Seleção de Plano</span></>}
+                  {currentWizardStep === 4 && <><Brain className="w-6 h-6 text-green-400" /><span className="gradient-text">Configuração de IA</span></>}
+                  {currentWizardStep === 5 && <><Cpu className="w-6 h-6 text-blue-400" /><span className="gradient-text">Seleção de Módulos</span></>}
+                  {currentWizardStep === 6 && <><Plug className="w-6 h-6 text-orange-400" /><span className="gradient-text">Configuração de Integrações</span></>}
+                  {currentWizardStep === 7 && <><UserPlus className="w-6 h-6 text-pink-400" /><span className="gradient-text">Convite de Equipe</span></>}
+                  {currentWizardStep === 8 && <><FileCheck className="w-6 h-6 text-emerald-400" /><span className="gradient-text">Revisão e Confirmação</span></>}
                 </CardTitle>
+                <p className="text-gray-400 mt-2">
+                  {currentWizardStep === 1 && "Nome, email, telefone, website e descrição da organização"}
+                  {currentWizardStep === 2 && "Escolha entre Agência de Marketing, Centro de Suporte ou Mesa de Trading"}
+                  {currentWizardStep === 3 && "Starter ($29), Professional ($99) ou Enterprise ($299)"}
+                  {currentWizardStep === 4 && "Provedor principal e backup, modelos e limites de IA"}
+                  {currentWizardStep === 5 && "Módulos inclusos no plano e opcionais"}
+                  {currentWizardStep === 6 && "Integrações recomendadas e configuração"}
+                  {currentWizardStep === 7 && "Admin principal, membros da equipe e roles"}
+                  {currentWizardStep === 8 && "Resumo completo, termos de serviço e billing"}
+                </p>
               </CardHeader>
               <CardContent>
-                <Form {...createForm}>
-                  <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-6">
+                {/* Step 1: Informações Básicas */}
+                {currentWizardStep === 1 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label className="text-gray-300 mb-2 block">Nome da Organização *</Label>
+                        <Input
+                          value={wizardData.name || ''}
+                          onChange={(e) => updateWizardData({ name: e.target.value })}
+                          placeholder="Ex: TechCorp Solutions"
+                          className="glass bg-gray-900/50 border-gray-700 text-white"
+                          data-testid="wizard-step1-name"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-300 mb-2 block">Email Principal *</Label>
+                        <Input
+                          type="email"
+                          value={wizardData.email || ''}
+                          onChange={(e) => updateWizardData({ email: e.target.value })}
+                          placeholder="contato@empresa.com"
+                          className="glass bg-gray-900/50 border-gray-700 text-white"
+                          data-testid="wizard-step1-email"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label className="text-gray-300 mb-2 block">Telefone</Label>
+                        <Input
+                          value={wizardData.phone || ''}
+                          onChange={(e) => updateWizardData({ phone: e.target.value })}
+                          placeholder="+55 (11) 99999-9999"
+                          className="glass bg-gray-900/50 border-gray-700 text-white"
+                          data-testid="wizard-step1-phone"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="text-gray-300 mb-2 block">Website</Label>
+                        <Input
+                          value={wizardData.website || ''}
+                          onChange={(e) => updateWizardData({ website: e.target.value })}
+                          placeholder="https://www.empresa.com"
+                          className="glass bg-gray-900/50 border-gray-700 text-white"
+                          data-testid="wizard-step1-website"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-gray-300 mb-2 block">Descrição</Label>
+                      <Textarea
+                        value={wizardData.description || ''}
+                        onChange={(e) => updateWizardData({ description: e.target.value })}
+                        placeholder="Descreva brevemente o que sua organização faz..."
+                        className="glass bg-gray-900/50 border-gray-700 text-white resize-none"
+                        rows={4}
+                        data-testid="wizard-step1-description"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-gray-300 mb-2 block">Logo da Empresa (Opcional)</Label>
+                      <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-cyan-500 transition-colors cursor-pointer">
+                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-400 mb-2">Clique para fazer upload ou arraste sua logo aqui</p>
+                        <p className="text-sm text-gray-500">PNG, JPG até 5MB</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Tipo de Negócio */}
+                {currentWizardStep === 2 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {Object.entries(BUSINESS_TYPES).map(([key, type]) => {
+                        const IconComponent = type.icon;
+                        const isSelected = wizardData.businessType === key;
+                        
+                        return (
+                          <Card 
+                            key={key}
+                            className={`glass-card neon-panel cursor-pointer transition-all duration-300 ${
+                              isSelected 
+                                ? 'ring-2 ring-cyan-400 bg-gradient-to-b from-cyan-500/10 to-purple-500/10' 
+                                : 'hover:ring-1 hover:ring-gray-500'
+                            }`}
+                            onClick={() => updateWizardData({ businessType: key as any })}
+                            data-testid={`wizard-step2-${key}`}
+                          >
+                            <CardContent className="p-6 text-center">
+                              <div className={`w-16 h-16 mx-auto rounded-xl bg-gradient-to-r ${type.color} flex items-center justify-center mb-4`}>
+                                <IconComponent className="w-8 h-8 text-white" />
+                              </div>
+                              
+                              <h4 className="text-xl font-bold text-white mb-2">{type.name}</h4>
+                              <p className="text-gray-400 text-sm mb-4">{type.description}</p>
+                              
+                              <div className="space-y-2">
+                                <div className="text-sm font-semibold text-gray-300">Módulos Inclusos:</div>
+                                {type.modules.map((module, index) => (
+                                  <div key={index} className="flex items-center gap-2 text-xs text-gray-400">
+                                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-purple-400"></div>
+                                    <span>{module.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {isSelected && (
+                                <div className="mt-4 flex items-center justify-center gap-2 text-cyan-400">
+                                  <CheckCircle className="w-5 h-5" />
+                                  <span className="text-sm font-semibold">Selecionado</span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Seleção de Plano */}
+                {currentWizardStep === 3 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {Object.entries(PLANS).map(([key, plan]) => {
+                        const IconComponent = plan.icon;
+                        const isSelected = wizardData.plan === key;
+                        const isPopular = key === 'professional';
+                        
+                        return (
+                          <Card 
+                            key={key}
+                            className={`glass-card neon-panel cursor-pointer transition-all duration-300 relative ${
+                              isSelected 
+                                ? 'ring-2 ring-cyan-400 bg-gradient-to-b from-cyan-500/10 to-purple-500/10 scale-105' 
+                                : 'hover:ring-1 hover:ring-gray-500 hover:scale-102'
+                            }`}
+                            onClick={() => updateWizardData({ plan: key as any })}
+                            data-testid={`wizard-step3-${key}`}
+                          >
+                            {isPopular && (
+                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                  🔥 Mais Popular
+                                </div>
+                              </div>
+                            )}
+                            
+                            <CardContent className="p-6 text-center">
+                              <div className={`w-16 h-16 mx-auto rounded-xl bg-gradient-to-r ${plan.color} flex items-center justify-center mb-4`}>
+                                <IconComponent className="w-8 h-8 text-white" />
+                              </div>
+                              
+                              <h4 className="text-xl font-bold text-white mb-2">{plan.name}</h4>
+                              <div className="text-3xl font-bold gradient-text mb-4">
+                                ${plan.price}<span className="text-lg text-gray-400">/mês</span>
+                              </div>
+                              
+                              <div className="space-y-3 mb-6">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-400">Usuários</span>
+                                  <span className="text-white font-semibold">
+                                    {plan.users === -1 ? 'Ilimitado' : plan.users}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-400">Requisições IA</span>
+                                  <span className="text-white font-semibold">{formatNumber(plan.aiRequests)}/mês</span>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-2 mb-6">
+                                {plan.features.map((feature, index) => (
+                                  <div key={index} className="flex items-center gap-2 text-sm text-gray-300">
+                                    <CheckCircle className="w-4 h-4 text-green-400" />
+                                    <span>{feature}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {isSelected && (
+                                <div className="flex items-center justify-center gap-2 text-cyan-400">
+                                  <CheckCircle className="w-5 h-5" />
+                                  <span className="text-sm font-semibold">Plano Selecionado</span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4-7: Em desenvolvimento */}
+                {(currentWizardStep >= 4 && currentWizardStep <= 7) && (
+                  <div className="text-center py-20">
+                    <div className="w-20 h-20 mx-auto rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center mb-4">
+                      {getWizardStepIcon(currentWizardStep) && React.createElement(getWizardStepIcon(currentWizardStep), { className: "w-10 h-10 text-gray-300" })}
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-300 mb-2">Step {currentWizardStep}</h3>
+                    <p className="text-gray-500 mb-6">Em desenvolvimento...</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={createForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-300">Nome da Organização</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Ex: TechCorp Solutions"
-                                className="glass bg-gray-900/50 border-gray-700 text-white"
-                                data-testid="create-org-name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={createForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-300">Email</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="email"
-                                placeholder="contato@empresa.com"
-                                className="glass bg-gray-900/50 border-gray-700 text-white"
-                                data-testid="create-org-email"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <div className="max-w-md mx-auto glass p-6 rounded-xl">
+                      <p className="text-gray-400 text-sm">
+                        Este step será implementado com todas as funcionalidades específicas 
+                        conforme o framework definido.
+                      </p>
                     </div>
+                  </div>
+                )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={createForm.control}
-                        name="type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-300">Tipo de Organização</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="glass bg-gray-900/50 border-gray-700 text-white" data-testid="create-org-type">
-                                  <SelectValue placeholder="Selecione o tipo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-gray-900 border-gray-700">
-                                <SelectItem value="marketing">Marketing</SelectItem>
-                                <SelectItem value="support">Support</SelectItem>
-                                <SelectItem value="trading">Trading</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                {/* Step 8: Confirmação Final */}
+                {currentWizardStep === 8 && (
+                  <div className="space-y-6">
+                    <div className="max-w-3xl mx-auto">
+                      <Card className="glass-card neon-panel mb-6">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Resumo da Configuração</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-400">Nome:</span>
+                              <span className="ml-2 text-white font-semibold">{wizardData.name || 'Não definido'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Email:</span>
+                              <span className="ml-2 text-white font-semibold">{wizardData.email || 'Não definido'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Tipo:</span>
+                              <span className="ml-2 text-white font-semibold">
+                                {wizardData.businessType ? BUSINESS_TYPES[wizardData.businessType].name : 'Não definido'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Plano:</span>
+                              <span className="ml-2 text-white font-semibold">
+                                {wizardData.plan ? PLANS[wizardData.plan].name : 'Não definido'}
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                      <FormField
-                        control={createForm.control}
-                        name="plan"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-300">Plano</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="glass bg-gray-900/50 border-gray-700 text-white" data-testid="create-org-plan">
-                                  <SelectValue placeholder="Selecione o plano" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-gray-900 border-gray-700">
-                                <SelectItem value="starter">Starter</SelectItem>
-                                <SelectItem value="pro">Pro</SelectItem>
-                                <SelectItem value="enterprise">Enterprise</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="flex items-start gap-4 p-6 glass bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-xl">
+                        <Checkbox
+                          checked={wizardData.acceptTerms}
+                          onCheckedChange={(checked) => updateWizardData({ acceptTerms: !!checked })}
+                          data-testid="wizard-step8-terms"
+                        />
+                        <div>
+                          <p className="text-white">
+                            Eu aceito os{' '}
+                            <span className="text-cyan-400 cursor-pointer hover:underline">Termos de Serviço</span>
+                            {' '}e a{' '}
+                            <span className="text-cyan-400 cursor-pointer hover:underline">Política de Privacidade</span>
+                          </p>
+                          <p className="text-sm text-gray-400 mt-1">
+                            Ao aceitar, você concorda com todas as condições da plataforma
+                          </p>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                )}
 
-                    <FormField
-                      control={createForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-300">Descrição (Opcional)</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              placeholder="Breve descrição sobre a organização..."
-                              className="glass bg-gray-900/50 border-gray-700 text-white resize-none"
-                              rows={3}
-                              data-testid="create-org-description"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {/* Navigation */}
+                <div className="flex items-center justify-between pt-8 mt-8 border-t border-gray-700/30">
+                  <Button
+                    onClick={prevWizardStep}
+                    disabled={currentWizardStep === 1}
+                    className="flex items-center gap-2 hover:bg-gray-700"
+                    variant="ghost"
+                    data-testid="wizard-prev-step"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Anterior
+                  </Button>
 
-                    <div className="flex gap-3 pt-6">
+                  <div className="flex items-center gap-3">
+                    {currentWizardStep < 8 ? (
                       <Button
-                        type="submit"
-                        disabled={createMutation.isPending}
-                        className="btn-glow bg-gradient-to-r from-purple-600 to-pink-600 flex-1"
-                        data-testid="create-org-submit"
+                        onClick={nextWizardStep}
+                        disabled={!isWizardStepValid(currentWizardStep)}
+                        className="btn-glow bg-gradient-to-r from-cyan-600 to-purple-600"
+                        data-testid="wizard-next-step"
+                      >
+                        Próximo
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          if (isWizardStepValid(8)) {
+                            // Convert wizardData to form format
+                            const formData = {
+                              name: wizardData.name || '',
+                              email: wizardData.email || '',
+                              type: wizardData.businessType || 'marketing',
+                              plan: wizardData.plan === 'professional' ? 'pro' : wizardData.plan || 'starter',
+                              description: wizardData.description || ''
+                            };
+                            createMutation.mutate(formData as any);
+                          }
+                        }}
+                        disabled={!isWizardStepValid(8) || createMutation.isPending}
+                        className="btn-glow bg-gradient-to-r from-green-600 to-emerald-600"
+                        data-testid="wizard-create-organization"
                       >
                         {createMutation.isPending ? (
                           <>
@@ -1153,24 +1626,14 @@ export default function OrganizationsManagementComplete() {
                           </>
                         ) : (
                           <>
-                            <Plus className="w-4 h-4 mr-2" />
+                            <Sparkles className="w-4 h-4 mr-2" />
                             Criar Organização
                           </>
                         )}
                       </Button>
-                      
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => createForm.reset()}
-                        className="hover:bg-gray-700"
-                      >
-                        Limpar
-                      </Button>
-                    </div>
-                    
-                  </form>
-                </Form>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

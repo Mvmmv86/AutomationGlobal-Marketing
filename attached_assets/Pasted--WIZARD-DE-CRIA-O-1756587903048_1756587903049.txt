@@ -1,0 +1,48 @@
+┌─────────────────────────────────────────────────────────────┐
+│                 WIZARD DE CRIAÇÃO (8 STEPS)                 │
+├─────────────────────────────────────────────────────────────┤
+│ Step 1: 📝 Informações Básicas                              │
+│ ├── Nome da Organização                                     │
+│ ├── Email Principal                                         │
+│ ├── Telefone, Website, Descrição                           │
+│ └── Upload de Logo                                          │
+│                                                             │
+│ Step 2: 🎯 Tipo de Negócio                                  │
+│ ├── 📢 Agência de Marketing                                 │
+│ │   └── Módulos: Marketing AI, Content AI, Analytics AI    │
+│ ├── 🎧 Centro de Suporte                                    │
+│ │   └── Módulos: Support AI, Chatbot AI, Knowledge AI     │
+│ └── ₿ Mesa de Trading                                       │
+│     └── Módulos: Trading AI, Risk AI, Market AI           │
+│                                                             │
+│ Step 3: 💎 Seleção de Plano                                 │
+│ ├── Starter ($29/mês) - 2 usuários, 1K IA/mês            │
+│ ├── Professional ($99/mês) - 10 usuários, 10K IA/mês     │
+│ └── Enterprise ($299/mês) - Ilimitado, 100K IA/mês       │
+│                                                             │
+│ Step 4: 🤖 Configuração de IA                               │
+│ ├── Provedor Principal (OpenAI/Anthropic)                  │
+│ ├── Provedor Backup                                        │
+│ ├── Modelos por Módulo                                     │
+│ └── Limites e Cotas                                        │
+│                                                             │
+│ Step 5: 🧩 Seleção de Módulos                               │
+│ ├── Módulos Inclusos no Plano                              │
+│ ├── Módulos Opcionais                                      │
+│ └── Configurações Específicas                              │
+│                                                             │
+│ Step 6: 🔗 Configuração de Integrações                      │
+│ ├── Integrações Recomendadas por Tipo                      │
+│ ├── Auto-configuração Disponível                           │
+│ └── Configuração Manual                                    │
+│                                                             │
+│ Step 7: 👥 Convite de Equipe                                │
+│ ├── Admin Principal                                        │
+│ ├── Membros da Equipe                                      │
+│ └── Definição de Roles                                     │
+│                                                             │
+│ Step 8: ✅ Revisão e Confirmação                            │
+│ ├── Resumo Completo                                        │
+│ ├── Termos de Serviço                                      │
+│ └── Configuração de Billing                                │
+└─────────────────────────────────────────────────────────────┘
