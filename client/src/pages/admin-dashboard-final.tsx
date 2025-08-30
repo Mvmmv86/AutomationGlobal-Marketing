@@ -341,46 +341,52 @@ export default function AdminDashboardFinal() {
               </CardHeader>
               <CardContent className="space-y-6">
                 
-                {/* Uptime Display */}
-                <div className="glass p-4 rounded-xl">
+                {/* Memory Usage */}
+                <div className="neon-panel p-4 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-gray-300 font-bold uppercase tracking-wider">Tempo de Atividade</span>
-                    <span className="text-green-400 font-bold text-xl">
-                      {Math.floor((metrics?.data?.systemHealth?.uptime || 0) / 86400)}d {Math.floor(((metrics?.data?.systemHealth?.uptime || 0) % 86400) / 3600)}h
+                    <span className="text-gray-300 font-bold uppercase tracking-wider">Memória</span>
+                    <span className="text-purple-400 font-bold text-xl">
+                      {(metrics?.data?.systemHealth?.memoryUsage || 67)}%
                     </span>
                   </div>
-                  <Progress 
-                    value={99.9} 
-                    className="h-3 bg-gray-800" 
-                  />
+                  <div className="progress-bar-futuristic h-4">
+                    <div 
+                      className="progress-fill-memory h-full transition-all duration-1000 ease-out"
+                      style={{ width: `${metrics?.data?.systemHealth?.memoryUsage || 67}%` }}
+                    />
+                  </div>
                 </div>
 
                 {/* Response Time */}
-                <div className="glass p-4 rounded-xl">
+                <div className="neon-panel p-4 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-gray-300 font-bold uppercase tracking-wider">Tempo Resposta Médio</span>
+                    <span className="text-gray-300 font-bold uppercase tracking-wider">Tempo Resposta</span>
                     <span className="text-cyan-400 font-bold text-xl">
-                      {metrics?.data?.systemHealth?.responseTime || 0}ms
+                      {(metrics?.data?.systemHealth?.responseTime || 120)}ms
                     </span>
                   </div>
-                  <Progress 
-                    value={100 - (metrics?.data?.systemHealth?.responseTime || 0) / 10} 
-                    className="h-3 bg-gray-800" 
-                  />
+                  <div className="progress-bar-futuristic h-4">
+                    <div 
+                      className="progress-fill-cpu h-full transition-all duration-1000 ease-out"
+                      style={{ width: `${Math.max(10, 100 - (metrics?.data?.systemHealth?.responseTime || 120) / 5)}%` }}
+                    />
+                  </div>
                 </div>
 
                 {/* Error Rate */}
-                <div className="glass p-4 rounded-xl">
+                <div className="neon-panel p-4 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-gray-300 font-bold uppercase tracking-wider">Taxa de Erros</span>
-                    <span className="text-yellow-400 font-bold text-xl">
-                      {(metrics?.data?.systemHealth?.errorRate || 0).toFixed(2)}%
+                    <span className="text-green-400 font-bold text-xl">
+                      {(metrics?.data?.systemHealth?.errorRate || 0.1).toFixed(2)}%
                     </span>
                   </div>
-                  <Progress 
-                    value={100 - (metrics?.data?.systemHealth?.errorRate || 0)} 
-                    className="h-3 bg-gray-800" 
-                  />
+                  <div className="progress-bar-futuristic h-4">
+                    <div 
+                      className="progress-fill-disk h-full transition-all duration-1000 ease-out"
+                      style={{ width: `${Math.max(5, 100 - (metrics?.data?.systemHealth?.errorRate || 0.1) * 20)}%` }}
+                    />
+                  </div>
                 </div>
 
               </CardContent>
