@@ -55,21 +55,21 @@
   - [x] Data isolation via organizationId
   - [x] Tenant switching dinâmico funcional
   - [!] **IMPORTANTE**: Sempre usar Drizzle ORM para conexões DB (porta 6543 Supabase pooler funciona no Replit)
-- [ ] Task 2.4: Gestão de Permissões Granular
-  - [ ] Roles hierarchy implementado
-  - [ ] Permissions system robusto
-  - [ ] Permission checking automático
-  - [ ] Frontend permission sync
-- [ ] Task 2.5: API Rate Limiting e Throttling
-  - [ ] Rate limits por usuário/org
-  - [ ] Sliding window algorithm
-  - [ ] Different limits per endpoint
-  - [ ] Error handling 429
-- [ ] Task 2.6: Logging e Monitoramento Completo
-  - [ ] Structured logging implementado
-  - [ ] Performance metrics coletadas
-  - [ ] Health checks funcionando
-  - [ ] Audit trail completo
+- [x] Task 2.4: Gestão de Permissões Granular
+  - [x] Roles hierarchy implementado
+  - [x] Permissions system robusto
+  - [x] Permission checking automático
+  - [x] Frontend permission sync
+- [x] Task 2.5: API Rate Limiting e Throttling
+  - [x] Rate limits por usuário/org
+  - [x] Sliding window algorithm
+  - [x] Different limits per endpoint
+  - [x] Error handling 429
+- [x] Task 2.6: Logging e Monitoramento Completo
+  - [x] Structured logging implementado
+  - [x] Performance metrics coletadas
+  - [x] Health checks funcionando
+  - [x] Audit trail completo
 
 ## FASE 2: ADMIN GLOBAL COMPLETO (Semanas 3-4)
 

@@ -1326,6 +1326,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoints
+  const adminRoutes = (await import('./routes/admin')).default;
+  app.use('/api/admin', adminRoutes);
+
   const httpServer = createServer(app);
   return httpServer;
 }
