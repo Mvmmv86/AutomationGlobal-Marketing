@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Building2, 
   Users, 
@@ -24,6 +24,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 interface OrganizationData {
   id: string;
@@ -45,10 +52,37 @@ interface ApiResponse {
   message?: string;
 }
 
+// Form schemas
+const createOrgSchema = z.object({
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  plan: z.enum(['starter', 'professional', 'enterprise'], {
+    required_error: 'Selecione um plano'
+  }),
+  description: z.string().optional(),
+});
+
+const editOrgSchema = z.object({
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  plan: z.enum(['starter', 'professional', 'enterprise']),
+  status: z.enum(['active', 'inactive', 'trial', 'suspended']),
+  description: z.string().optional(),
+});
+
+type CreateOrgForm = z.infer<typeof createOrgSchema>;
+type EditOrgForm = z.infer<typeof editOrgSchema>;
+
 export default function OrganizationsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationData | null>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch organizations from API
   const { data: response, isLoading } = useQuery<ApiResponse>({
@@ -102,6 +136,137 @@ export default function OrganizationsManagement() {
     );
   };
 
+  // Form handlers
+  const createForm = useForm<CreateOrgForm>({
+    resolver: zodResolver(createOrgSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      plan: 'starter',
+      description: '',
+    },
+  });
+
+  const editForm = useForm<EditOrgForm>({
+    resolver: zodResolver(editOrgSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      plan: 'starter',
+      status: 'active',
+      description: '',
+    },
+  });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: async (data: CreateOrgForm) => {
+      const response = await fetch('/api/admin/organizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to create organization');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/organizations-simple'] });
+      setShowCreateModal(false);
+      createForm.reset();
+      toast({
+        title: 'Sucesso!',
+        description: 'Organização criada com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: EditOrgForm }) => {
+      const response = await fetch(`/api/admin/organizations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update organization');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/organizations-simple'] });
+      setShowEditModal(false);
+      setSelectedOrg(null);
+      editForm.reset();
+      toast({
+        title: 'Sucesso!',
+        description: 'Organização atualizada com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/organizations/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete organization');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/organizations-simple'] });
+      toast({
+        title: 'Sucesso!',
+        description: 'Organização removida com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCreateSubmit = (data: CreateOrgForm) => {
+    createMutation.mutate(data);
+  };
+
+  const handleEditSubmit = (data: EditOrgForm) => {
+    if (!selectedOrg) return;
+    updateMutation.mutate({ id: selectedOrg.id, data });
+  };
+
+  const handleEditClick = (org: OrganizationData) => {
+    setSelectedOrg(org);
+    editForm.reset({
+      name: org.name,
+      email: org.email || '',
+      plan: (org.planType?.toLowerCase() || 'starter') as any,
+      status: org.status as any,
+      description: '',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta organização?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 matrix-grid">
       <div className="relative z-10 p-8 space-y-8">
@@ -117,10 +282,127 @@ export default function OrganizationsManagement() {
             </p>
           </div>
           
-          <Button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 btn-glow">
-            <Plus className="h-5 w-5 mr-2" />
-            Nova Organização
-          </Button>
+          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 btn-glow">
+                <Plus className="h-5 w-5 mr-2" />
+                Nova Organização
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass-dark max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-white">Nova Organização</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Crie uma nova organização na plataforma.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...createForm}>
+                <form onSubmit={createForm.handleSubmit(handleCreateSubmit)} className="space-y-4">
+                  <FormField
+                    control={createForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Nome</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Digite o nome da organização" 
+                            className="glass-dark" 
+                            {...field}
+                            data-testid="input-org-name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={createForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="email@organizacao.com" 
+                            type="email"
+                            className="glass-dark" 
+                            {...field}
+                            data-testid="input-org-email"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={createForm.control}
+                    name="plan"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Plano</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="glass-dark" data-testid="select-org-plan">
+                              <SelectValue placeholder="Selecione o plano" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="glass-dark">
+                            <SelectItem value="starter">Starter</SelectItem>
+                            <SelectItem value="professional">Professional</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={createForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Descrição (opcional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Descrição da organização..." 
+                            className="glass-dark resize-none" 
+                            rows={3}
+                            {...field}
+                            data-testid="textarea-org-description"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowCreateModal(false)}
+                      className="flex-1 glass-dark"
+                      data-testid="button-cancel-create"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createMutation.isPending}
+                      className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
+                      data-testid="button-submit-create"
+                    >
+                      {createMutation.isPending ? 'Criando...' : 'Criar'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats Cards */}
@@ -366,11 +648,19 @@ export default function OrganizationsManagement() {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Visualizar
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-gray-300 hover:text-blue-400">
+                              <DropdownMenuItem 
+                                className="text-gray-300 hover:text-blue-400 cursor-pointer"
+                                onClick={() => handleEditClick(org)}
+                                data-testid={`button-edit-${org.id}`}
+                              >
                                 <Edit className="h-4 w-4 mr-2" />
                                 Editar
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-gray-300 hover:text-red-400">
+                              <DropdownMenuItem 
+                                className="text-gray-300 hover:text-red-400 cursor-pointer"
+                                onClick={() => handleDeleteClick(org.id)}
+                                data-testid={`button-delete-${org.id}`}
+                              >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Excluir
                               </DropdownMenuItem>
@@ -394,6 +684,149 @@ export default function OrganizationsManagement() {
           </CardContent>
         </Card>
 
+        {/* Edit Organization Modal */}
+        <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+          <DialogContent className="glass-dark max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Editar Organização</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Atualize as informações da organização.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300">Nome</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Digite o nome da organização" 
+                          className="glass-dark" 
+                          {...field}
+                          data-testid="input-edit-org-name"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300">Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="email@organizacao.com" 
+                          type="email"
+                          className="glass-dark" 
+                          {...field}
+                          data-testid="input-edit-org-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="plan"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300">Plano</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="glass-dark" data-testid="select-edit-org-plan">
+                            <SelectValue placeholder="Selecione o plano" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="glass-dark">
+                          <SelectItem value="starter">Starter</SelectItem>
+                          <SelectItem value="professional">Professional</SelectItem>
+                          <SelectItem value="enterprise">Enterprise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300">Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="glass-dark" data-testid="select-edit-org-status">
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="glass-dark">
+                          <SelectItem value="active">Ativo</SelectItem>
+                          <SelectItem value="inactive">Inativo</SelectItem>
+                          <SelectItem value="trial">Trial</SelectItem>
+                          <SelectItem value="suspended">Suspenso</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-300">Descrição (opcional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Descrição da organização..." 
+                          className="glass-dark resize-none" 
+                          rows={3}
+                          {...field}
+                          data-testid="textarea-edit-org-description"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setSelectedOrg(null);
+                    }}
+                    className="flex-1 glass-dark"
+                    data-testid="button-cancel-edit"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={updateMutation.isPending}
+                    className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
+                    data-testid="button-submit-edit"
+                  >
+                    {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </div>
