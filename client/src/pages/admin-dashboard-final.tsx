@@ -130,7 +130,7 @@ export default function AdminDashboardFinal() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             {/* Organizations Metric */}
-            <Card className="glass border-gray-700 card-hover neon-blue relative overflow-hidden">
+            <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 to-blue-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Organizações</CardTitle>
@@ -165,7 +165,7 @@ export default function AdminDashboardFinal() {
             </Card>
 
             {/* AI Usage Metric */}
-            <Card className="glass border-gray-700 card-hover relative overflow-hidden">
+            <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/10 to-orange-600/10"></div>
               <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
@@ -201,7 +201,7 @@ export default function AdminDashboardFinal() {
             </Card>
 
             {/* Users Metric */}
-            <Card className="glass border-gray-700 card-hover neon-cyan relative overflow-hidden">
+            <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-pink-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Total Usuários</CardTitle>
@@ -236,7 +236,7 @@ export default function AdminDashboardFinal() {
             </Card>
 
             {/* Sessions Metric */}
-            <Card className="glass border-gray-700 card-hover relative overflow-hidden">
+            <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 to-emerald-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Sessões Ativas</CardTitle>
@@ -271,7 +271,7 @@ export default function AdminDashboardFinal() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Organization Distribution Chart */}
-            <Card className="glass border-gray-700 card-hover relative overflow-hidden">
+            <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-purple-400"></div>
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-white flex items-center gap-4">
@@ -329,7 +329,7 @@ export default function AdminDashboardFinal() {
             </Card>
 
             {/* System Performance Indicators */}
-            <Card className="glass border-gray-700 card-hover relative overflow-hidden">
+            <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-400"></div>
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-white flex items-center gap-4">
@@ -393,7 +393,7 @@ export default function AdminDashboardFinal() {
     // Placeholder for other tabs
     return (
       <div className="space-y-8 fade-in">
-        <Card className="glass border-gray-700">
+        <Card className="glass-card neon-panel">
           <CardHeader>
             <CardTitle className="text-2xl font-bold gradient-text">
               {selectedTab === 'organizations' && 'Gestão de Organizações'}
@@ -424,7 +424,7 @@ export default function AdminDashboardFinal() {
         {/* SIDEBAR HEADER */}
         <div className="p-8 border-b border-cyan-400/20">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center icon-container-futuristic neon-cyan">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center icon-container-futuristic neon-panel">
               <Brain className="w-7 h-7 icon-silver-neon ai-pulse" />
             </div>
             <div>
@@ -434,7 +434,7 @@ export default function AdminDashboardFinal() {
           </div>
           
           {/* LIVE STATUS */}
-          <div className="glass p-4 rounded-xl neon-blue">
+          <div className="neon-panel p-4 rounded-xl">
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${autoRefresh ? 'bg-green-400 status-online animate-pulse' : 'bg-red-400 status-offline'}`}></div>
               <span className="text-sm font-bold uppercase tracking-wider">
@@ -477,8 +477,8 @@ export default function AdminDashboardFinal() {
             {/* Auto Refresh Toggle */}
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4 card-hover ${
-                autoRefresh ? 'neon-blue' : ''
+              className={`w-full p-4 rounded-xl neon-panel transition-all duration-300 flex items-center gap-4 card-hover ${
+                autoRefresh ? 'neon-cyan' : ''
               }`}
               data-testid="toggle-auto-refresh"
             >
@@ -493,7 +493,7 @@ export default function AdminDashboardFinal() {
             {/* Manual Refresh */}
             <button
               onClick={() => refetchMetrics()}
-              className="w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4 card-hover mt-3 btn-glow"
+              className="w-full p-4 rounded-xl neon-panel transition-all duration-300 flex items-center gap-4 card-hover mt-3 btn-glow"
               data-testid="manual-refresh"
             >
               <div className="p-2 rounded-lg icon-container-futuristic border-cyan-500">
@@ -506,7 +506,7 @@ export default function AdminDashboardFinal() {
 
         {/* SIDEBAR FOOTER */}
         <div className="p-6 border-t border-cyan-400/20">
-          <div className="glass p-4 rounded-xl text-center">
+          <div className="neon-panel p-4 rounded-xl text-center">
             <Globe className="w-6 h-6 text-cyan-400 mx-auto mb-2 ai-pulse" />
             <p className="text-xs text-gray-400">Task 3.1 - Dashboard Admin</p>
             <p className="text-xs text-cyan-400 font-bold">Global Principal</p>
@@ -530,7 +530,7 @@ export default function AdminDashboardFinal() {
             </div>
             
             {/* SYSTEM STATUS INDICATOR */}
-            <div className="glass p-6 rounded-xl neon-blue">
+            <div className="neon-panel p-6 rounded-xl">
               <div className="flex items-center gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-cyan-400">{metrics?.data?.organizations?.total || 0}</div>
