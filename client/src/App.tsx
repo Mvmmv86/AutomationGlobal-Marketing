@@ -19,6 +19,7 @@ import AdminDashboard from "@/pages/admin-dashboard-final";
 import AdminDashboardComplete from "@/pages/admin-dashboard-complete";
 import OrganizationsManagement from "@/pages/organizations-management-simple";
 import OrganizationsManagementAdvanced from "@/pages/organizations-management-advanced";
+import OrganizationsManagementComplete from "@/pages/organizations-management-complete";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,8 +40,9 @@ function Router() {
       <Route path="/rate-limit-test" component={RateLimitTest} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/admin-dashboard-complete" component={AdminDashboardComplete} />
-      <Route path="/organizations" component={OrganizationsManagement} />
+      <Route path="/organizations" component={OrganizationsManagementComplete} />
       <Route path="/organizations-advanced" component={OrganizationsManagementAdvanced} />
+      <Route path="/organizations-simple" component={OrganizationsManagement} />
       <Route component={NotFound} />
     </Switch>
   );
