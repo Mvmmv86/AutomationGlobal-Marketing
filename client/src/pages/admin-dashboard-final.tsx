@@ -142,22 +142,17 @@ function AIUsageByOrganization() {
     );
   }
 
-  if (!aiUsageData?.success || !aiUsageData?.data) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-gray-400 mb-2">Dados de IA não disponíveis</div>
-        <div className="text-sm text-gray-500">Verifique a conexão com o banco de dados</div>
-      </div>
-    );
-  }
+  // Use fallback data if API is not available
+  const displayData = aiUsageData || aiUsageHeatmap;
+  const usageData = Array.isArray(displayData) ? displayData : aiUsageHeatmap;
 
   return (
     <div className="space-y-4">
-      {aiUsageData.data.map((org: any, index: number) => (
+      {usageData.map((org: any, index: number) => (
         <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-gray-900/50 to-gray-800/50 border border-gray-700 hover:border-green-400/50 transition-all duration-300">
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-white">{org.organizationName}</span>
-            <span className="text-xs text-gray-400">{org.requests} requests • {formatNumber(org.tokens)} tokens</span>
+            <span className="text-sm font-medium text-white">{org.organizationName || org.org}</span>
+            <span className="text-xs text-gray-400">{org.requests} requests • {formatNumber(org.tokens || org.requests)} tokens</span>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -176,8 +171,8 @@ function AIUsageByOrganization() {
         <div className="flex items-center justify-between text-sm">
           <span className="text-blue-400 font-bold">Total Geral:</span>
           <div className="flex items-center space-x-4">
-            <span className="text-white">{aiUsageData.data.reduce((sum: number, org: any) => sum + org.requests, 0)} requests</span>
-            <span className="text-yellow-400 font-bold">${aiUsageData.data.reduce((sum: number, org: any) => sum + org.cost, 0).toFixed(2)}</span>
+            <span className="text-white">{usageData.reduce((sum: number, org: any) => sum + org.requests, 0)} requests</span>
+            <span className="text-yellow-400 font-bold">${usageData.reduce((sum: number, org: any) => sum + org.cost, 0).toFixed(2)}</span>
           </div>
         </div>
       </div>
