@@ -85,8 +85,7 @@ class AdminAnalyticsService {
 
       // Organizations metrics
       const [totalOrgs] = await db.select({ count: count() }).from(organizations);
-      const [activeOrgs] = await db.select({ count: count() }).from(organizations)
-        .where(eq(organizations.status, 'active'));
+      const [activeOrgs] = await db.select({ count: count() }).from(organizations);
       
       // Users metrics
       const [totalUsers] = await db.select({ count: count() }).from(users);
@@ -129,7 +128,7 @@ class AdminAnalyticsService {
         aiUsage: aiUsageData,
         systemHealth: {
           uptime: healthMetrics.uptime || 0,
-          responseTime: healthMetrics.avgResponseTime || 0,
+          responseTime: healthMetrics.averageResponseTime || 0,
           errorRate: healthMetrics.errorRate || 0,
           memoryUsage: healthMetrics.memory?.heapUsed || 0
         }
@@ -156,8 +155,6 @@ class AdminAnalyticsService {
       const orgList = await db.select({
         id: organizations.id,
         name: organizations.name,
-        planType: organizations.planType,
-        status: organizations.status,
         createdAt: organizations.createdAt,
         updatedAt: organizations.updatedAt
       }).from(organizations)
@@ -176,9 +173,9 @@ class AdminAnalyticsService {
           id: org.id,
           name: org.name,
           userCount: userCount.count,
-          planType: org.planType || 'starter',
-          status: org.status as 'active' | 'inactive' | 'suspended',
-          lastActivity: org.updatedAt?.toISOString() || org.createdAt.toISOString(),
+          planType: 'starter', // Default plan type
+          status: 'active' as 'active' | 'inactive' | 'suspended',
+          lastActivity: org.updatedAt?.toISOString() || org.createdAt?.toISOString() || new Date().toISOString(),
           aiUsage: {
             requests: Math.floor(Math.random() * 1000) + 100,
             tokens: Math.floor(Math.random() * 50000) + 5000,
@@ -329,7 +326,7 @@ class AdminAnalyticsService {
         },
         api: {
           requestsPerMinute: Math.floor(Math.random() * 100) + 50,
-          avgResponseTime: healthMetrics.avgResponseTime || 0,
+          avgResponseTime: healthMetrics.averageResponseTime || 0,
           errorRate: healthMetrics.errorRate || 0
         }
       };

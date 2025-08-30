@@ -15,7 +15,7 @@ import AuthTest from "@/pages/auth-test";
 import MultiTenantTest from "@/pages/multi-tenant-test";
 import PermissionsTest from "@/pages/permissions-test";
 import RateLimitTest from "@/pages/rate-limit-test";
-import AdminDashboard from "@/pages/admin-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard-v2";
 import NotFound from "@/pages/not-found";
 
 function Router() {

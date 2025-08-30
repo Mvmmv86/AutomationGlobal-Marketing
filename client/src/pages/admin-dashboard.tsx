@@ -101,12 +101,25 @@ interface SystemStatus {
   };
 }
 
+interface MetricsResponse {
+  success: boolean;
+  message: string;
+  data: GlobalMetrics;
+  timestamp: string;
+}
+
+interface PieChartEntry {
+  name: string;
+  value: number;
+  color: string;
+}
+
 export default function AdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
 
   // Fetch global metrics
-  const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery({
+  const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery<MetricsResponse>({
     queryKey: ['/api/admin/metrics'],
     refetchInterval: autoRefresh ? refreshInterval : false,
     retry: false
@@ -200,158 +213,209 @@ export default function AdminDashboard() {
     error: '#ef4444'
   };
 
-  const pieChartData = metrics?.success ? [
+  const pieChartData: PieChartEntry[] = metrics?.success ? [
     { name: 'Active Orgs', value: metrics.data.organizations.active, color: chartColors.success },
     { name: 'Inactive Orgs', value: metrics.data.organizations.inactive, color: chartColors.error }
   ] : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-6 matrix-grid">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              Admin Global Dashboard
+            <h1 className="text-5xl font-bold gradient-text ai-pulse">
+              AUTOMATION GLOBAL v4.0
             </h1>
-            <p className="text-slate-300 mt-2">
-              Task 3.1 - Comprehensive system analytics and real-time monitoring
+            <h2 className="text-2xl font-semibold text-cyan-400 mt-2">Admin Global Dashboard</h2>
+            <p className="text-gray-400 mt-2 flex items-center gap-2">
+              <Brain className="w-4 h-4 text-cyan-400" />
+              Task 3.1 - AI-Powered System Analytics & Real-time Monitoring
             </p>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${autoRefresh ? 'bg-green-400 animate-pulse' : 'bg-slate-400'}`} />
-              <span className="text-sm text-slate-300">
-                {autoRefresh ? 'Live' : 'Paused'}
+            <div className="glass p-3 rounded-lg flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${autoRefresh ? 'bg-green-400 neon-cyan animate-pulse' : 'bg-gray-500'}`} />
+              <span className="text-sm text-gray-300 font-medium">
+                {autoRefresh ? 'LIVE MONITORING' : 'PAUSED'}
               </span>
             </div>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
+              className={`px-6 py-3 glass rounded-lg text-sm transition-all btn-glow font-medium ${
+                autoRefresh ? 'text-red-400 hover:text-red-300' : 'text-green-400 hover:text-green-300'
+              }`}
               data-testid="button-toggle-refresh"
             >
-              {autoRefresh ? 'Pause' : 'Resume'}
+              {autoRefresh ? 'PAUSE' : 'RESUME'}
             </button>
             <button
               onClick={() => {
                 refetchMetrics();
               }}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-sm transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg text-sm transition-all btn-glow flex items-center gap-2 font-medium neon-blue"
               data-testid="button-manual-refresh"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              REFRESH NOW
             </button>
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-slate-800 border-slate-700">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Overview
+        <Tabs defaultValue="overview" className="space-y-8">
+          <TabsList className="glass border-gray-700 p-1 rounded-xl">
+            <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600 data-[state=active]:text-white px-6 py-3 rounded-lg transition-all">
+              <BarChart3 className="w-5 h-5" />
+              OVERVIEW
             </TabsTrigger>
-            <TabsTrigger value="organizations" className="flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              Organizations
+            <TabsTrigger value="organizations" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white px-6 py-3 rounded-lg transition-all">
+              <Building2 className="w-5 h-5" />
+              ORGANIZATIONS
             </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2">
-              <Server className="w-4 h-4" />
-              System Health
+            <TabsTrigger value="system" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white px-6 py-3 rounded-lg transition-all">
+              <Server className="w-5 h-5" />
+              SYSTEM HEALTH
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <LineChart className="w-4 h-4" />
-              Analytics
+            <TabsTrigger value="analytics" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-orange-600 data-[state=active]:text-white px-6 py-3 rounded-lg transition-all">
+              <LineChart className="w-5 h-5" />
+              AI ANALYTICS
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-8 fade-in">
             {/* Key Metrics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Organizations Metric */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-300">Organizations</CardTitle>
-                  <Building2 className="h-4 w-4 text-cyan-400" />
+              <Card className="glass border-gray-700 card-hover neon-blue">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-300 uppercase tracking-wider">Organizations</CardTitle>
+                  <div className="p-2 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg">
+                    <Building2 className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {metricsLoading ? '...' : formatNumber(metrics?.data?.organizations?.total || 0)}
+                  <div className="text-3xl font-bold text-white mb-2">
+                    {metricsLoading ? (
+                      <div className="animate-pulse text-gray-400">...</div>
+                    ) : (
+                      <span className="gradient-text">{formatNumber(metrics?.data?.organizations?.total || 0)}</span>
+                    )}
                   </div>
-                  <div className="flex items-center text-xs text-slate-400 mt-1">
+                  <div className="flex items-center text-xs text-gray-400 mt-2">
                     <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
-                    {metrics?.data?.organizations?.growthRate || 0}% from last month
+                    <span className="text-green-400 font-medium">{metrics?.data?.organizations?.growthRate || 0}%</span>
+                    <span className="ml-1">from last month</span>
                   </div>
-                  <div className="mt-2 text-xs">
-                    <span className="text-green-400">{metrics?.data?.organizations?.active || 0} active</span>
-                    <span className="text-slate-400 mx-2">•</span>
-                    <span className="text-red-400">{metrics?.data?.organizations?.inactive || 0} inactive</span>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                      <span className="text-green-400 font-medium">{metrics?.data?.organizations?.active || 0} active</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                      <span className="text-red-400 font-medium">{metrics?.data?.organizations?.inactive || 0} inactive</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Users Metric */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-300">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-purple-400" />
+              <Card className="glass border-gray-700 card-hover neon-cyan">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-300 uppercase tracking-wider">Total Users</CardTitle>
+                  <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {metricsLoading ? '...' : formatNumber(metrics?.data?.users?.total || 0)}
+                  <div className="text-3xl font-bold text-white mb-2">
+                    {metricsLoading ? (
+                      <div className="animate-pulse text-gray-400">...</div>
+                    ) : (
+                      <span className="gradient-text">{formatNumber(metrics?.data?.users?.total || 0)}</span>
+                    )}
                   </div>
-                  <div className="flex items-center text-xs text-slate-400 mt-1">
+                  <div className="flex items-center text-xs text-gray-400 mt-2">
                     <TrendingUp className="h-3 w-3 text-green-400 mr-1" />
-                    {metrics?.data?.users?.growthRate || 0}% growth
+                    <span className="text-green-400 font-medium">{metrics?.data?.users?.growthRate || 0}%</span>
+                    <span className="ml-1">growth rate</span>
                   </div>
-                  <div className="mt-2 text-xs">
-                    <span className="text-green-400">{metrics?.data?.users?.active || 0} active</span>
-                    <span className="text-slate-400 mx-2">•</span>
-                    <span className="text-cyan-400">{metrics?.data?.users?.lastWeek || 0} new this week</span>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                      <span className="text-green-400 font-medium">{metrics?.data?.users?.active || 0} active</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
+                      <span className="text-cyan-400 font-medium">{metrics?.data?.users?.lastWeek || 0} new week</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* AI Usage Metric */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-300">AI Requests</CardTitle>
-                  <Brain className="h-4 w-4 text-yellow-400" />
+              <Card className="glass border-gray-700 card-hover relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/10 to-orange-600/10"></div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative z-10">
+                  <CardTitle className="text-sm font-medium text-gray-300 uppercase tracking-wider">AI Requests</CardTitle>
+                  <div className="p-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg">
+                    <Brain className="h-5 w-5 text-white ai-pulse" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {metricsLoading ? '...' : formatNumber(metrics?.data?.aiUsage?.totalRequests || 0)}
+                <CardContent className="relative z-10">
+                  <div className="text-3xl font-bold text-white mb-2">
+                    {metricsLoading ? (
+                      <div className="animate-pulse text-gray-400">...</div>
+                    ) : (
+                      <span className="text-yellow-400">{formatNumber(metrics?.data?.aiUsage?.totalRequests || 0)}</span>
+                    )}
                   </div>
-                  <div className="flex items-center text-xs text-slate-400 mt-1">
+                  <div className="flex items-center text-xs text-gray-400 mt-2">
                     <Activity className="h-3 w-3 text-yellow-400 mr-1" />
-                    {metrics?.data?.aiUsage?.avgResponseTime || 0}ms avg response
+                    <span className="text-yellow-400 font-medium">{metrics?.data?.aiUsage?.avgResponseTime || 0}ms</span>
+                    <span className="ml-1">avg response</span>
                   </div>
-                  <div className="mt-2 text-xs">
-                    <span className="text-yellow-400">{formatNumber(metrics?.data?.aiUsage?.totalTokens || 0)} tokens</span>
-                    <span className="text-slate-400 mx-2">•</span>
-                    <span className="text-green-400">{formatCurrency(metrics?.data?.aiUsage?.costToday || 0)} today</span>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                      <span className="text-yellow-400 font-medium">{formatNumber(metrics?.data?.aiUsage?.totalTokens || 0)} tokens</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                      <span className="text-green-400 font-medium">{formatCurrency(metrics?.data?.aiUsage?.costToday || 0)} today</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Sessions Metric */}
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-300">Active Sessions</CardTitle>
-                  <Activity className="h-4 w-4 text-green-400" />
+              <Card className="glass border-gray-700 card-hover">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium text-gray-300 uppercase tracking-wider">Active Sessions</CardTitle>
+                  <div className="p-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg">
+                    <Activity className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-white">
-                    {metricsLoading ? '...' : formatNumber(metrics?.data?.sessions?.active || 0)}
+                  <div className="text-3xl font-bold text-white mb-2">
+                    {metricsLoading ? (
+                      <div className="animate-pulse text-gray-400">...</div>
+                    ) : (
+                      <span className="text-green-400">{formatNumber(metrics?.data?.sessions?.active || 0)}</span>
+                    )}
                   </div>
-                  <div className="flex items-center text-xs text-slate-400 mt-1">
+                  <div className="flex items-center text-xs text-gray-400 mt-2">
                     <Wifi className="h-3 w-3 text-green-400 mr-1" />
-                    {metrics?.data?.sessions?.avgDuration || 0}min avg duration
+                    <span className="text-green-400 font-medium">{metrics?.data?.sessions?.avgDuration || 0}min</span>
+                    <span className="ml-1">avg duration</span>
                   </div>
-                  <div className="mt-2 text-xs">
-                    <span className="text-green-400">{formatNumber(metrics?.data?.sessions?.total || 0)} total sessions</span>
+                  <div className="mt-3 text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                      <span className="text-green-400 font-medium">{formatNumber(metrics?.data?.sessions?.total || 0)} total sessions</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
