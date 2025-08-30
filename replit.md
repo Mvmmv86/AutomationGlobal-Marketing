@@ -6,6 +6,133 @@ Automation Global is an enterprise-grade AI automation platform designed to stre
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Design System - Automation Global v4.0 Futuristic UI
+
+### Core Design Philosophy
+O design system foi baseado na referência visual do Freepik (elementos UI futurísticos com fundo escuro e efeitos neon azul/ciano), criando uma experiência imersiva e tecnológica que reflete a natureza avançada da plataforma de automação com IA.
+
+### Color Palette
+**Primary Background Colors:**
+- Base: `#0a0e1a` (azul escuro profundo)
+- Secondary: `#0f172a` (azul escuro médio)
+- Accent: `#1e293b` (azul escuro claro)
+
+**Neon Colors:**
+- Primary Cyan: `#00f5ff` (ciano brilhante)
+- Secondary Blue: `#007bff` (azul médio)
+- Accent Purple: `#8b5cf6` (roxo vibrante)
+- Success Green: `#10b981` (verde esmeralda)
+
+**Text Colors:**
+- Primary: `#ffffff` (branco puro)
+- Secondary: `#e2e8f0` (cinza claro)
+- Muted: `#64748b` (cinza médio)
+
+### Background System
+**Matrix Grid Effect:**
+- Grid futurístico com linhas neon ciano/azul
+- Gradientes radiais sutis para profundidade
+- Animações de pulse e scan
+- Efeitos diagonais para dinamismo
+
+**Implementation:**
+```css
+.matrix-grid {
+  background: radial gradients + linear gradients
+  position: relative
+  overflow: hidden
+}
+```
+
+### Component Styles
+
+**Glass Morphism:**
+- `.glass-card`: Cards principais com blur e transparência
+- `.glass`: Elementos secundários com menos opacidade
+- `.glass-dark`: Containers de alta importância
+
+**Neon Panels:**
+- `.neon-panel`: Estilo padrão para todos os containers
+- Bordas brilhantes com gradientes
+- Sombras internas e externas
+- Efeitos de profundidade com pseudo-elementos
+
+**Progress Bars Futurísticas:**
+- `.progress-bar-futuristic`: Container base
+- `.progress-fill-cpu`: Preenchimento ciano
+- `.progress-fill-memory`: Preenchimento roxo
+- `.progress-fill-disk`: Preenchimento verde
+- Animação de scanning futurístico
+
+### Icon System
+**Silver Neon Icons:**
+- `.icon-silver-neon`: Ícones com brilho prateado
+- Efeitos de drop-shadow múltiplos
+- Hover com scale e intensificação
+- Estados ativos com cor ciano
+
+**Icon Containers:**
+- `.icon-container-futuristic`: Containers padronizados
+- Gradientes metálicos
+- Bordas iluminadas
+- Estados de navegação ativa
+
+### Typography
+**Font Stack:** 'Inter', 'Orbitron', system-ui, sans-serif
+**Text Effects:**
+- `.gradient-text`: Gradientes ciano para roxo
+- Tracking amplo para títulos (tracking-wider)
+- Uppercase para labels importantes
+
+### Animation System
+**Keyframes Principais:**
+- `grid-pulse`: Pulsação do grid de fundo (6s)
+- `diagonal-pulse`: Efeitos diagonais (8s)
+- `sidebar-pulse`: Borda lateral da sidebar (3s)
+- `progress-scan`: Scanning das barras de progresso (2s)
+- `ai-pulse`: Pulsação para elementos IA
+
+### Sidebar Design
+**Estrutura:**
+- `.sidebar-glow`: Gradientes verticais complexos
+- Borda direita neon pulsante
+- Backdrop blur intenso
+- Sombras de profundidade
+
+### Interactive Elements
+**Buttons:**
+- `.btn-glow`: Botões com efeito neon
+- Estados hover com transformações
+- Transições suaves (0.3s ease)
+
+**Cards:**
+- `.card-hover`: Efeitos de hover padronizados
+- Elevação e brilho intensificado
+- Transformações sutis (translateY)
+
+### Layout Principles
+1. **Hierarquia Visual:** Uso de brilho e opacidade para importância
+2. **Profundidade:** Camadas com blur e sombras
+3. **Movimento:** Animações sutis e transições fluidas
+4. **Contraste:** Texto claro sobre fundos escuros
+5. **Consistência:** Padrões repetidos em todos os componentes
+
+### Usage Guidelines
+- **Sempre** usar `.neon-panel` para containers principais
+- **Sempre** aplicar `.icon-silver-neon` em ícones
+- **Sempre** usar `.glass-card` para cards de conteúdo
+- **Sempre** incluir efeitos de hover e transições
+- **Sempre** manter a hierarquia de cores neon
+
+### Technical Implementation
+- CSS Variables para cores consistentes
+- Backdrop-filter para efeitos de blur
+- Multiple box-shadows para profundidade
+- Linear-gradients para efeitos metálicos
+- Transform e filter para interatividade
+
+Este design system garante uma experiência visual coesa e futurística em toda a plataforma, mantendo a identidade tecnológica avançada da Automation Global v4.0.
+
 ## System Architecture
 
 ### Frontend Architecture
