@@ -43,6 +43,8 @@ export interface IStorage {
   // Organization methods
   getOrganization(id: string): Promise<Organization | undefined>;
   getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
+  getAllOrganizations(): Promise<Organization[]>;
+  getAllUsers(): Promise<User[]>;
   createOrganization(data: InsertOrganization): Promise<Organization>;
   updateOrganization(id: string, data: Partial<Organization>): Promise<Organization>;
   getUserOrganizations(userId: string): Promise<Array<OrganizationUser & { organization: Organization }>>;
@@ -142,6 +144,14 @@ export class DatabaseStorage implements IStorage {
   async getOrganizationBySlug(slug: string): Promise<Organization | undefined> {
     const orgs = await db.select().from(schema.organizations).where(eq(schema.organizations.slug, slug));
     return orgs[0];
+  }
+
+  async getAllOrganizations(): Promise<Organization[]> {
+    return await db.select().from(schema.organizations).orderBy(desc(schema.organizations.createdAt));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(schema.users).orderBy(desc(schema.users.createdAt));
   }
 
   async createOrganization(data: InsertOrganization): Promise<Organization> {
