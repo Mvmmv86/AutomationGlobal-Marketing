@@ -211,6 +211,82 @@ html, body {
   box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
 }
 
+/* SILVER NEON ICONS - Inspired by futuristic UI elements */
+.icon-silver-neon {
+  filter: 
+    drop-shadow(0 0 8px rgba(192, 192, 192, 0.8))
+    drop-shadow(0 0 16px rgba(192, 192, 192, 0.4))
+    drop-shadow(0 0 24px rgba(192, 192, 192, 0.2));
+  color: #e2e8f0 !important;
+  transition: all 0.3s ease;
+}
+
+.icon-silver-neon:hover {
+  filter: 
+    drop-shadow(0 0 12px rgba(192, 192, 192, 1))
+    drop-shadow(0 0 24px rgba(192, 192, 192, 0.6))
+    drop-shadow(0 0 36px rgba(192, 192, 192, 0.3));
+  color: #f1f5f9 !important;
+  transform: scale(1.1);
+}
+
+/* FUTURISTIC ICON CONTAINERS */
+.icon-container-futuristic {
+  background: 
+    linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(192, 192, 192, 0.3);
+  box-shadow: 
+    inset 0 1px 0 rgba(192, 192, 192, 0.1),
+    0 0 20px rgba(192, 192, 192, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.icon-container-futuristic::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(135deg, 
+    rgba(192, 192, 192, 0.2) 0%, 
+    transparent 25%, 
+    transparent 75%, 
+    rgba(192, 192, 192, 0.1) 100%
+  );
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.icon-container-futuristic:hover {
+  border-color: rgba(192, 192, 192, 0.6);
+  box-shadow: 
+    inset 0 1px 0 rgba(192, 192, 192, 0.2),
+    0 0 30px rgba(192, 192, 192, 0.2),
+    0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ACTIVE STATE FOR NAVIGATION */
+.nav-item-active .icon-container-futuristic {
+  background: 
+    linear-gradient(135deg, rgba(0, 245, 255, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-color: rgba(0, 245, 255, 0.5);
+  box-shadow: 
+    inset 0 1px 0 rgba(0, 245, 255, 0.3),
+    0 0 25px rgba(0, 245, 255, 0.3),
+    0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.nav-item-active .icon-silver-neon {
+  color: #00f5ff !important;
+  filter: 
+    drop-shadow(0 0 10px rgba(0, 245, 255, 0.8))
+    drop-shadow(0 0 20px rgba(0, 245, 255, 0.4))
+    drop-shadow(0 0 30px rgba(0, 245, 255, 0.2));
+}
+
 :root {
   /* Core Colors */
   --background: hsl(0 0% 100%);

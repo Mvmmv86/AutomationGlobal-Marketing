@@ -134,8 +134,8 @@ export default function AdminDashboardFinal() {
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 to-blue-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Organizações</CardTitle>
-                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
-                  <Building2 className="h-6 w-6 text-gray-300" />
+                <div className="p-3 rounded-xl icon-container-futuristic">
+                  <Building2 className="h-6 w-6 icon-silver-neon" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -170,8 +170,8 @@ export default function AdminDashboardFinal() {
               <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Requisições IA</CardTitle>
-                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
-                  <Brain className="h-6 w-6 text-gray-300 ai-pulse" />
+                <div className="p-3 rounded-xl icon-container-futuristic">
+                  <Brain className="h-6 w-6 icon-silver-neon ai-pulse" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -205,8 +205,8 @@ export default function AdminDashboardFinal() {
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-pink-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Total Usuários</CardTitle>
-                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
-                  <Users className="h-6 w-6 text-gray-300" />
+                <div className="p-3 rounded-xl icon-container-futuristic">
+                  <Users className="h-6 w-6 icon-silver-neon" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -240,8 +240,8 @@ export default function AdminDashboardFinal() {
               <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 to-emerald-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
                 <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Sessões Ativas</CardTitle>
-                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
-                  <Activity className="h-6 w-6 text-gray-300" />
+                <div className="p-3 rounded-xl icon-container-futuristic">
+                  <Activity className="h-6 w-6 icon-silver-neon" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -275,8 +275,8 @@ export default function AdminDashboardFinal() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-purple-400"></div>
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-white flex items-center gap-4">
-                  <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
-                    <PieChart className="w-6 h-6 text-gray-300" />
+                  <div className="p-3 rounded-xl icon-container-futuristic">
+                    <PieChart className="w-6 h-6 icon-silver-neon" />
                   </div>
                   <span className="gradient-text uppercase tracking-wider">Distribuição de Organizações</span>
                 </CardTitle>
@@ -333,8 +333,8 @@ export default function AdminDashboardFinal() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-400"></div>
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-white flex items-center gap-4">
-                  <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
-                    <Shield className="w-6 h-6 text-gray-300" />
+                  <div className="p-3 rounded-xl icon-container-futuristic">
+                    <Shield className="w-6 h-6 icon-silver-neon" />
                   </div>
                   <span className="gradient-text uppercase tracking-wider">Performance do Sistema</span>
                 </CardTitle>
@@ -424,8 +424,8 @@ export default function AdminDashboardFinal() {
         {/* SIDEBAR HEADER */}
         <div className="p-8 border-b border-cyan-400/20">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center neon-cyan">
-              <Brain className="w-7 h-7 text-white ai-pulse" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center icon-container-futuristic neon-cyan">
+              <Brain className="w-7 h-7 icon-silver-neon ai-pulse" />
             </div>
             <div>
               <h1 className="text-xl font-bold gradient-text">AUTOMATION</h1>
@@ -462,8 +462,8 @@ export default function AdminDashboardFinal() {
               }`}
               data-testid={`nav-${item.id}`}
             >
-              <div className={`p-2 rounded-lg ${selectedTab === item.id ? 'bg-white/20' : 'bg-gray-800/60 border border-gray-700'}`}>
-                <item.icon className={`w-5 h-5 ${selectedTab === item.id ? 'text-white' : 'text-gray-400'}`} />
+              <div className={`p-2 rounded-lg icon-container-futuristic ${selectedTab === item.id ? 'nav-item-active' : ''}`}>
+                <item.icon className={`w-5 h-5 icon-silver-neon`} />
               </div>
               <span className="font-semibold text-white group-hover:text-cyan-300 transition-colors">
                 {item.label}
@@ -482,8 +482,8 @@ export default function AdminDashboardFinal() {
               }`}
               data-testid="toggle-auto-refresh"
             >
-              <div className={`p-2 rounded-lg bg-gray-800/60 border ${autoRefresh ? 'border-green-500' : 'border-red-500'}`}>
-                <RefreshCw className={`w-5 h-5 ${autoRefresh ? 'text-green-400 animate-spin' : 'text-red-400'}`} />
+              <div className={`p-2 rounded-lg icon-container-futuristic ${autoRefresh ? 'border-green-500' : 'border-red-500'}`}>
+                <RefreshCw className={`w-5 h-5 icon-silver-neon ${autoRefresh ? 'animate-spin' : ''}`} />
               </div>
               <span className="font-semibold text-white">
                 {autoRefresh ? 'Pausar Monitor' : 'Ativar Monitor'}
@@ -496,8 +496,8 @@ export default function AdminDashboardFinal() {
               className="w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4 card-hover mt-3 btn-glow"
               data-testid="manual-refresh"
             >
-              <div className="p-2 rounded-lg bg-gray-800/60 border border-cyan-500">
-                <Target className="w-5 h-5 text-cyan-400" />
+              <div className="p-2 rounded-lg icon-container-futuristic border-cyan-500">
+                <Target className="w-5 h-5 icon-silver-neon" />
               </div>
               <span className="font-semibold text-white">Atualizar Dados</span>
             </button>
