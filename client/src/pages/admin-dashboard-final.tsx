@@ -133,9 +133,9 @@ export default function AdminDashboardFinal() {
             <Card className="glass border-gray-700 card-hover neon-blue relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/10 to-blue-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
-                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Organizations</CardTitle>
-                <div className="p-3 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl neon-blue">
-                  <Building2 className="h-6 w-6 text-white" />
+                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Organizações</CardTitle>
+                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
+                  <Building2 className="h-6 w-6 text-gray-300" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -149,16 +149,16 @@ export default function AdminDashboardFinal() {
                 <div className="flex items-center text-sm text-gray-400 mt-3">
                   <TrendingUp className="h-4 w-4 text-green-400 mr-2" />
                   <span className="text-green-400 font-bold">{metrics?.data?.organizations?.growthRate || 0}%</span>
-                  <span className="ml-2">from last month</span>
+                  <span className="ml-2">do mês passado</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-400 neon-cyan"></div>
-                    <span className="text-green-400 font-bold">{metrics?.data?.organizations?.active || 0} active</span>
+                    <span className="text-green-400 font-bold">{metrics?.data?.organizations?.active || 0} ativas</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <span className="text-red-400 font-bold">{metrics?.data?.organizations?.inactive || 0} inactive</span>
+                    <span className="text-red-400 font-bold">{metrics?.data?.organizations?.inactive || 0} inativas</span>
                   </div>
                 </div>
               </CardContent>
@@ -169,9 +169,9 @@ export default function AdminDashboardFinal() {
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-600/10 to-orange-600/10"></div>
               <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
-                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">AI Requests</CardTitle>
-                <div className="p-3 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl">
-                  <Brain className="h-6 w-6 text-white ai-pulse" />
+                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Requisições IA</CardTitle>
+                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
+                  <Brain className="h-6 w-6 text-gray-300 ai-pulse" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -185,7 +185,7 @@ export default function AdminDashboardFinal() {
                 <div className="flex items-center text-sm text-gray-400 mt-3">
                   <Zap className="h-4 w-4 text-yellow-400 mr-2" />
                   <span className="text-yellow-400 font-bold">{metrics?.data?.aiUsage?.avgResponseTime || 0}ms</span>
-                  <span className="ml-2">avg response</span>
+                  <span className="ml-2">resposta média</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
@@ -204,9 +204,9 @@ export default function AdminDashboardFinal() {
             <Card className="glass border-gray-700 card-hover neon-cyan relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-pink-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
-                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Total Users</CardTitle>
-                <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl">
-                  <Users className="h-6 w-6 text-white" />
+                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Total Usuários</CardTitle>
+                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
+                  <Users className="h-6 w-6 text-gray-300" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -220,16 +220,16 @@ export default function AdminDashboardFinal() {
                 <div className="flex items-center text-sm text-gray-400 mt-3">
                   <TrendingUp className="h-4 w-4 text-green-400 mr-2" />
                   <span className="text-green-400 font-bold">{metrics?.data?.users?.growthRate || 0}%</span>
-                  <span className="ml-2">growth rate</span>
+                  <span className="ml-2">crescimento</span>
                 </div>
                 <div className="mt-4 flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                    <span className="text-green-400 font-bold">{metrics?.data?.users?.active || 0} active</span>
+                    <span className="text-green-400 font-bold">{metrics?.data?.users?.active || 0} ativos</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
-                    <span className="text-cyan-400 font-bold">{metrics?.data?.users?.lastWeek || 0} new</span>
+                    <span className="text-cyan-400 font-bold">{metrics?.data?.users?.lastWeek || 0} novos</span>
                   </div>
                 </div>
               </CardContent>
@@ -239,9 +239,9 @@ export default function AdminDashboardFinal() {
             <Card className="glass border-gray-700 card-hover relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 to-emerald-600/10"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 relative z-10">
-                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Live Sessions</CardTitle>
-                <div className="p-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl">
-                  <Activity className="h-6 w-6 text-white" />
+                <CardTitle className="text-sm font-bold text-gray-300 uppercase tracking-wider">Sessões Ativas</CardTitle>
+                <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
+                  <Activity className="h-6 w-6 text-gray-300" />
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
@@ -255,12 +255,12 @@ export default function AdminDashboardFinal() {
                 <div className="flex items-center text-sm text-gray-400 mt-3">
                   <Wifi className="h-4 w-4 text-green-400 mr-2" />
                   <span className="text-green-400 font-bold">{metrics?.data?.sessions?.avgDuration || 0}min</span>
-                  <span className="ml-2">avg duration</span>
+                  <span className="ml-2">duração média</span>
                 </div>
                 <div className="mt-4 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-green-400 neon-cyan"></div>
-                    <span className="text-green-400 font-bold">{formatNumber(metrics?.data?.sessions?.total || 0)} total today</span>
+                    <span className="text-green-400 font-bold">{formatNumber(metrics?.data?.sessions?.total || 0)} total hoje</span>
                   </div>
                 </div>
               </CardContent>
@@ -275,10 +275,10 @@ export default function AdminDashboardFinal() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-purple-400"></div>
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-white flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl">
-                    <PieChart className="w-6 h-6 text-white" />
+                  <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
+                    <PieChart className="w-6 h-6 text-gray-300" />
                   </div>
-                  <span className="gradient-text uppercase tracking-wider">Organization Distribution</span>
+                  <span className="gradient-text uppercase tracking-wider">Distribuição de Organizações</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -333,10 +333,10 @@ export default function AdminDashboardFinal() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-blue-400"></div>
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-white flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl">
-                    <Shield className="w-6 h-6 text-white" />
+                  <div className="p-3 bg-gray-800/80 border border-gray-600 rounded-xl">
+                    <Shield className="w-6 h-6 text-gray-300" />
                   </div>
-                  <span className="gradient-text uppercase tracking-wider">System Performance</span>
+                  <span className="gradient-text uppercase tracking-wider">Performance do Sistema</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -344,7 +344,7 @@ export default function AdminDashboardFinal() {
                 {/* Uptime Display */}
                 <div className="glass p-4 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-gray-300 font-bold uppercase tracking-wider">System Uptime</span>
+                    <span className="text-gray-300 font-bold uppercase tracking-wider">Tempo de Atividade</span>
                     <span className="text-green-400 font-bold text-xl">
                       {Math.floor((metrics?.data?.systemHealth?.uptime || 0) / 86400)}d {Math.floor(((metrics?.data?.systemHealth?.uptime || 0) % 86400) / 3600)}h
                     </span>
@@ -358,7 +358,7 @@ export default function AdminDashboardFinal() {
                 {/* Response Time */}
                 <div className="glass p-4 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-gray-300 font-bold uppercase tracking-wider">Avg Response Time</span>
+                    <span className="text-gray-300 font-bold uppercase tracking-wider">Tempo Resposta Médio</span>
                     <span className="text-cyan-400 font-bold text-xl">
                       {metrics?.data?.systemHealth?.responseTime || 0}ms
                     </span>
@@ -372,7 +372,7 @@ export default function AdminDashboardFinal() {
                 {/* Error Rate */}
                 <div className="glass p-4 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-gray-300 font-bold uppercase tracking-wider">Error Rate</span>
+                    <span className="text-gray-300 font-bold uppercase tracking-wider">Taxa de Erros</span>
                     <span className="text-yellow-400 font-bold text-xl">
                       {(metrics?.data?.systemHealth?.errorRate || 0).toFixed(2)}%
                     </span>
@@ -396,9 +396,9 @@ export default function AdminDashboardFinal() {
         <Card className="glass border-gray-700">
           <CardHeader>
             <CardTitle className="text-2xl font-bold gradient-text">
-              {selectedTab === 'organizations' && 'Organization Management'}
-              {selectedTab === 'system' && 'System Health Monitor'}
-              {selectedTab === 'analytics' && 'AI Analytics Center'}
+              {selectedTab === 'organizations' && 'Gestão de Organizações'}
+              {selectedTab === 'system' && 'Monitor de Saúde do Sistema'}
+              {selectedTab === 'analytics' && 'Centro de Analytics IA'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -408,8 +408,8 @@ export default function AdminDashboardFinal() {
                 {selectedTab === 'system' && <Server className="w-16 h-16 text-green-400 ai-pulse" />}
                 {selectedTab === 'analytics' && <Brain className="w-16 h-16 text-yellow-400 ai-pulse" />}
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Coming Soon</h3>
-              <p className="text-gray-400">Advanced features for {selectedTab} coming in next tasks</p>
+              <h3 className="text-xl font-bold text-white mb-2">Em Breve</h3>
+              <p className="text-gray-400">Recursos avançados para {selectedTab} chegando nas próximas tarefas</p>
             </div>
           </CardContent>
         </Card>
@@ -462,8 +462,8 @@ export default function AdminDashboardFinal() {
               }`}
               data-testid={`nav-${item.id}`}
             >
-              <div className={`p-2 rounded-lg ${selectedTab === item.id ? 'bg-white/20' : 'bg-gradient-to-r ' + item.color}`}>
-                <item.icon className={`w-5 h-5 text-white`} />
+              <div className={`p-2 rounded-lg ${selectedTab === item.id ? 'bg-white/20' : 'bg-gray-800/60 border border-gray-700'}`}>
+                <item.icon className={`w-5 h-5 ${selectedTab === item.id ? 'text-white' : 'text-gray-400'}`} />
               </div>
               <span className="font-semibold text-white group-hover:text-cyan-300 transition-colors">
                 {item.label}
@@ -482,8 +482,8 @@ export default function AdminDashboardFinal() {
               }`}
               data-testid="toggle-auto-refresh"
             >
-              <div className={`p-2 rounded-lg ${autoRefresh ? 'bg-green-600' : 'bg-red-600'}`}>
-                <RefreshCw className={`w-5 h-5 text-white ${autoRefresh ? 'animate-spin' : ''}`} />
+              <div className={`p-2 rounded-lg bg-gray-800/60 border ${autoRefresh ? 'border-green-500' : 'border-red-500'}`}>
+                <RefreshCw className={`w-5 h-5 ${autoRefresh ? 'text-green-400 animate-spin' : 'text-red-400'}`} />
               </div>
               <span className="font-semibold text-white">
                 {autoRefresh ? 'Pausar Monitor' : 'Ativar Monitor'}
@@ -496,8 +496,8 @@ export default function AdminDashboardFinal() {
               className="w-full p-4 rounded-xl glass transition-all duration-300 flex items-center gap-4 card-hover mt-3 btn-glow"
               data-testid="manual-refresh"
             >
-              <div className="p-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600">
-                <Target className="w-5 h-5 text-white" />
+              <div className="p-2 rounded-lg bg-gray-800/60 border border-cyan-500">
+                <Target className="w-5 h-5 text-cyan-400" />
               </div>
               <span className="font-semibold text-white">Atualizar Dados</span>
             </button>

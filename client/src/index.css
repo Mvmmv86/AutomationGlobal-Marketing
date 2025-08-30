@@ -117,36 +117,19 @@ html, body {
   }
 }
 
-/* HOVER EFFECTS */
+/* HOVER EFFECTS - Clean Version */
 .card-hover {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.card-hover::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(0, 245, 255, 0.1), transparent);
-  transform: rotate(45deg);
-  transition: all 0.5s;
-  opacity: 0;
-}
-
-.card-hover:hover::before {
-  animation: shimmer 1.5s ease-in-out;
-  opacity: 1;
-}
-
 .card-hover:hover {
-  transform: translateY(-5px);
+  transform: translateY(-3px);
   box-shadow: 
-    0 10px 30px rgba(0, 245, 255, 0.3),
-    0 0 50px rgba(0, 245, 255, 0.2);
+    0 8px 25px rgba(0, 245, 255, 0.2),
+    0 0 30px rgba(0, 245, 255, 0.15);
+  border-color: rgba(0, 245, 255, 0.4);
 }
 
 @keyframes shimmer {
@@ -154,17 +137,17 @@ html, body {
   100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
-/* BUTTON EFFECTS */
+/* BUTTON EFFECTS - Clean Version */
 .btn-glow {
   transition: all 0.3s ease;
   position: relative;
 }
 
 .btn-glow:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 
-    0 10px 25px rgba(0, 245, 255, 0.4),
-    0 0 30px rgba(0, 245, 255, 0.3);
+    0 6px 20px rgba(0, 245, 255, 0.3),
+    0 0 20px rgba(0, 245, 255, 0.2);
 }
 
 /* SIDEBAR STYLES */
