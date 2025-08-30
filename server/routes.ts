@@ -1330,6 +1330,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const adminRoutes = (await import('./routes/admin')).default;
   app.use('/api/admin', adminRoutes);
 
+  // AI Usage endpoints
+  const aiUsageRoutes = (await import('./routes/ai-usage')).default;
+  app.use('/api/ai', aiUsageRoutes);
+
   const httpServer = createServer(app);
   return httpServer;
 }

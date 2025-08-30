@@ -110,6 +110,80 @@ const moduleAdoption = [
   { module: 'AI Automation', adoption: 82, organizations: 18 }
 ];
 
+// AI Usage by Organization Component
+function AIUsageByOrganization() {
+  const { data: aiUsageData, isLoading } = useQuery({
+    queryKey: ['/api/ai/usage-by-organization'],
+    refetchInterval: 30000,
+    retry: false
+  });
+
+  // Local formatNumber function
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="animate-pulse flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-gray-900/50 to-gray-800/50">
+            <div className="h-4 bg-gray-700 rounded w-32"></div>
+            <div className="flex items-center space-x-4">
+              <div className="h-2 bg-gray-700 rounded w-20"></div>
+              <div className="h-4 bg-gray-700 rounded w-12"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!aiUsageData?.success || !aiUsageData?.data) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-gray-400 mb-2">Dados de IA não disponíveis</div>
+        <div className="text-sm text-gray-500">Verifique a conexão com o banco de dados</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {aiUsageData.data.map((org: any, index: number) => (
+        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-gray-900/50 to-gray-800/50 border border-gray-700 hover:border-green-400/50 transition-all duration-300">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-white">{org.organizationName}</span>
+            <span className="text-xs text-gray-400">{org.requests} requests • {formatNumber(org.tokens)} tokens</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Progress value={org.usage} className="w-20 progress-bar-futuristic" />
+              <span className="text-sm text-green-400 font-bold">{org.usage}%</span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-yellow-400 font-bold">${org.cost}</div>
+              <div className="text-xs text-gray-400">hoje</div>
+            </div>
+          </div>
+        </div>
+      ))}
+      
+      <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-400/30">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-blue-400 font-bold">Total Geral:</span>
+          <div className="flex items-center space-x-4">
+            <span className="text-white">{aiUsageData.data.reduce((sum: number, org: any) => sum + org.requests, 0)} requests</span>
+            <span className="text-yellow-400 font-bold">${aiUsageData.data.reduce((sum: number, org: any) => sum + org.cost, 0).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface MetricsResponse {
   success: boolean;
   message: string;
@@ -398,7 +472,7 @@ export default function AdminDashboardFinal() {
           {/* AI Usage Heatmap & Geographic Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            {/* AI Usage Heatmap */}
+            {/* AI Usage by Organization */}
             <Card className="glass-card card-hover neon-panel relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-yellow-400"></div>
               <CardHeader className="relative z-10">
@@ -407,23 +481,12 @@ export default function AdminDashboardFinal() {
                     <Brain className="h-6 w-6 text-green-400" />
                   </div>
                   <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-yellow-400 bg-clip-text text-transparent">
-                    AI Usage Heatmap
+                    Uso de IA por Organização
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="relative z-10 space-y-4">
-                {aiUsageHeatmap.map((org, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-gray-900/50 to-gray-800/50 border border-gray-700">
-                    <span className="text-sm font-medium text-white">{org.org}</span>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Progress value={org.usage} className="w-20 progress-bar-futuristic" />
-                        <span className="text-sm text-green-400 font-bold">{org.usage}%</span>
-                      </div>
-                      <span className="text-sm text-yellow-400 font-bold">${org.cost}</span>
-                    </div>
-                  </div>
-                ))}
+                <AIUsageByOrganization />
               </CardContent>
             </Card>
 
