@@ -20,6 +20,12 @@ The system uses PostgreSQL with Drizzle ORM for type-safe operations. It impleme
 ### Authentication & Authorization
 Multi-layered security is implemented with JWT-based authentication supporting organization context switching. It enforces role-based access control (RBAC) across 6 permission levels. Session management includes token refresh and secure cookie handling. Organization isolation is enforced at both application and database levels.
 
+### Rate Limiting & API Protection (Task 2.5 - COMPLETED)
+Hierarchical rate limiting system with role-based limits (super_admin: 1000/15min, org_admin: 500/15min, org_user: 100/15min, org_viewer: 50/15min, public: 10/15min, guest: 5/15min). Uses sliding window algorithm with Redis primary storage and automatic in-memory fallback. Provides informative HTTP headers (X-RateLimit-*) and sub-10ms response times. All endpoints protected with middleware integration.
+
+### Logging & Monitoring System (Task 2.6 - COMPLETED)
+Comprehensive structured logging with JSON format, unique request IDs, and metadata tracking. Multi-service health checks for database, Redis, filesystem, memory, and CPU. Real-time performance monitoring with slow request alerts (>1s). Request/response logging with user context and automatic metrics collection. Health endpoints: /api/health (full check), /api/health/ready (readiness), /api/health/live (liveness), /api/health/metrics (system metrics).
+
 ### Automation Engine Architecture
 The automation system is built around a flexible workflow engine that supports complex business logic via configurable steps, triggers, and actions. Automations can be scheduled, event-triggered, or on-demand, and include retry mechanisms, error handling, and detailed execution logging. It integrates with external services through a standardized framework.
 
@@ -30,8 +36,10 @@ The automation system is built around a flexible workflow engine that supports c
 - **Anthropic API**: Secondary AI provider (Claude Sonnet 4) for fallback and specialized reasoning.
 
 ### Database & Infrastructure
-- **Neon PostgreSQL**: Primary serverless database.
+- **Supabase PostgreSQL**: Primary serverless database with Drizzle ORM integration.
 - **Drizzle ORM**: Type-safe database client.
+- **Redis**: Rate limiting and caching (with in-memory fallback).
+- **IORedis**: Redis client with connection pooling.
 
 ### Authentication & Session Management
 - **JWT**: Token-based authentication.
