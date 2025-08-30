@@ -53,6 +53,7 @@ import {
   Plug,
   UserPlus,
   FileCheck,
+  Home,
   Star,
   Crown,
   Check,
@@ -74,6 +75,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 
 // Tipos seguindo o schema do projeto
 interface Organization {
@@ -349,6 +351,7 @@ export default function OrganizationsManagementComplete() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Forms
   const createForm = useForm<CreateOrgForm>({
@@ -713,6 +716,25 @@ export default function OrganizationsManagementComplete() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setLocation('/admin-dashboard-complete')}
+              className="btn-glow bg-gradient-to-r from-blue-600 to-cyan-600"
+              data-testid="nav-admin-dashboard"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Dashboard Admin
+            </Button>
+            
+            <Button
+              onClick={() => setLocation('/')}
+              variant="ghost" 
+              className="hover:bg-gray-700"
+              data-testid="nav-home"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Home
+            </Button>
+            
             <Button 
               onClick={() => refetch()} 
               className="neon-panel btn-glow"
