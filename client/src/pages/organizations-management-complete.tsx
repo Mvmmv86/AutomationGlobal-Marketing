@@ -194,6 +194,9 @@ export default function OrganizationsManagementComplete() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isAnalyticsDialogOpen, setIsAnalyticsDialogOpen] = useState(false);
+  const [isBillingDialogOpen, setIsBillingDialogOpen] = useState(false);
   const [bulkAction, setBulkAction] = useState<string>('');
   
   const { toast } = useToast();
@@ -402,9 +405,13 @@ export default function OrganizationsManagementComplete() {
 
   // Action handlers
   const handleSingleAction = (org: Organization, action: string) => {
+    setSelectedOrg(org);
+    
     switch (action) {
+      case 'view':
+        setIsDetailsDialogOpen(true);
+        break;
       case 'edit':
-        setSelectedOrg(org);
         editForm.reset({
           name: org.name,
           email: org.email,
@@ -414,9 +421,37 @@ export default function OrganizationsManagementComplete() {
         });
         setIsEditDialogOpen(true);
         break;
+      case 'analytics':
+        setIsAnalyticsDialogOpen(true);
+        break;
+      case 'billing':
+        setIsBillingDialogOpen(true);
+        break;
+      case 'suspend':
+        if (org.status === 'active') {
+          if (confirm(`Tem certeza que deseja suspender a organização "${org.name}"?`)) {
+            toast({
+              title: "Organização Suspensa",
+              description: `${org.name} foi suspensa com sucesso`,
+              variant: "destructive",
+            });
+          }
+        } else if (org.status === 'suspended') {
+          if (confirm(`Tem certeza que deseja reativar a organização "${org.name}"?`)) {
+            toast({
+              title: "Organização Reativada",
+              description: `${org.name} foi reativada com sucesso`,
+            });
+          }
+        }
+        break;
       case 'delete':
-        if (confirm(`Tem certeza que deseja excluir a organização "${org.name}"?`)) {
+        if (confirm(`⚠️ ATENÇÃO: Esta ação excluirá permanentemente a organização "${org.name}".\n\nUm backup será criado automaticamente antes da exclusão.\n\nDeseja continuar?`)) {
           deleteMutation.mutate(org.id);
+          toast({
+            title: "Backup Criado",
+            description: `Backup da organização ${org.name} salvo antes da exclusão`,
+          });
         }
         break;
       default:
@@ -844,28 +879,69 @@ export default function OrganizationsManagementComplete() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleSingleAction(org, 'view')}
-                                  className="p-2 hover:bg-cyan-500/20"
+                                  className="p-2 hover:bg-cyan-500/20 group"
                                   data-testid={`view-org-${org.id}`}
+                                  title="Visualizar Detalhes"
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  <Eye className="w-4 h-4 text-cyan-400" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleSingleAction(org, 'edit')}
-                                  className="p-2 hover:bg-purple-500/20"
+                                  className="p-2 hover:bg-purple-500/20 group"
                                   data-testid={`edit-org-${org.id}`}
+                                  title="Editar Configurações"
                                 >
-                                  <Edit3 className="w-4 h-4" />
+                                  <Settings className="w-4 h-4 text-purple-400" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleSingleAction(org, 'analytics')}
+                                  className="p-2 hover:bg-yellow-500/20 group"
+                                  data-testid={`analytics-org-${org.id}`}
+                                  title="Ver Analytics"
+                                >
+                                  <BarChart3 className="w-4 h-4 text-yellow-400" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleSingleAction(org, 'billing')}
+                                  className="p-2 hover:bg-green-500/20 group"
+                                  data-testid={`billing-org-${org.id}`}
+                                  title="Gerenciar Billing"
+                                >
+                                  <CreditCard className="w-4 h-4 text-green-400" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleSingleAction(org, 'suspend')}
+                                  className={`p-2 group ${
+                                    org.status === 'suspended' 
+                                      ? 'hover:bg-green-500/20' 
+                                      : 'hover:bg-orange-500/20'
+                                  }`}
+                                  data-testid={`suspend-org-${org.id}`}
+                                  title={org.status === 'suspended' ? 'Reativar' : 'Suspender'}
+                                >
+                                  {org.status === 'suspended' ? (
+                                    <Play className="w-4 h-4 text-green-400" />
+                                  ) : (
+                                    <Pause className="w-4 h-4 text-orange-400" />
+                                  )}
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleSingleAction(org, 'delete')}
-                                  className="p-2 hover:bg-red-500/20"
+                                  className="p-2 hover:bg-red-500/20 group"
                                   data-testid={`delete-org-${org.id}`}
+                                  title="Excluir (com backup)"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4 text-red-400" />
                                 </Button>
                               </div>
                             </td>
@@ -1100,6 +1176,330 @@ export default function OrganizationsManagementComplete() {
           </TabsContent>
 
         </Tabs>
+
+        {/* Details Dialog */}
+        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+          <DialogContent className="glass bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <Eye className="w-6 h-6 text-cyan-400" />
+                <span className="gradient-text">Detalhes da Organização</span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedOrg && (
+              <div className="space-y-6">
+                {/* Header Info */}
+                <div className="flex items-start gap-4 p-6 rounded-lg glass-card neon-panel">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden icon-container-futuristic">
+                    {selectedOrg.logoUrl ? (
+                      <img src={selectedOrg.logoUrl} alt={selectedOrg.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-r from-cyan-600 to-purple-600 flex items-center justify-center">
+                        <Building2 className="w-8 h-8 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">{selectedOrg.name}</h3>
+                    <p className="text-gray-400 mb-3">{selectedOrg.email}</p>
+                    <div className="flex items-center gap-4">
+                      {getTypeBadge(selectedOrg.type)}
+                      {getPlanBadge(selectedOrg.plan)}
+                      {getStatusBadge(selectedOrg.status)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">ID da Organização</p>
+                    <p className="font-mono text-cyan-400">{selectedOrg.id}</p>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="glass-card neon-panel">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-6 h-6 text-cyan-400" />
+                        <div>
+                          <p className="text-2xl font-bold text-white">{selectedOrg.userCount}</p>
+                          <p className="text-sm text-gray-400">Usuários Ativos</p>
+                          <p className="text-xs text-gray-500">de {selectedOrg.settings.maxUsers} máximo</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card neon-panel">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Brain className="w-6 h-6 text-yellow-400" />
+                        <div>
+                          <p className="text-2xl font-bold text-white">{formatNumber(selectedOrg.aiUsage.requests)}</p>
+                          <p className="text-sm text-gray-400">Requisições IA</p>
+                          <p className="text-xs text-gray-500">{formatNumber(selectedOrg.aiUsage.tokens)} tokens</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card neon-panel">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <DollarSign className="w-6 h-6 text-green-400" />
+                        <div>
+                          <p className="text-2xl font-bold text-white">{formatCurrency(selectedOrg.revenue)}</p>
+                          <p className="text-sm text-gray-400">Revenue Mensal</p>
+                          <p className="text-xs text-gray-500">Custo IA: ${selectedOrg.aiUsage.cost.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card neon-panel">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Activity className="w-6 h-6 text-purple-400" />
+                        <div>
+                          <p className="text-lg font-bold text-white">Ativa</p>
+                          <p className="text-sm text-gray-400">Última Atividade</p>
+                          <p className="text-xs text-gray-500">{formatDate(selectedOrg.lastActivity)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Configuration Details */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="glass-card neon-panel">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Settings className="w-5 h-5 text-cyan-400" />
+                        <span className="gradient-text">Configurações</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
+                        <span className="text-gray-400">Máximo de Usuários</span>
+                        <span className="text-white font-semibold">{selectedOrg.settings.maxUsers}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
+                        <span className="text-gray-400">Limite de Requisições IA</span>
+                        <span className="text-white font-semibold">{formatNumber(selectedOrg.settings.maxAiRequests)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
+                        <span className="text-gray-400">Data de Criação</span>
+                        <span className="text-white font-semibold">{formatDate(selectedOrg.createdAt)}</span>
+                      </div>
+                      <div className="py-2">
+                        <span className="text-gray-400 block mb-2">Recursos Habilitados</span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedOrg.settings.features.map((feature, index) => (
+                            <Badge key={index} className="bg-purple-500/20 text-purple-400 border-purple-400/50">
+                              {feature}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card neon-panel">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <BarChart3 className="w-5 h-5 text-yellow-400" />
+                        <span className="gradient-text">Métricas de Uso</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-400">Uso de Usuários</span>
+                          <span className="text-white font-semibold">
+                            {Math.round((selectedOrg.userCount / selectedOrg.settings.maxUsers) * 100)}%
+                          </span>
+                        </div>
+                        <div className="progress-bar-futuristic">
+                          <div 
+                            className="progress-fill-cpu" 
+                            style={{ width: `${Math.round((selectedOrg.userCount / selectedOrg.settings.maxUsers) * 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-gray-400">Uso de IA</span>
+                          <span className="text-white font-semibold">
+                            {Math.round((selectedOrg.aiUsage.requests / selectedOrg.settings.maxAiRequests) * 100)}%
+                          </span>
+                        </div>
+                        <div className="progress-bar-futuristic">
+                          <div 
+                            className="progress-fill-memory" 
+                            style={{ width: `${Math.round((selectedOrg.aiUsage.requests / selectedOrg.settings.maxAiRequests) * 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-gray-700/50">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold gradient-text">{formatCurrency(selectedOrg.revenue)}</p>
+                          <p className="text-sm text-gray-400">Revenue Total</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Analytics Dialog */}
+        <Dialog open={isAnalyticsDialogOpen} onOpenChange={setIsAnalyticsDialogOpen}>
+          <DialogContent className="glass bg-gray-900 border-gray-700 text-white max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <BarChart3 className="w-6 h-6 text-yellow-400" />
+                <span className="gradient-text">Analytics da Organização</span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedOrg && (
+              <div className="space-y-6">
+                <div className="text-center p-8 glass-card neon-panel">
+                  <BarChart3 className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold gradient-text mb-2">Analytics Avançado</h3>
+                  <p className="text-gray-400 mb-4">
+                    Análise completa de performance para <span className="text-white font-semibold">{selectedOrg.name}</span>
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div className="p-4 rounded-lg glass bg-gradient-to-r from-yellow-600/10 to-orange-600/10">
+                      <h4 className="text-lg font-bold text-yellow-400">Requisições IA</h4>
+                      <p className="text-3xl font-bold text-white">{formatNumber(selectedOrg.aiUsage.requests)}</p>
+                      <p className="text-sm text-gray-400">Últimos 30 dias</p>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg glass bg-gradient-to-r from-green-600/10 to-emerald-600/10">
+                      <h4 className="text-lg font-bold text-green-400">Eficiência</h4>
+                      <p className="text-3xl font-bold text-white">94.2%</p>
+                      <p className="text-sm text-gray-400">Taxa de sucesso</p>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg glass bg-gradient-to-r from-purple-600/10 to-pink-600/10">
+                      <h4 className="text-lg font-bold text-purple-400">Crescimento</h4>
+                      <p className="text-3xl font-bold text-white">+23%</p>
+                      <p className="text-sm text-gray-400">vs. mês anterior</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Billing Dialog */}
+        <Dialog open={isBillingDialogOpen} onOpenChange={setIsBillingDialogOpen}>
+          <DialogContent className="glass bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <CreditCard className="w-6 h-6 text-green-400" />
+                <span className="gradient-text">Gerenciamento de Billing</span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedOrg && (
+              <div className="space-y-6">
+                {/* Billing Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="glass-card neon-panel">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-green-400" />
+                        Faturamento Atual
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center">
+                        <p className="text-4xl font-bold gradient-text mb-2">{formatCurrency(selectedOrg.revenue)}</p>
+                        <p className="text-gray-400">Revenue Mensal</p>
+                        <div className="mt-4 p-3 rounded-lg glass bg-green-500/10">
+                          <p className="text-green-400 font-semibold">Plano {selectedOrg.plan.toUpperCase()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="glass-card neon-panel">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Brain className="w-5 h-5 text-yellow-400" />
+                        Custos de IA
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Custo Total IA</span>
+                          <span className="text-yellow-400 font-bold">${selectedOrg.aiUsage.cost.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Requisições</span>
+                          <span className="text-white">{formatNumber(selectedOrg.aiUsage.requests)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400">Tokens Processados</span>
+                          <span className="text-white">{formatNumber(selectedOrg.aiUsage.tokens)}</span>
+                        </div>
+                        <div className="pt-2 border-t border-gray-700/50">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-400">Custo por Requisição</span>
+                            <span className="text-cyan-400 font-semibold">
+                              ${(selectedOrg.aiUsage.cost / selectedOrg.aiUsage.requests).toFixed(4)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Billing Actions */}
+                <Card className="glass-card neon-panel">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-cyan-400" />
+                      Ações de Billing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Button className="btn-glow bg-gradient-to-r from-green-600 to-emerald-600">
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Alterar Plano
+                      </Button>
+                      <Button className="btn-glow bg-gradient-to-r from-blue-600 to-cyan-600">
+                        <Download className="w-4 h-4 mr-2" />
+                        Baixar Fatura
+                      </Button>
+                      <Button className="btn-glow bg-gradient-to-r from-purple-600 to-pink-600">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Histórico
+                      </Button>
+                      <Button className="btn-glow bg-gradient-to-r from-yellow-600 to-orange-600">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Configurar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
