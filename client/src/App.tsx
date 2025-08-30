@@ -16,6 +16,7 @@ import MultiTenantTest from "@/pages/multi-tenant-test";
 import PermissionsTest from "@/pages/permissions-test";
 import RateLimitTest from "@/pages/rate-limit-test";
 import AdminDashboard from "@/pages/admin-dashboard-final";
+import AdminDashboardComplete from "@/pages/admin-dashboard-complete";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/permissions-test" component={PermissionsTest} />
       <Route path="/rate-limit-test" component={RateLimitTest} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/admin-dashboard-complete" component={AdminDashboardComplete} />
       <Route component={NotFound} />
     </Switch>
   );
