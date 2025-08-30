@@ -17,6 +17,7 @@ import PermissionsTest from "@/pages/permissions-test";
 import RateLimitTest from "@/pages/rate-limit-test";
 import AdminDashboard from "@/pages/admin-dashboard-final";
 import AdminDashboardComplete from "@/pages/admin-dashboard-complete";
+import OrganizationsManagement from "@/pages/organizations-management-simple";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/rate-limit-test" component={RateLimitTest} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/admin-dashboard-complete" component={AdminDashboardComplete} />
+      <Route path="/organizations" component={OrganizationsManagement} />
       <Route component={NotFound} />
     </Switch>
   );

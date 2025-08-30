@@ -18,6 +18,7 @@ import {
   Globe,
   Shield
 } from 'lucide-react';
+import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { 
   PieChart as RechartsPieChart,
@@ -238,10 +239,10 @@ export default function AdminDashboardFinal() {
   ] : [];
 
   const navigationItems = [
-    { id: 'overview', icon: BarChart3, label: 'Visão Geral', color: 'from-cyan-600 to-blue-600' },
-    { id: 'organizations', icon: Building2, label: 'Organizações', color: 'from-purple-600 to-pink-600' },
-    { id: 'system', icon: Server, label: 'Sistema', color: 'from-green-600 to-emerald-600' },
-    { id: 'analytics', icon: LineChart, label: 'IA Analytics', color: 'from-yellow-600 to-orange-600' }
+    { id: 'overview', icon: BarChart3, label: 'Visão Geral', color: 'from-cyan-600 to-blue-600', path: '/admin-dashboard' },
+    { id: 'organizations', icon: Building2, label: 'Organizações', color: 'from-purple-600 to-pink-600', path: '/organizations' },
+    { id: 'system', icon: Server, label: 'Sistema', color: 'from-green-600 to-emerald-600', path: '/admin-dashboard' },
+    { id: 'analytics', icon: LineChart, label: 'IA Analytics', color: 'from-yellow-600 to-orange-600', path: '/admin-dashboard' }
   ];
 
   const renderMainContent = () => {
@@ -853,23 +854,39 @@ export default function AdminDashboardFinal() {
           
           {/* Navigation Items */}
           {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSelectedTab(item.id)}
-              className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group ${
-                selectedTab === item.id 
-                  ? `bg-gradient-to-r ${item.color} neon-cyan transform scale-105` 
-                  : 'glass hover:glass-dark card-hover'
-              }`}
-              data-testid={`nav-${item.id}`}
-            >
-              <div className={`p-2 rounded-lg icon-container-futuristic ${selectedTab === item.id ? 'nav-item-active' : ''}`}>
-                <item.icon className={`w-5 h-5 icon-silver-neon`} />
-              </div>
-              <span className="font-semibold text-white group-hover:text-cyan-300 transition-colors">
-                {item.label}
-              </span>
-            </button>
+            item.id === 'organizations' ? (
+              <Link href={item.path} key={item.id}>
+                <button
+                  className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group glass hover:glass-dark card-hover`}
+                  data-testid={`nav-${item.id}`}
+                >
+                  <div className={`p-2 rounded-lg icon-container-futuristic`}>
+                    <item.icon className={`w-5 h-5 icon-silver-neon`} />
+                  </div>
+                  <span className="font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                    {item.label}
+                  </span>
+                </button>
+              </Link>
+            ) : (
+              <button
+                key={item.id}
+                onClick={() => setSelectedTab(item.id)}
+                className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group ${
+                  selectedTab === item.id 
+                    ? `bg-gradient-to-r ${item.color} neon-cyan transform scale-105` 
+                    : 'glass hover:glass-dark card-hover'
+                }`}
+                data-testid={`nav-${item.id}`}
+              >
+                <div className={`p-2 rounded-lg icon-container-futuristic ${selectedTab === item.id ? 'nav-item-active' : ''}`}>
+                  <item.icon className={`w-5 h-5 icon-silver-neon`} />
+                </div>
+                <span className="font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                  {item.label}
+                </span>
+              </button>
+            )
           ))}
           
           <div className="pt-8 border-t border-gray-700/50">
