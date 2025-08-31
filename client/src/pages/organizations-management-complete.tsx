@@ -1885,55 +1885,119 @@ export default function OrganizationsManagementComplete() {
                       <Card className="glass-card neon-panel">
                         <CardHeader>
                           <CardTitle className="text-lg gradient-text">Membros da Equipe</CardTitle>
-                          <p className="text-sm text-gray-400">Adicione até {wizardData.plan ? PLANS[wizardData.plan].users : 2} usuários</p>
+                          <p className="text-sm text-gray-400">
+                            {wizardData.plan && PLANS[wizardData.plan].users === -1 
+                              ? 'Adicione quantos membros precisar (usuários ilimitados)'
+                              : `Adicione até ${(wizardData.plan ? PLANS[wizardData.plan].users : 2) - 1} usuários`
+                            }
+                          </p>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                          {[0, 1, 2].slice(0, (wizardData.plan ? PLANS[wizardData.plan].users : 2) - 1).map((index) => {
-                            const member = wizardData.teamMembers?.[index] || {};
-                            return (
-                              <div key={index} className="space-y-2 p-3 bg-gray-800/50 rounded">
-                                <input
-                                  type="text"
-                                  className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm"
-                                  value={member.name || ''}
-                                  onChange={(e) => {
+                          {/* Lista de membros existentes */}
+                          {(wizardData.teamMembers || []).map((member, index) => (
+                            <div key={index} className="relative space-y-2 p-3 bg-gray-800/50 rounded border">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs text-gray-400">Membro {index + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     const updated = [...(wizardData.teamMembers || [])];
-                                    updated[index] = { 
-                                      name: e.target.value, 
-                                      email: member.email || '', 
-                                      role: 'user' 
-                                    };
+                                    updated.splice(index, 1);
                                     updateWizardData({ teamMembers: updated });
                                   }}
-                                  placeholder={`Nome do membro ${index + 1}`}
-                                  data-testid={`wizard-step7-member-${index}-name`}
-                                />
-                                <input
-                                  type="email"
-                                  className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm"
-                                  value={member.email || ''}
-                                  onChange={(e) => {
-                                    const updated = [...(wizardData.teamMembers || [])];
-                                    updated[index] = { 
-                                      name: member.name || '', 
-                                      email: e.target.value, 
-                                      role: 'user' 
-                                    };
-                                    updateWizardData({ teamMembers: updated });
-                                  }}
-                                  placeholder={`email${index + 1}@empresa.com`}
-                                  data-testid={`wizard-step7-member-${index}-email`}
-                                />
+                                  className="text-red-400 hover:text-red-300 text-xs"
+                                  data-testid={`wizard-step7-remove-member-${index}`}
+                                >
+                                  ✕ Remover
+                                </button>
+                              </div>
+                              <input
+                                type="text"
+                                className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm"
+                                value={member.name || ''}
+                                onChange={(e) => {
+                                  const updated = [...(wizardData.teamMembers || [])];
+                                  updated[index] = { 
+                                    name: e.target.value, 
+                                    email: member.email || '', 
+                                    role: 'user' 
+                                  };
+                                  updateWizardData({ teamMembers: updated });
+                                }}
+                                placeholder="Nome completo"
+                                data-testid={`wizard-step7-member-${index}-name`}
+                              />
+                              <input
+                                type="email"
+                                className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm"
+                                value={member.email || ''}
+                                onChange={(e) => {
+                                  const updated = [...(wizardData.teamMembers || [])];
+                                  updated[index] = { 
+                                    name: member.name || '', 
+                                    email: e.target.value, 
+                                    role: 'user' 
+                                  };
+                                  updateWizardData({ teamMembers: updated });
+                                }}
+                                placeholder="email@empresa.com"
+                                data-testid={`wizard-step7-member-${index}-email`}
+                              />
+                            </div>
+                          ))}
+
+                          {/* Botão para adicionar novo membro */}
+                          {(() => {
+                            const currentMemberCount = (wizardData.teamMembers || []).length;
+                            const maxUsers = wizardData.plan ? PLANS[wizardData.plan].users : 2;
+                            const canAddMore = maxUsers === -1 || currentMemberCount < (maxUsers - 1);
+                            
+                            return canAddMore ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...(wizardData.teamMembers || [])];
+                                  updated.push({ name: '', email: '', role: 'user' });
+                                  updateWizardData({ teamMembers: updated });
+                                }}
+                                className="w-full p-4 border-2 border-dashed border-cyan-600 rounded-lg text-cyan-400 hover:border-cyan-400 hover:bg-cyan-500/5 transition-all"
+                                data-testid="wizard-step7-add-member"
+                              >
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className="text-xl">+</span>
+                                  <span>Adicionar Membro da Equipe</span>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">
+                                  {maxUsers === -1 
+                                    ? 'Sem limite de usuários no plano Enterprise'
+                                    : `${(maxUsers - 1) - currentMemberCount} vagas restantes`
+                                  }
+                                </p>
+                              </button>
+                            ) : (
+                              <div className="text-center p-4 border-2 border-dashed border-gray-600 rounded">
+                                <p className="text-gray-400 text-sm">
+                                  🚫 Limite de usuários atingido para o plano {wizardData.plan ? PLANS[wizardData.plan].name : ''}<br/>
+                                  Faça upgrade para adicionar mais membros.
+                                </p>
                               </div>
                             );
-                          })}
-                          
+                          })()}
+
+                          {/* Informação sobre plano Enterprise */}
                           {wizardData.plan && PLANS[wizardData.plan].users === -1 && (
-                            <div className="text-center p-4 border-2 border-dashed border-gray-600 rounded">
-                              <p className="text-gray-400 text-sm">
-                                ✨ Plano Enterprise: Usuários ilimitados!<br/>
-                                Adicione quantos membros precisar após criar a organização.
+                            <div className="text-center p-3 bg-gradient-to-r from-yellow-600/10 to-orange-600/10 border border-yellow-600/30 rounded">
+                              <p className="text-yellow-400 text-sm">
+                                ✨ <strong>Plano Enterprise</strong><br/>
+                                Adicione quantos membros precisar - sem limitações!
                               </p>
+                            </div>
+                          )}
+
+                          {/* Contador de membros */}
+                          {(wizardData.teamMembers || []).length > 0 && (
+                            <div className="text-center text-xs text-gray-400">
+                              Total: {(wizardData.teamMembers || []).length} membro(s) + 1 administrador
                             </div>
                           )}
                         </CardContent>
