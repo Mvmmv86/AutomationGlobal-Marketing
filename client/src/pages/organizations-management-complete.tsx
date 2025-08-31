@@ -2009,55 +2009,269 @@ export default function OrganizationsManagementComplete() {
                 {/* Step 8: Confirmação Final */}
                 {currentWizardStep === 8 && (
                   <div className="space-y-6">
-                    <div className="max-w-3xl mx-auto">
+                    <div className="max-w-4xl mx-auto">
+                      {/* Informações Básicas */}
                       <Card className="glass-card neon-panel mb-6">
                         <CardHeader>
-                          <CardTitle className="text-lg gradient-text">Resumo da Configuração</CardTitle>
+                          <CardTitle className="text-xl gradient-text">📋 Resumo Completo da Configuração</CardTitle>
+                          <p className="text-sm text-gray-400">Revise todas as configurações antes de criar a organização</p>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-400">Nome:</span>
-                              <span className="ml-2 text-white font-semibold">{wizardData.name || 'Não definido'}</span>
+                        <CardContent className="space-y-6">
+                          {/* Seção 1: Dados Básicos */}
+                          <div>
+                            <h3 className="text-lg text-cyan-400 mb-3 border-b border-cyan-600/30 pb-1">1. Informações Básicas</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Nome da Organização:</span>
+                                <span className="text-white font-semibold">{wizardData.name || 'Não definido'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Email Principal:</span>
+                                <span className="text-white font-semibold">{wizardData.email || 'Não definido'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Tipo de Negócio:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.businessType ? BUSINESS_TYPES[wizardData.businessType].name : 'Não definido'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Descrição:</span>
+                                <span className="text-white font-semibold">{wizardData.description || 'Nenhuma'}</span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-gray-400">Email:</span>
-                              <span className="ml-2 text-white font-semibold">{wizardData.email || 'Não definido'}</span>
+                          </div>
+
+                          {/* Seção 2: Plano e Módulos */}
+                          <div>
+                            <h3 className="text-lg text-cyan-400 mb-3 border-b border-cyan-600/30 pb-1">2. Plano e Módulos</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Plano Selecionado:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.plan ? `${PLANS[wizardData.plan].name} ($${PLANS[wizardData.plan].price}/mês)` : 'Não definido'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Usuários Permitidos:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.plan ? (PLANS[wizardData.plan].users === -1 ? 'Ilimitado' : PLANS[wizardData.plan].users) : '0'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Requisições IA/mês:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.plan ? formatNumber(PLANS[wizardData.plan].aiRequests) : '0'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Módulos Opcionais:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.optionalModules?.length || 0}
+                                </span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-gray-400">Tipo:</span>
-                              <span className="ml-2 text-white font-semibold">
-                                {wizardData.businessType ? BUSINESS_TYPES[wizardData.businessType].name : 'Não definido'}
-                              </span>
+                          </div>
+
+                          {/* Seção 3: Configuração de IA */}
+                          <div>
+                            <h3 className="text-lg text-cyan-400 mb-3 border-b border-cyan-600/30 pb-1">3. Configuração de IA</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Provedor Principal:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.primaryAiProvider ? (wizardData.primaryAiProvider === 'openai' ? 'OpenAI (GPT-5)' : 'Anthropic (Claude Sonnet 4)') : 'Não definido'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Provedor Backup:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.backupAiProvider ? (wizardData.backupAiProvider === 'openai' ? 'OpenAI (GPT-5)' : 'Anthropic (Claude Sonnet 4)') : 'Não definido'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Limite Diário:</span>
+                                <span className="text-white font-semibold">
+                                  {wizardData.aiLimits?.daily || Math.floor((wizardData.plan ? PLANS[wizardData.plan].aiRequests : 1000) / 30)} requisições
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Max Tokens:</span>
+                                <span className="text-white font-semibold">{wizardData.aiLimits?.maxTokens || 4000}</span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-gray-400">Plano:</span>
-                              <span className="ml-2 text-white font-semibold">
-                                {wizardData.plan ? PLANS[wizardData.plan].name : 'Não definido'}
-                              </span>
+                          </div>
+
+                          {/* Seção 4: Integrações */}
+                          <div>
+                            <h3 className="text-lg text-cyan-400 mb-3 border-b border-cyan-600/30 pb-1">4. Integrações Selecionadas</h3>
+                            <div className="text-sm">
+                              {wizardData.integrations && wizardData.integrations.length > 0 ? (
+                                <div>
+                                  <div className="flex justify-between mb-2">
+                                    <span className="text-gray-400">Total de Integrações:</span>
+                                    <span className="text-white font-semibold">{wizardData.integrations.length}</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    {wizardData.integrations.map((integrationId) => {
+                                      const integration = [
+                                        { id: 'zapier', name: 'Zapier' }, { id: 'slack', name: 'Slack' }, 
+                                        { id: 'discord', name: 'Discord' }, { id: 'stripe', name: 'Stripe' }, 
+                                        { id: 'paypal', name: 'PayPal' }, { id: 'google-analytics', name: 'Google Analytics' },
+                                        { id: 'hubspot', name: 'HubSpot' }, { id: 'salesforce', name: 'Salesforce' }, 
+                                        { id: 'mailchimp', name: 'Mailchimp' }, { id: 'whatsapp', name: 'WhatsApp Business' },
+                                        { id: 'gmail', name: 'Gmail' }, { id: 'telegram', name: 'Telegram' }
+                                      ].find(i => i.id === integrationId);
+                                      return (
+                                        <span key={integrationId} className="px-2 py-1 bg-cyan-600/20 text-cyan-300 rounded text-xs">
+                                          {integration?.name || integrationId}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-gray-400">Nenhuma integração selecionada</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Seção 5: Equipe */}
+                          <div>
+                            <h3 className="text-lg text-cyan-400 mb-3 border-b border-cyan-600/30 pb-1">5. Configuração da Equipe</h3>
+                            <div className="space-y-3 text-sm">
+                              {/* Admin Principal */}
+                              <div>
+                                <h4 className="text-gray-400 mb-2">Administrador Principal:</h4>
+                                <div className="pl-4 space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400">Nome:</span>
+                                    <span className="text-white font-semibold">{wizardData.adminUser?.name || 'Não definido'}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400">Email:</span>
+                                    <span className="text-white font-semibold">{wizardData.adminUser?.email || 'Não definido'}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Membros da Equipe */}
+                              <div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <h4 className="text-gray-400">Membros da Equipe:</h4>
+                                  <span className="text-white font-semibold">
+                                    {(wizardData.teamMembers || []).length}
+                                  </span>
+                                </div>
+                                {(wizardData.teamMembers || []).length > 0 ? (
+                                  <div className="pl-4 space-y-2">
+                                    {wizardData.teamMembers.map((member, index) => (
+                                      <div key={index} className="flex justify-between text-xs bg-gray-800/30 p-2 rounded">
+                                        <span className="text-gray-300">{member.name || `Membro ${index + 1}`}</span>
+                                        <span className="text-gray-400">{member.email || 'Email não definido'}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="pl-4 text-gray-400 text-xs">Nenhum membro adicionado</div>
+                                )}
+                              </div>
+
+                              {/* Total de Usuários */}
+                              <div className="pt-2 border-t border-gray-700">
+                                <div className="flex justify-between font-semibold">
+                                  <span className="text-gray-400">Total de Usuários:</span>
+                                  <span className="text-cyan-400">
+                                    {1 + (wizardData.teamMembers || []).length}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
 
-                      <div className="flex items-start gap-4 p-6 glass bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-xl">
-                        <Checkbox
-                          checked={wizardData.acceptTerms}
-                          onCheckedChange={(checked) => updateWizardData({ acceptTerms: !!checked })}
-                          data-testid="wizard-step8-terms"
-                        />
-                        <div>
-                          <p className="text-white">
-                            Eu aceito os{' '}
-                            <span className="text-cyan-400 cursor-pointer hover:underline">Termos de Serviço</span>
-                            {' '}e a{' '}
-                            <span className="text-cyan-400 cursor-pointer hover:underline">Política de Privacidade</span>
-                          </p>
-                          <p className="text-sm text-gray-400 mt-1">
-                            Ao aceitar, você concorda com todas as condições da plataforma
-                          </p>
-                        </div>
-                      </div>
+                      {/* Aceite de Termos */}
+                      <Card className="glass-card neon-panel mb-6">
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <Checkbox
+                              checked={wizardData.acceptTerms}
+                              onCheckedChange={(checked) => updateWizardData({ acceptTerms: !!checked })}
+                              data-testid="wizard-step8-terms"
+                              className="mt-1"
+                            />
+                            <div>
+                              <p className="text-white">
+                                Eu aceito os{' '}
+                                <span className="text-cyan-400 cursor-pointer hover:underline">Termos de Serviço</span>
+                                {' '}e a{' '}
+                                <span className="text-cyan-400 cursor-pointer hover:underline">Política de Privacidade</span>
+                              </p>
+                              <p className="text-sm text-gray-400 mt-1">
+                                Ao aceitar, você concorda com todas as condições da plataforma e autoriza a criação da organização com as configurações acima.
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Resumo de Custos */}
+                      {wizardData.plan && (
+                        <Card className="glass-card neon-panel">
+                          <CardHeader>
+                            <CardTitle className="text-lg gradient-text">💰 Resumo de Custos</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Plano {PLANS[wizardData.plan].name}:</span>
+                                <span className="text-white font-semibold">
+                                  {PLANS[wizardData.plan].price === 0 ? 'Gratuito' : `$${PLANS[wizardData.plan].price}/mês`}
+                                </span>
+                              </div>
+                              {wizardData.optionalModules && wizardData.optionalModules.length > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400">Módulos Opcionais:</span>
+                                  <span className="text-white font-semibold">
+                                    +$
+                                    {[
+                                      { id: 'advanced-analytics', price: 19 },
+                                      { id: 'multi-language', price: 15 },
+                                      { id: 'api-access', price: 25 },
+                                      { id: 'white-label', price: 49 }
+                                    ]
+                                      .filter(module => wizardData.optionalModules.includes(module.id))
+                                      .reduce((total, module) => total + module.price, 0)}/mês
+                                  </span>
+                                </div>
+                              )}
+                              <div className="border-t border-gray-600 pt-2">
+                                <div className="flex justify-between text-lg font-bold">
+                                  <span className="text-cyan-400">Total Mensal:</span>
+                                  <span className="text-cyan-400">
+                                    {(() => {
+                                      const baseCost = PLANS[wizardData.plan].price;
+                                      const optionalCost = wizardData.optionalModules
+                                        ? [
+                                            { id: 'advanced-analytics', price: 19 },
+                                            { id: 'multi-language', price: 15 },
+                                            { id: 'api-access', price: 25 },
+                                            { id: 'white-label', price: 49 }
+                                          ]
+                                            .filter(module => wizardData.optionalModules.includes(module.id))
+                                            .reduce((total, module) => total + module.price, 0)
+                                        : 0;
+                                      const total = baseCost + optionalCost;
+                                      return total === 0 ? 'Gratuito' : `$${total}/mês`;
+                                    })()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 )}
