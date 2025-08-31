@@ -1462,7 +1462,7 @@ export default function OrganizationsManagementComplete() {
                 {/* Step 3: Seleção de Plano */}
                 {currentWizardStep === 3 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                       {Object.entries(PLANS).map(([key, plan]) => {
                         const IconComponent = plan.icon;
                         const isSelected = wizardData.plan === key;
@@ -1472,7 +1472,7 @@ export default function OrganizationsManagementComplete() {
                         return (
                           <Card 
                             key={key}
-                            className={`glass-card neon-panel cursor-pointer transition-all duration-300 relative ${
+                            className={`glass-card neon-panel cursor-pointer transition-all duration-300 relative min-h-[420px] ${
                               isSelected 
                                 ? 'ring-2 ring-cyan-400 bg-gradient-to-b from-cyan-500/10 to-purple-500/10 scale-105' 
                                 : 'hover:ring-1 hover:ring-gray-500 hover:scale-102'
@@ -1481,63 +1481,65 @@ export default function OrganizationsManagementComplete() {
                             data-testid={`wizard-step3-${key}`}
                           >
                             {isPopular && (
-                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10">
+                                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap">
                                   🔥 Mais Popular
                                 </div>
                               </div>
                             )}
                             
                             {isFree && (
-                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                                <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-10">
+                                <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap">
                                   ✨ Gratuito
                                 </div>
                               </div>
                             )}
                             
-                            <CardContent className="p-6 text-center">
-                              <div className={`w-16 h-16 mx-auto rounded-xl bg-gradient-to-r ${plan.color} flex items-center justify-center mb-4`}>
-                                <IconComponent className="w-8 h-8 text-white" />
-                              </div>
-                              
-                              <h4 className="text-xl font-bold text-white mb-2">{plan.name}</h4>
-                              <div className="text-3xl font-bold gradient-text mb-4">
-                                {plan.price === 0 ? (
-                                  <span className="text-green-400">Gratuito</span>
-                                ) : (
-                                  <>
-                                    ${plan.price}<span className="text-lg text-gray-400">/mês</span>
-                                  </>
-                                )}
-                              </div>
-                              
-                              <div className="space-y-3 mb-6">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-400">Usuários</span>
-                                  <span className="text-white font-semibold">
-                                    {plan.users === -1 ? 'Ilimitado' : plan.users}
-                                  </span>
+                            <CardContent className="p-4 text-center h-full flex flex-col justify-between">
+                              <div>
+                                <div className={`w-12 h-12 mx-auto rounded-lg bg-gradient-to-r ${plan.color} flex items-center justify-center mb-3`}>
+                                  <IconComponent className="w-6 h-6 text-white" />
                                 </div>
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-400">Requisições IA</span>
-                                  <span className="text-white font-semibold">{formatNumber(plan.aiRequests)}/mês</span>
+                                
+                                <h4 className="text-lg font-bold text-white mb-2">{plan.name}</h4>
+                                <div className="text-2xl font-bold gradient-text mb-3">
+                                  {plan.price === 0 ? (
+                                    <span className="text-green-400">Gratuito</span>
+                                  ) : (
+                                    <>
+                                      ${plan.price}<span className="text-sm text-gray-400">/mês</span>
+                                    </>
+                                  )}
                                 </div>
-                              </div>
-                              
-                              <div className="space-y-2 mb-6">
-                                {plan.features.map((feature, index) => (
-                                  <div key={index} className="flex items-center gap-2 text-sm text-gray-300">
-                                    <CheckCircle className="w-4 h-4 text-green-400" />
-                                    <span>{feature}</span>
+                                
+                                <div className="space-y-2 mb-4">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-400">Usuários</span>
+                                    <span className="text-white font-semibold">
+                                      {plan.users === -1 ? 'Ilimitado' : plan.users}
+                                    </span>
                                   </div>
-                                ))}
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-gray-400">IA/mês</span>
+                                    <span className="text-white font-semibold">{formatNumber(plan.aiRequests)}</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-1 mb-4">
+                                  {plan.features.slice(0, 3).map((feature, index) => (
+                                    <div key={index} className="flex items-center gap-2 text-xs text-gray-300">
+                                      <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
+                                      <span className="text-left">{feature}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                               
                               {isSelected && (
-                                <div className="flex items-center justify-center gap-2 text-cyan-400">
-                                  <CheckCircle className="w-5 h-5" />
-                                  <span className="text-sm font-semibold">Plano Selecionado</span>
+                                <div className="flex items-center justify-center gap-2 text-cyan-400 mt-2">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span className="text-xs font-semibold">Selecionado</span>
                                 </div>
                               )}
                             </CardContent>
