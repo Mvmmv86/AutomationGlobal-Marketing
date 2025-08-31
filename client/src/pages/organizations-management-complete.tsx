@@ -1752,17 +1752,33 @@ export default function OrganizationsManagementComplete() {
                 {/* Step 6: Integrações */}
                 {currentWizardStep === 6 && (
                   <div className="space-y-6">
+                    {/* Header com informações */}
+                    <div className="text-center mb-6">
+                      <p className="text-gray-400 text-sm">
+                        Selecione as integrações que deseja conectar à sua organização. 
+                        Você pode configurá-las posteriormente.
+                      </p>
+                      {wizardData.integrations && wizardData.integrations.length > 0 && (
+                        <div className="mt-2 text-cyan-400 text-sm">
+                          ✅ {wizardData.integrations.length} integração(ões) selecionada(s)
+                        </div>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {[
-                        { id: 'zapier', name: 'Zapier', icon: '⚡', description: 'Automação com 5000+ apps', category: 'Automação' },
-                        { id: 'slack', name: 'Slack', icon: '💬', description: 'Notificações e comandos', category: 'Comunicação' },
-                        { id: 'discord', name: 'Discord', icon: '🎮', description: 'Bot e integrações', category: 'Comunicação' },
-                        { id: 'stripe', name: 'Stripe', icon: '💳', description: 'Pagamentos e billing', category: 'Pagamentos' },
-                        { id: 'paypal', name: 'PayPal', icon: '🏦', description: 'Pagamentos globais', category: 'Pagamentos' },
-                        { id: 'google-analytics', name: 'Google Analytics', icon: '📊', description: 'Análise de tráfego', category: 'Analytics' },
-                        { id: 'hubspot', name: 'HubSpot', icon: '🎯', description: 'CRM e marketing', category: 'CRM' },
-                        { id: 'salesforce', name: 'Salesforce', icon: '☁️', description: 'CRM empresarial', category: 'CRM' },
-                        { id: 'mailchimp', name: 'Mailchimp', icon: '📧', description: 'Email marketing', category: 'Marketing' }
+                        { id: 'zapier', name: 'Zapier', icon: '⚡', description: 'Automação com 5000+ apps', category: 'Automação', popularity: 'high' },
+                        { id: 'slack', name: 'Slack', icon: '💬', description: 'Notificações e comandos', category: 'Comunicação', popularity: 'high' },
+                        { id: 'discord', name: 'Discord', icon: '🎮', description: 'Bot e integrações', category: 'Comunicação', popularity: 'medium' },
+                        { id: 'stripe', name: 'Stripe', icon: '💳', description: 'Pagamentos e billing', category: 'Pagamentos', popularity: 'high' },
+                        { id: 'paypal', name: 'PayPal', icon: '🏦', description: 'Pagamentos globais', category: 'Pagamentos', popularity: 'medium' },
+                        { id: 'google-analytics', name: 'Google Analytics', icon: '📊', description: 'Análise de tráfego', category: 'Analytics', popularity: 'high' },
+                        { id: 'hubspot', name: 'HubSpot', icon: '🎯', description: 'CRM e marketing', category: 'CRM', popularity: 'medium' },
+                        { id: 'salesforce', name: 'Salesforce', icon: '☁️', description: 'CRM empresarial', category: 'CRM', popularity: 'high' },
+                        { id: 'mailchimp', name: 'Mailchimp', icon: '📧', description: 'Email marketing', category: 'Marketing', popularity: 'medium' },
+                        { id: 'whatsapp', name: 'WhatsApp Business', icon: '💚', description: 'Mensagens WhatsApp', category: 'Comunicação', popularity: 'high' },
+                        { id: 'gmail', name: 'Gmail', icon: '📨', description: 'Integração com Gmail', category: 'Email', popularity: 'high' },
+                        { id: 'telegram', name: 'Telegram', icon: '✈️', description: 'Bot Telegram', category: 'Comunicação', popularity: 'medium' }
                       ].map((integration) => {
                         const isSelected = wizardData.integrations?.includes(integration.id);
                         return (
@@ -1784,12 +1800,24 @@ export default function OrganizationsManagementComplete() {
                           >
                             <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                               <div>
-                                <div className="text-3xl mb-2">{integration.icon}</div>
+                                <div className="relative">
+                                  <div className="text-3xl mb-2">{integration.icon}</div>
+                                  {integration.popularity === 'high' && (
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full"></span>
+                                  )}
+                                </div>
                                 <h4 className="text-white font-semibold mb-1">{integration.name}</h4>
                                 <p className="text-xs text-gray-400 mb-2">{integration.description}</p>
-                                <span className="inline-block px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
-                                  {integration.category}
-                                </span>
+                                <div className="flex items-center justify-center gap-2">
+                                  <span className="inline-block px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
+                                    {integration.category}
+                                  </span>
+                                  {integration.popularity === 'high' && (
+                                    <span className="inline-block px-2 py-1 text-xs bg-orange-600 text-white rounded">
+                                      Popular
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               {isSelected && (
                                 <div className="flex items-center justify-center gap-2 text-cyan-400 mt-2">
@@ -1823,7 +1851,11 @@ export default function OrganizationsManagementComplete() {
                               className="w-full mt-1 p-3 bg-gray-800 border border-gray-600 rounded text-white"
                               value={wizardData.adminUser?.name || ''}
                               onChange={(e) => updateWizardData({ 
-                                adminUser: { ...wizardData.adminUser, name: e.target.value, role: 'admin' }
+                                adminUser: { 
+                                  name: e.target.value, 
+                                  email: wizardData.adminUser?.email || '', 
+                                  role: 'admin' 
+                                }
                               })}
                               placeholder="Ex: João Silva"
                               data-testid="wizard-step7-admin-name"
@@ -1836,7 +1868,11 @@ export default function OrganizationsManagementComplete() {
                               className="w-full mt-1 p-3 bg-gray-800 border border-gray-600 rounded text-white"
                               value={wizardData.adminUser?.email || ''}
                               onChange={(e) => updateWizardData({ 
-                                adminUser: { ...wizardData.adminUser, email: e.target.value, role: 'admin' }
+                                adminUser: { 
+                                  name: wizardData.adminUser?.name || '', 
+                                  email: e.target.value, 
+                                  role: 'admin' 
+                                }
                               })}
                               placeholder="admin@empresa.com"
                               data-testid="wizard-step7-admin-email"
@@ -1862,7 +1898,11 @@ export default function OrganizationsManagementComplete() {
                                   value={member.name || ''}
                                   onChange={(e) => {
                                     const updated = [...(wizardData.teamMembers || [])];
-                                    updated[index] = { ...member, name: e.target.value, role: 'user' };
+                                    updated[index] = { 
+                                      name: e.target.value, 
+                                      email: member.email || '', 
+                                      role: 'user' 
+                                    };
                                     updateWizardData({ teamMembers: updated });
                                   }}
                                   placeholder={`Nome do membro ${index + 1}`}
@@ -1874,7 +1914,11 @@ export default function OrganizationsManagementComplete() {
                                   value={member.email || ''}
                                   onChange={(e) => {
                                     const updated = [...(wizardData.teamMembers || [])];
-                                    updated[index] = { ...member, email: e.target.value, role: 'user' };
+                                    updated[index] = { 
+                                      name: member.name || '', 
+                                      email: e.target.value, 
+                                      role: 'user' 
+                                    };
                                     updateWizardData({ teamMembers: updated });
                                   }}
                                   placeholder={`email${index + 1}@empresa.com`}
