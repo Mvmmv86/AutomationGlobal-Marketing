@@ -20,6 +20,7 @@ import AdminDashboardComplete from "@/pages/admin-dashboard-complete";
 import OrganizationsManagement from "@/pages/organizations-management-simple";
 import OrganizationsManagementAdvanced from "@/pages/organizations-management-advanced";
 import OrganizationsManagementComplete from "@/pages/organizations-management-complete";
+import AIManagementGlobal from "@/pages/ai-management-global";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/organizations" component={OrganizationsManagementComplete} />
       <Route path="/organizations-advanced" component={OrganizationsManagementAdvanced} />
       <Route path="/organizations-simple" component={OrganizationsManagement} />
+      <Route path="/ai-management" component={AIManagementGlobal} />
       <Route component={NotFound} />
     </Switch>
   );
