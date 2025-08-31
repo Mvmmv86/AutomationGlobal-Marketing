@@ -1550,20 +1550,350 @@ export default function OrganizationsManagementComplete() {
                   </div>
                 )}
 
-                {/* Step 4-7: Em desenvolvimento */}
-                {(currentWizardStep >= 4 && currentWizardStep <= 7) && (
-                  <div className="text-center py-20">
-                    <div className="w-20 h-20 mx-auto rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 flex items-center justify-center mb-4">
-                      {getWizardStepIcon(currentWizardStep) && React.createElement(getWizardStepIcon(currentWizardStep), { className: "w-10 h-10 text-gray-300" })}
+                {/* Step 4: Configuração de IA */}
+                {currentWizardStep === 4 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Provedor Principal */}
+                      <Card className="glass-card neon-panel">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Provedor Principal de IA</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-3">
+                            {[
+                              { id: 'openai', name: 'OpenAI', icon: '🤖', description: 'GPT-5, melhor para texto e análise' },
+                              { id: 'anthropic', name: 'Anthropic', icon: '🧠', description: 'Claude Sonnet 4, excelente para raciocínio' }
+                            ].map((provider) => (
+                              <div
+                                key={provider.id}
+                                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                                  wizardData.primaryAiProvider === provider.id
+                                    ? 'border-cyan-400 bg-cyan-500/10'
+                                    : 'border-gray-600 hover:border-gray-500'
+                                }`}
+                                onClick={() => updateWizardData({ primaryAiProvider: provider.id as any })}
+                                data-testid={`wizard-step4-primary-${provider.id}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{provider.icon}</span>
+                                  <div>
+                                    <h4 className="text-white font-semibold">{provider.name}</h4>
+                                    <p className="text-sm text-gray-400">{provider.description}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Provedor Backup */}
+                      <Card className="glass-card neon-panel">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Provedor Backup</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-3">
+                            {[
+                              { id: 'anthropic', name: 'Anthropic', icon: '🧠', description: 'Claude como backup confiável' },
+                              { id: 'openai', name: 'OpenAI', icon: '🤖', description: 'GPT como fallback robusto' }
+                            ].filter(p => p.id !== wizardData.primaryAiProvider).map((provider) => (
+                              <div
+                                key={provider.id}
+                                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                                  wizardData.backupAiProvider === provider.id
+                                    ? 'border-cyan-400 bg-cyan-500/10'
+                                    : 'border-gray-600 hover:border-gray-500'
+                                }`}
+                                onClick={() => updateWizardData({ backupAiProvider: provider.id as any })}
+                                data-testid={`wizard-step4-backup-${provider.id}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{provider.icon}</span>
+                                  <div>
+                                    <h4 className="text-white font-semibold">{provider.name}</h4>
+                                    <p className="text-sm text-gray-400">{provider.description}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-300 mb-2">Step {currentWizardStep}</h3>
-                    <p className="text-gray-500 mb-6">Em desenvolvimento...</p>
-                    
-                    <div className="max-w-md mx-auto glass p-6 rounded-xl">
-                      <p className="text-gray-400 text-sm">
-                        Este step será implementado com todas as funcionalidades específicas 
-                        conforme o framework definido.
-                      </p>
+
+                    {/* Configurações de Limite */}
+                    <Card className="glass-card neon-panel">
+                      <CardHeader>
+                        <CardTitle className="text-lg gradient-text">Limites e Configurações</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-sm text-gray-400">Limite Diário (requisições)</label>
+                          <input
+                            type="number"
+                            className="w-full mt-1 p-2 bg-gray-800 border border-gray-600 rounded text-white"
+                            value={wizardData.aiLimits?.daily || Math.floor((wizardData.plan ? PLANS[wizardData.plan].aiRequests : 1000) / 30)}
+                            onChange={(e) => updateWizardData({ 
+                              aiLimits: { ...wizardData.aiLimits, daily: parseInt(e.target.value) || 0 }
+                            })}
+                            data-testid="wizard-step4-daily-limit"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm text-gray-400">Timeout (segundos)</label>
+                          <input
+                            type="number"
+                            className="w-full mt-1 p-2 bg-gray-800 border border-gray-600 rounded text-white"
+                            value={wizardData.aiLimits?.timeout || 30}
+                            onChange={(e) => updateWizardData({ 
+                              aiLimits: { ...wizardData.aiLimits, timeout: parseInt(e.target.value) || 30 }
+                            })}
+                            data-testid="wizard-step4-timeout"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm text-gray-400">Max Tokens</label>
+                          <input
+                            type="number"
+                            className="w-full mt-1 p-2 bg-gray-800 border border-gray-600 rounded text-white"
+                            value={wizardData.aiLimits?.maxTokens || 4000}
+                            onChange={(e) => updateWizardData({ 
+                              aiLimits: { ...wizardData.aiLimits, maxTokens: parseInt(e.target.value) || 4000 }
+                            })}
+                            data-testid="wizard-step4-max-tokens"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Step 5: Seleção de Módulos */}
+                {currentWizardStep === 5 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Módulos Inclusos */}
+                      <Card className="glass-card neon-panel">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Módulos Inclusos no Plano</CardTitle>
+                          <p className="text-sm text-gray-400">Estes módulos estão inclusos no seu plano {wizardData.plan ? PLANS[wizardData.plan].name : ''}</p>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {wizardData.businessType && BUSINESS_TYPES[wizardData.businessType].modules.map((module) => (
+                            <div key={module.id} className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <CheckCircle className="w-5 h-5 text-green-400" />
+                                <div>
+                                  <h4 className="text-white font-semibold">{module.name}</h4>
+                                  <p className="text-sm text-gray-400">{module.description}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      {/* Módulos Opcionais */}
+                      <Card className="glass-card neon-panel">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Módulos Opcionais</CardTitle>
+                          <p className="text-sm text-gray-400">Adicione funcionalidades extras (podem ter custo adicional)</p>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {[
+                            { id: 'advanced-analytics', name: 'Analytics Avançado', description: 'Relatórios detalhados e previsões', price: 19 },
+                            { id: 'multi-language', name: 'Suporte Multi-idioma', description: 'Tradução automática e localizações', price: 15 },
+                            { id: 'api-access', name: 'Acesso API Premium', description: 'APIs avançadas e webhooks', price: 25 },
+                            { id: 'white-label', name: 'White Label', description: 'Marca personalizada completa', price: 49 }
+                          ].map((module) => {
+                            const isSelected = wizardData.optionalModules?.includes(module.id);
+                            return (
+                              <div
+                                key={module.id}
+                                className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                                  isSelected 
+                                    ? 'border-cyan-400 bg-cyan-500/10' 
+                                    : 'border-gray-600 hover:border-gray-500'
+                                }`}
+                                onClick={() => {
+                                  const current = wizardData.optionalModules || [];
+                                  const updated = isSelected 
+                                    ? current.filter(id => id !== module.id)
+                                    : [...current, module.id];
+                                  updateWizardData({ optionalModules: updated });
+                                }}
+                                data-testid={`wizard-step5-optional-${module.id}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                      isSelected ? 'border-cyan-400 bg-cyan-400' : 'border-gray-500'
+                                    }`}>
+                                      {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                                    </div>
+                                    <div>
+                                      <h4 className="text-white font-semibold">{module.name}</h4>
+                                      <p className="text-sm text-gray-400">{module.description}</p>
+                                    </div>
+                                  </div>
+                                  <span className="text-cyan-400 font-semibold">+${module.price}/mês</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 6: Integrações */}
+                {currentWizardStep === 6 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[
+                        { id: 'zapier', name: 'Zapier', icon: '⚡', description: 'Automação com 5000+ apps', category: 'Automação' },
+                        { id: 'slack', name: 'Slack', icon: '💬', description: 'Notificações e comandos', category: 'Comunicação' },
+                        { id: 'discord', name: 'Discord', icon: '🎮', description: 'Bot e integrações', category: 'Comunicação' },
+                        { id: 'stripe', name: 'Stripe', icon: '💳', description: 'Pagamentos e billing', category: 'Pagamentos' },
+                        { id: 'paypal', name: 'PayPal', icon: '🏦', description: 'Pagamentos globais', category: 'Pagamentos' },
+                        { id: 'google-analytics', name: 'Google Analytics', icon: '📊', description: 'Análise de tráfego', category: 'Analytics' },
+                        { id: 'hubspot', name: 'HubSpot', icon: '🎯', description: 'CRM e marketing', category: 'CRM' },
+                        { id: 'salesforce', name: 'Salesforce', icon: '☁️', description: 'CRM empresarial', category: 'CRM' },
+                        { id: 'mailchimp', name: 'Mailchimp', icon: '📧', description: 'Email marketing', category: 'Marketing' }
+                      ].map((integration) => {
+                        const isSelected = wizardData.integrations?.includes(integration.id);
+                        return (
+                          <Card
+                            key={integration.id}
+                            className={`glass-card cursor-pointer transition-all min-h-[120px] ${
+                              isSelected 
+                                ? 'ring-2 ring-cyan-400 bg-cyan-500/10' 
+                                : 'hover:ring-1 hover:ring-gray-500'
+                            }`}
+                            onClick={() => {
+                              const current = wizardData.integrations || [];
+                              const updated = isSelected 
+                                ? current.filter(id => id !== integration.id)
+                                : [...current, integration.id];
+                              updateWizardData({ integrations: updated });
+                            }}
+                            data-testid={`wizard-step6-${integration.id}`}
+                          >
+                            <CardContent className="p-4 text-center h-full flex flex-col justify-between">
+                              <div>
+                                <div className="text-3xl mb-2">{integration.icon}</div>
+                                <h4 className="text-white font-semibold mb-1">{integration.name}</h4>
+                                <p className="text-xs text-gray-400 mb-2">{integration.description}</p>
+                                <span className="inline-block px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
+                                  {integration.category}
+                                </span>
+                              </div>
+                              {isSelected && (
+                                <div className="flex items-center justify-center gap-2 text-cyan-400 mt-2">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span className="text-xs font-semibold">Selecionado</span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 7: Configuração da Equipe */}
+                {currentWizardStep === 7 && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Admin Principal */}
+                      <Card className="glass-card neon-panel">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Administrador Principal</CardTitle>
+                          <p className="text-sm text-gray-400">Usuário com acesso total à organização</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <label className="text-sm text-gray-400">Nome Completo</label>
+                            <input
+                              type="text"
+                              className="w-full mt-1 p-3 bg-gray-800 border border-gray-600 rounded text-white"
+                              value={wizardData.adminUser?.name || ''}
+                              onChange={(e) => updateWizardData({ 
+                                adminUser: { ...wizardData.adminUser, name: e.target.value, role: 'admin' }
+                              })}
+                              placeholder="Ex: João Silva"
+                              data-testid="wizard-step7-admin-name"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm text-gray-400">Email</label>
+                            <input
+                              type="email"
+                              className="w-full mt-1 p-3 bg-gray-800 border border-gray-600 rounded text-white"
+                              value={wizardData.adminUser?.email || ''}
+                              onChange={(e) => updateWizardData({ 
+                                adminUser: { ...wizardData.adminUser, email: e.target.value, role: 'admin' }
+                              })}
+                              placeholder="admin@empresa.com"
+                              data-testid="wizard-step7-admin-email"
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Membros da Equipe */}
+                      <Card className="glass-card neon-panel">
+                        <CardHeader>
+                          <CardTitle className="text-lg gradient-text">Membros da Equipe</CardTitle>
+                          <p className="text-sm text-gray-400">Adicione até {wizardData.plan ? PLANS[wizardData.plan].users : 2} usuários</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {[0, 1, 2].slice(0, (wizardData.plan ? PLANS[wizardData.plan].users : 2) - 1).map((index) => {
+                            const member = wizardData.teamMembers?.[index] || {};
+                            return (
+                              <div key={index} className="space-y-2 p-3 bg-gray-800/50 rounded">
+                                <input
+                                  type="text"
+                                  className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm"
+                                  value={member.name || ''}
+                                  onChange={(e) => {
+                                    const updated = [...(wizardData.teamMembers || [])];
+                                    updated[index] = { ...member, name: e.target.value, role: 'user' };
+                                    updateWizardData({ teamMembers: updated });
+                                  }}
+                                  placeholder={`Nome do membro ${index + 1}`}
+                                  data-testid={`wizard-step7-member-${index}-name`}
+                                />
+                                <input
+                                  type="email"
+                                  className="w-full p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm"
+                                  value={member.email || ''}
+                                  onChange={(e) => {
+                                    const updated = [...(wizardData.teamMembers || [])];
+                                    updated[index] = { ...member, email: e.target.value, role: 'user' };
+                                    updateWizardData({ teamMembers: updated });
+                                  }}
+                                  placeholder={`email${index + 1}@empresa.com`}
+                                  data-testid={`wizard-step7-member-${index}-email`}
+                                />
+                              </div>
+                            );
+                          })}
+                          
+                          {wizardData.plan && PLANS[wizardData.plan].users === -1 && (
+                            <div className="text-center p-4 border-2 border-dashed border-gray-600 rounded">
+                              <p className="text-gray-400 text-sm">
+                                ✨ Plano Enterprise: Usuários ilimitados!<br/>
+                                Adicione quantos membros precisar após criar a organização.
+                              </p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 )}
