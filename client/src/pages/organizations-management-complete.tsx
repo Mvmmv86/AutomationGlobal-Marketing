@@ -135,7 +135,7 @@ interface WizardData {
   selectedModules: string[];
   
   // Step 3: Plano
-  plan: 'starter' | 'professional' | 'enterprise';
+  plan: 'free' | 'starter' | 'professional' | 'enterprise';
   
   // Step 4: IA Configuration
   primaryAiProvider: 'openai' | 'anthropic';
@@ -163,6 +163,15 @@ interface WizardData {
 
 // Plan configurations
 const PLANS = {
+  free: {
+    name: 'Free',
+    price: 0,
+    users: 1,
+    aiRequests: 100,
+    features: ['Basic AI', 'Community Support', 'Core Features'],
+    color: 'from-gray-600 to-slate-600',
+    icon: Shield
+  },
   starter: {
     name: 'Starter',
     price: 29,
@@ -233,7 +242,7 @@ const BUSINESS_TYPES = {
 const createOrgSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
-  plan: z.enum(['starter', 'pro', 'enterprise'], {
+  plan: z.enum(['free', 'starter', 'pro', 'enterprise'], {
     required_error: 'Selecione um plano'
   }),
   type: z.enum(['marketing', 'support', 'trading'], {
@@ -245,7 +254,7 @@ const createOrgSchema = z.object({
 const editOrgSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
-  plan: z.enum(['starter', 'pro', 'enterprise']),
+  plan: z.enum(['free', 'starter', 'pro', 'enterprise']),
   type: z.enum(['marketing', 'support', 'trading']),
   status: z.enum(['active', 'inactive', 'trial', 'suspended']),
   description: z.string().optional(),
@@ -1453,11 +1462,12 @@ export default function OrganizationsManagementComplete() {
                 {/* Step 3: Seleção de Plano */}
                 {currentWizardStep === 3 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                       {Object.entries(PLANS).map(([key, plan]) => {
                         const IconComponent = plan.icon;
                         const isSelected = wizardData.plan === key;
                         const isPopular = key === 'professional';
+                        const isFree = key === 'free';
                         
                         return (
                           <Card 
@@ -1478,6 +1488,14 @@ export default function OrganizationsManagementComplete() {
                               </div>
                             )}
                             
+                            {isFree && (
+                              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                                <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                  ✨ Gratuito
+                                </div>
+                              </div>
+                            )}
+                            
                             <CardContent className="p-6 text-center">
                               <div className={`w-16 h-16 mx-auto rounded-xl bg-gradient-to-r ${plan.color} flex items-center justify-center mb-4`}>
                                 <IconComponent className="w-8 h-8 text-white" />
@@ -1485,7 +1503,13 @@ export default function OrganizationsManagementComplete() {
                               
                               <h4 className="text-xl font-bold text-white mb-2">{plan.name}</h4>
                               <div className="text-3xl font-bold gradient-text mb-4">
-                                ${plan.price}<span className="text-lg text-gray-400">/mês</span>
+                                {plan.price === 0 ? (
+                                  <span className="text-green-400">Gratuito</span>
+                                ) : (
+                                  <>
+                                    ${plan.price}<span className="text-lg text-gray-400">/mês</span>
+                                  </>
+                                )}
                               </div>
                               
                               <div className="space-y-3 mb-6">
