@@ -274,6 +274,11 @@ export default function AIManagementByOrganization() {
   const [selectedOrganization, setSelectedOrganization] = useState<OrganizationAI | null>(null);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showLimitsDialog, setShowLimitsDialog] = useState(false);
+  const [editingLimits, setEditingLimits] = useState<{
+    provider: 'openai' | 'anthropic';
+    monthlyLimit: number;
+    dailyLimit: number;
+  } | null>(null);
   const [filterType, setFilterType] = useState('all');
   const [filterPlan, setFilterPlan] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -321,6 +326,62 @@ export default function AIManagementByOrganization() {
       });
     }
   });
+
+  // Função para atualizar limites de IA
+  const updateLimits = useMutation({
+    mutationFn: async ({ orgId, provider, monthlyLimit, dailyLimit }: { 
+      orgId: string, 
+      provider: string, 
+      monthlyLimit: number, 
+      dailyLimit: number 
+    }) => {
+      // Simulação da API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return { success: true };
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: 'Limites Atualizados',
+        description: `Limites do ${variables.provider} atualizados com sucesso`,
+      });
+      setShowLimitsDialog(false);
+      setEditingLimits(null);
+      queryClient.invalidateQueries({ queryKey: ['/api/organizations/ai'] });
+    },
+    onError: () => {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar os limites',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Função para abrir modal de edição de limites
+  const openLimitsDialog = (org: OrganizationAI, provider: 'openai' | 'anthropic') => {
+    const config = org.aiConfig[provider];
+    if (config) {
+      setSelectedOrganization(org);
+      setEditingLimits({
+        provider,
+        monthlyLimit: config.monthlyLimit,
+        dailyLimit: config.dailyLimit
+      });
+      setShowLimitsDialog(true);
+    }
+  };
+
+  // Função para salvar limites
+  const handleSaveLimits = () => {
+    if (selectedOrganization && editingLimits) {
+      updateLimits.mutate({
+        orgId: selectedOrganization.organizationId,
+        provider: editingLimits.provider,
+        monthlyLimit: editingLimits.monthlyLimit,
+        dailyLimit: editingLimits.dailyLimit
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
@@ -574,6 +635,15 @@ export default function AIManagementByOrganization() {
                               value={((org.aiConfig.openai?.usedThisMonth || 0) / (org.aiConfig.openai?.monthlyLimit || 1)) * 100} 
                               className="h-1" 
                             />
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openLimitsDialog(org, 'openai')}
+                              className="mt-1 text-xs h-6 px-2 text-gray-400 hover:text-white"
+                            >
+                              <Settings className="w-3 h-3 mr-1" />
+                              Ajustar Limites
+                            </Button>
                           </div>
                         ) : (
                           <p className="text-xs text-gray-500">API Key não configurada</p>
@@ -638,6 +708,15 @@ export default function AIManagementByOrganization() {
                               value={((org.aiConfig.anthropic?.usedThisMonth || 0) / (org.aiConfig.anthropic?.monthlyLimit || 1)) * 100} 
                               className="h-1" 
                             />
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => openLimitsDialog(org, 'anthropic')}
+                              className="mt-1 text-xs h-6 px-2 text-gray-400 hover:text-white"
+                            >
+                              <Settings className="w-3 h-3 mr-1" />
+                              Ajustar Limites
+                            </Button>
                           </div>
                         ) : (
                           <p className="text-xs text-gray-500">API Key não configurada</p>
@@ -742,6 +821,159 @@ export default function AIManagementByOrganization() {
             </CardContent>
           </Card>
         )}
+
+        {/* Modal de Ajuste de Limites */}
+        <Dialog open={showLimitsDialog} onOpenChange={setShowLimitsDialog}>
+          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold gradient-text">
+                🎛️ Ajustar Limites de IA
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedOrganization && editingLimits && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-white">
+                    {selectedOrganization.organizationName}
+                  </h3>
+                  <p className="text-gray-400">
+                    Configurando limites para{' '}
+                    <span className="text-cyan-400 font-semibold">
+                      {editingLimits.provider === 'openai' ? 'OpenAI' : 'Anthropic'}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Limite Mensal */}
+                  <div>
+                    <Label className="text-gray-300 font-medium">
+                      Limite Mensal (requisições)
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingLimits.monthlyLimit}
+                      onChange={(e) => setEditingLimits({
+                        ...editingLimits,
+                        monthlyLimit: parseInt(e.target.value) || 0
+                      })}
+                      className="bg-gray-800 border-gray-600 text-white mt-1"
+                      placeholder="Ex: 10000"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Número máximo de requisições por mês
+                    </p>
+                  </div>
+
+                  {/* Limite Diário */}
+                  <div>
+                    <Label className="text-gray-300 font-medium">
+                      Limite Diário (requisições)
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editingLimits.dailyLimit}
+                      onChange={(e) => setEditingLimits({
+                        ...editingLimits,
+                        dailyLimit: parseInt(e.target.value) || 0
+                      })}
+                      className="bg-gray-800 border-gray-600 text-white mt-1"
+                      placeholder="Ex: 500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Número máximo de requisições por dia
+                    </p>
+                  </div>
+
+                  {/* Uso Atual */}
+                  <div className="p-3 bg-gray-800/50 rounded border border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-300 mb-2">
+                      Uso Atual
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-400">Este mês</p>
+                        <p className="text-white font-semibold">
+                          {formatNumber(
+                            editingLimits.provider === 'openai' 
+                              ? selectedOrganization.aiConfig.openai?.usedThisMonth || 0
+                              : selectedOrganization.aiConfig.anthropic?.usedThisMonth || 0
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400">Hoje</p>
+                        <p className="text-white font-semibold">
+                          {formatNumber(
+                            editingLimits.provider === 'openai' 
+                              ? selectedOrganization.aiConfig.openai?.usedToday || 0
+                              : selectedOrganization.aiConfig.anthropic?.usedToday || 0
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Alertas de Validação */}
+                  {editingLimits.dailyLimit > editingLimits.monthlyLimit && (
+                    <div className="flex items-center gap-2 p-2 bg-yellow-500/20 text-yellow-300 rounded text-xs">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>Limite diário não pode ser maior que o mensal</span>
+                    </div>
+                  )}
+
+                  {editingLimits.monthlyLimit < (
+                    editingLimits.provider === 'openai' 
+                      ? selectedOrganization.aiConfig.openai?.usedThisMonth || 0
+                      : selectedOrganization.aiConfig.anthropic?.usedThisMonth || 0
+                  ) && (
+                    <div className="flex items-center gap-2 p-2 bg-red-500/20 text-red-300 rounded text-xs">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Limite mensal menor que uso atual</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botões */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowLimitsDialog(false);
+                      setEditingLimits(null);
+                    }}
+                    variant="outline"
+                    className="flex-1 bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSaveLimits}
+                    disabled={
+                      updateLimits.isPending || 
+                      editingLimits.dailyLimit > editingLimits.monthlyLimit
+                    }
+                    className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white"
+                  >
+                    {updateLimits.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Salvar Limites
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
