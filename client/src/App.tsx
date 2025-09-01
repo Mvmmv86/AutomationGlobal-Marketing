@@ -21,6 +21,7 @@ import OrganizationsManagement from "@/pages/organizations-management-simple";
 import OrganizationsManagementAdvanced from "@/pages/organizations-management-advanced";
 import OrganizationsManagementComplete from "@/pages/organizations-management-complete";
 import AIManagementGlobal from "@/pages/ai-management-global";
+import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/organizations-advanced" component={OrganizationsManagementAdvanced} />
       <Route path="/organizations-simple" component={OrganizationsManagement} />
       <Route path="/ai-management" component={AIManagementGlobal} />
+      <Route path="/ai-management-org" component={AIManagementByOrganization} />
       <Route component={NotFound} />
     </Switch>
   );

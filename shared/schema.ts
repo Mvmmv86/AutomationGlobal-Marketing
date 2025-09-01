@@ -62,7 +62,40 @@ export const organizationUsers = pgTable("organization_users", {
   isActive: boolean("is_active").default(true),
 });
 
-// AI Tables
+// AI Tables - Each organization manages their own AI
+export const organizationAiConfig = pgTable("organization_ai_config", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  provider: aiProviderEnum("provider").notNull(), // openai, anthropic
+  apiKey: text("api_key"), // encrypted
+  models: jsonb("models").default([]), // selected models
+  monthlyLimit: integer("monthly_limit").default(10000), // requests per month
+  dailyLimit: integer("daily_limit").default(500), // requests per day
+  usedThisMonth: integer("used_this_month").default(0),
+  usedToday: integer("used_today").default(0),
+  isActive: boolean("is_active").default(true),
+  isPausedByAdmin: boolean("is_paused_by_admin").default(false), // super admin can pause
+  settings: jsonb("settings").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aiUsageLogs = pgTable("ai_usage_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  provider: aiProviderEnum("provider").notNull(),
+  model: text("model").notNull(),
+  requestTokens: integer("request_tokens").default(0),
+  responseTokens: integer("response_tokens").default(0),
+  totalTokens: integer("total_tokens").default(0),
+  cost: decimal("cost", { precision: 10, scale: 4 }).default('0'),
+  responseTime: integer("response_time"), // milliseconds
+  success: boolean("success").default(true),
+  errorMessage: text("error_message"),
+  userId: uuid("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const aiProviders = pgTable("ai_providers", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -72,21 +105,6 @@ export const aiProviders = pgTable("ai_providers", {
   models: jsonb("models").default([]),
   settings: jsonb("settings").default({}),
   isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const aiUsageLogs = pgTable("ai_usage_logs", {
-  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
-  userId: uuid("user_id").references(() => users.id),
-  providerId: uuid("provider_id").references(() => aiProviders.id).notNull(),
-  model: text("model").notNull(),
-  tokens: integer("tokens"),
-  cost: decimal("cost", { precision: 10, scale: 6 }),
-  requestData: jsonb("request_data"),
-  responseData: jsonb("response_data"),
-  status: text("status").notNull(),
-  duration: integer("duration"), // in milliseconds
   createdAt: timestamp("created_at").defaultNow(),
 });
 
