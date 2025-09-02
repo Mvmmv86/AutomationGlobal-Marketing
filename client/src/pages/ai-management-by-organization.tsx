@@ -392,14 +392,26 @@ export default function AIManagementByOrganization() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold gradient-text mb-2">
-            🧠 Gestão de IA por Organização
-          </h1>
-          <p className="text-gray-400 text-lg">
-            Monitoramento e controle de IA para todas as organizações
-          </p>
+        {/* Header com botão de voltar */}
+        <div className="flex items-center justify-between mb-8">
+          <Button 
+            onClick={() => window.location.href = '/admin-dashboard-final'}
+            className="bg-gradient-to-r from-gray-700/20 to-gray-600/20 border border-gray-500/30 text-gray-300 hover:from-gray-600/40 hover:to-gray-500/40 hover:border-gray-400/50 hover:text-gray-200 transition-all duration-200"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Voltar ao Dashboard
+          </Button>
+          
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold gradient-text mb-2">
+              🧠 Gestão de IA por Organização
+            </h1>
+            <p className="text-gray-400 text-lg">
+              Monitoramento e controle de IA para todas as organizações
+            </p>
+          </div>
+          
+          <div className="w-32"></div> {/* Spacer para centralizar o título */}
         </div>
 
         {/* Cards de Estatísticas Globais */}
