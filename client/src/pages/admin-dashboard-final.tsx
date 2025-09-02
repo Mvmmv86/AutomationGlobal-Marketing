@@ -854,7 +854,7 @@ export default function AdminDashboardFinal() {
             item.id === 'organizations' || item.id === 'ai-management' ? (
               <Link href={item.path} key={item.id}>
                 <button
-                  className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group glass hover:glass-dark card-hover`}
+                  className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group glass hover:glass-dark card-hover ${item.id === 'ai-management' ? 'mt-4' : ''}`}
                   data-testid={`nav-${item.id}`}
                 >
                   <div className={`p-2 rounded-lg icon-container-futuristic`}>
