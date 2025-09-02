@@ -843,12 +843,13 @@ export default function AdminDashboardFinal() {
         </div>
 
         {/* NAVIGATION MENU */}
-        <div className="flex-1 p-6 space-y-3">
+        <div className="flex-1 p-6 space-y-4">
           <div className="mb-6">
-            <h2 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-4">PAINEL ADMINISTRATIVO</h2>
+            <h2 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-6">PAINEL ADMINISTRATIVO</h2>
           </div>
           
           {/* Navigation Items */}
+          <div className="space-y-4">
           {navigationItems.map((item) => (
             item.id === 'organizations' || item.id === 'ai-management' ? (
               <Link href={item.path} key={item.id}>
@@ -884,10 +885,12 @@ export default function AdminDashboardFinal() {
               </button>
             )
           ))}
+          </div>
           
-          <div className="pt-8 border-t border-gray-700/50">
-            <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-4">CONTROLES</h3>
+          <div className="pt-8 mt-8 border-t border-gray-700/50">
+            <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-6">CONTROLES</h3>
             
+            <div className="space-y-4">
             {/* Auto Refresh Toggle */}
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
@@ -907,7 +910,7 @@ export default function AdminDashboardFinal() {
             {/* Manual Refresh */}
             <button
               onClick={() => refetchMetrics()}
-              className="w-full p-4 rounded-xl neon-panel transition-all duration-300 flex items-center gap-4 card-hover mt-3 btn-glow"
+              className="w-full p-4 rounded-xl neon-panel transition-all duration-300 flex items-center gap-4 card-hover btn-glow"
               data-testid="manual-refresh"
             >
               <div className="p-2 rounded-lg icon-container-futuristic border-cyan-500">
@@ -915,6 +918,7 @@ export default function AdminDashboardFinal() {
               </div>
               <span className="font-semibold text-white">Atualizar Dados</span>
             </button>
+            </div>
           </div>
         </div>
 
