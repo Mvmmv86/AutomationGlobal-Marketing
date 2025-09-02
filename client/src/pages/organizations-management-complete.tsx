@@ -726,7 +726,7 @@ export default function OrganizationsManagementComplete() {
           
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => setLocation('/admin-dashboard-complete')}
+              onClick={() => setLocation('/admin-dashboard')}
               className="btn-glow bg-gradient-to-r from-blue-600 to-cyan-600"
               data-testid="nav-admin-dashboard"
             >
