@@ -14,17 +14,31 @@ O sistema administrativo principal mantém o design futurístico baseado na refe
 ### Organization-Specific Design Systems
 Cada tipo de organização possui seu próprio design system personalizado:
 
-#### Marketing Organizations - 3D Glass Morphism Design
-- **Background Options:** Preto (#0f0f0f) OU Branco (#ffffff) - configurável por usuário
-- **Cards:** Glass morphism com backdrop-filter: blur(20px)
-- **Gradientes:** Roxo para Azul (#8B5CF6 → #3B82F6)
-- **Bordas:** Arredondadas (20px) com transparência rgba(255,255,255,0.1)
-- **Sombras:** 3D profundas com efeito elevação e rgba(139,92,246,0.3)
-- **Efeitos:** Hover com translateY(-8px) e scale(1.02)
-- **Componentes:** Cards 3D, gráficos circulares, barras 3D, botões glass
-- **Layout:** Grid responsivo moderno (auto-fit, minmax(300px, 1fr))
-- **Referência:** Design baseado na imagem dashboard 3D fornecida
-- **Implementação:** SEMPRE usar este design APENAS para organizações tipo "marketing"
+#### Marketing Organizations - 3D Glass Morphism Design System (Registrado 02/09/2025)
+**Classes CSS Base:**
+- **`.glass-3d`**: Cards principais com backdrop-filter: blur(20px), box-shadow multicamada
+- **`.glass-3d-dark`**: Variação para tema escuro com rgba(0,0,0,0.2)
+- **`.glass-3d-light`**: Variação para tema claro com rgba(255,255,255,0.15)
+- **`.glass-button-3d`**: Botões interativos com hover effects e transformações
+- **`.gradient-purple-blue`**: Gradiente oficial (#8B5CF6 → #3B82F6)
+- **`.circular-progress-3d`**: Indicadores circulares com conic-gradient
+- **`.marketing-gradient-bg`**: Background com radial gradients e fallback
+
+**Especificações Técnicas:**
+- **Bordas:** border-radius: 20px para cards, 16px para botões
+- **Blur:** backdrop-filter: blur(20px) cards, blur(15px) botões
+- **Sombras:** Multicamada com rgba(0,0,0,0.4) + rgba(0,0,0,0.3)
+- **Hover:** translateY(-8px) scale(1.02) para cards, translateY(-2px) scale(1.02) botões
+- **Transições:** cubic-bezier(0.4, 0, 0.2, 1) para suavidade
+- **Cores:** Gradientes roxo/azul, bordas rgba(255,255,255,0.1)
+
+**Componentes Implementados:**
+- Cards glassmorphism com efeitos 3D profundos
+- Botões interativos clean com micro-interações
+- Indicadores circulares com gradientes
+- Sistema de temas configurável (dark/light)
+- Layout grid responsivo moderno
+- **Status:** Implementado e testado em MarketingDashboard3D.tsx
 
 #### Future Organization Types (Planejado)
 - **Support Organizations:** Será implementado design específico diferente

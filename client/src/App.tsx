@@ -27,6 +27,7 @@ import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboard from "@/pages/MarketingDashboard";
 import MarketingDashboard3D from "@/pages/MarketingDashboard3D";
+import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -51,6 +52,8 @@ function Router() {
       <Route path="/marketing" component={() => <MarketingDashboard />} />
       <Route path="/marketing-3d/:id" component={MarketingDashboard3D} />
       <Route path="/marketing-3d" component={() => <MarketingDashboard3D />} />
+      <Route path="/marketing-complete/:id" component={MarketingDashboardComplete} />
+      <Route path="/marketing-complete" component={() => <MarketingDashboardComplete />} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
