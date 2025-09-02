@@ -10,7 +10,7 @@ import {
   Brain,
   BarChart3,
   Users,
-  Video,
+  Video as VideoIcon,
   Sun,
   Moon,
   Home,
@@ -32,7 +32,10 @@ import {
   Save,
   Eye,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Play,
+  Share2,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,8 +50,7 @@ import { SiInstagram as Instagram, SiFacebook as Facebook, SiX as Twitter, SiYou
 // Theme Context
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
 
-// Social Media Manager Component
-import { SocialMediaManager } from "@/components/SocialMediaManager";
+
 
 interface MarketingMetrics {
   impressions: number;
@@ -94,7 +96,7 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [activeContentTab, setActiveContentTab] = useState('library');
 
   const contentTabs = [
-    { id: 'library', label: 'Biblioteca', icon: Video },
+    { id: 'library', label: 'Biblioteca', icon: VideoIcon },
     { id: 'editor', label: 'Editor', icon: MessageCircle },
     { id: 'calendar', label: 'Calendário', icon: Calendar },
     { id: 'templates', label: 'Templates', icon: Activity }
@@ -577,7 +579,7 @@ function MarketingDashboardCompleteInner() {
         <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
         <div className="flex-1 p-8">
-          <SocialMediaManager />
+          <ContentManagement theme={theme} />
         </div>
       </div>
     );
@@ -763,94 +765,27 @@ function MarketingDashboardCompleteInner() {
 }
 
 function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
-  const { id: organizationId } = useParams<{ id: string }>();
-  const queryClient = useQueryClient();
-  
-  const [postContent, setPostContent] = useState('');
+  // Estados do editor
+  const [content, setContent] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('instagram');
   const [scheduleDate, setScheduleDate] = useState('');
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
-  const [uploadedMedia, setUploadedMedia] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishMode, setPublishMode] = useState<'now' | 'schedule' | 'draft'>('now');
+  const [uploadedMedia, setUploadedMedia] = useState<any[]>([]);
   
-  // Query para buscar contas conectadas
-  const { data: socialAccounts = [], isLoading: loadingAccounts } = useQuery({
-    queryKey: [`/api/organizations/${organizationId}/social-media/accounts`],
-    enabled: !!organizationId
-  });
-
-  // Mutation para conectar conta
-  const connectAccountMutation = useMutation({
-    mutationFn: async ({ platform, accessToken }: { platform: string; accessToken: string }) => {
-      const response = await fetch(`/api/organizations/${organizationId}/social-media/connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform, accessToken, accountId: 'auto' })
-      });
-      if (!response.ok) throw new Error('Failed to connect account');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/social-media/accounts`] });
-    }
-  });
-
-  // Mutation para publicar post
-  const publishPostMutation = useMutation({
-    mutationFn: async (postData: any) => {
-      const response = await fetch(`/api/organizations/${organizationId}/social-media/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData)
-      });
-      if (!response.ok) throw new Error('Failed to publish post');
-      return response.json();
-    },
-    onSuccess: () => {
-      setPostContent('');
-      setScheduleDate('');
-      setSelectedAccounts([]);
-      setUploadedMedia([]);
-      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}/social-media/posts`] });
-    }
-  });
-
+  // Estados de conexões sociais
+  const [connectedAccounts, setConnectedAccounts] = useState([
+    { id: 'fb1', platform: 'facebook', name: 'Página Principal', connected: true, accountId: 'page_123' },
+    { id: 'ig1', platform: 'instagram', name: '@empresa', connected: true, accountId: 'ig_456' }
+  ]);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>(['fb1', 'ig1']);
+  
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-pink-500 to-purple-500' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-gradient-to-r from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'Twitter/X', icon: Twitter, color: 'bg-gradient-to-r from-gray-800 to-gray-900' },
-    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-gradient-to-r from-blue-700 to-blue-800' }
+    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-500' },
+    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
+    { id: 'twitter', name: 'Twitter/X', icon: Twitter, color: 'from-gray-800 to-gray-900' },
+    { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'from-red-600 to-red-700' }
   ];
-
-  const handleConnectFacebook = () => {
-    const redirectUri = `${window.location.origin}/api/auth/facebook/callback`;
-    const facebookAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${redirectUri}&scope=pages_manage_posts,pages_read_engagement&response_type=code&state=${organizationId}`;
-    window.open(facebookAuthUrl, 'facebook-auth', 'width=600,height=400');
-  };
-
-  const handleConnectInstagram = () => {
-    const redirectUri = `${window.location.origin}/api/auth/instagram/callback`;
-    const instagramAuthUrl = `https://api.instagram.com/oauth/authorize?client_id=${process.env.INSTAGRAM_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user_profile,user_media&response_type=code&state=${organizationId}`;
-    window.open(instagramAuthUrl, 'instagram-auth', 'width=600,height=400');
-  };
-
-  const handlePublish = async () => {
-    if (!postContent.trim()) return;
-    
-    setIsPublishing(true);
-    try {
-      await publishPostMutation.mutateAsync({
-        content: postContent,
-        platforms: selectedAccounts,
-        mediaUrls: uploadedMedia,
-        scheduledAt: scheduleDate || undefined
-      });
-    } catch (error) {
-      console.error('Error publishing post:', error);
-    } finally {
-      setIsPublishing(false);
-    }
-  };
 
   const suggestions = [
     'Aproveite nossa promoção especial de verão! 🌞',
@@ -860,101 +795,78 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     'Tutorial: Como aproveitar ao máximo nosso serviço'
   ];
 
+  // Funções de ação
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      // Simular publicação
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Publicando:', { content, accounts: selectedAccounts, scheduleDate });
+    } catch (error) {
+      console.error('Erro ao publicar:', error);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleConnectAccount = (platform: string) => {
+    console.log('Conectar conta:', platform);
+    // Aqui seria a integração real com APIs do Facebook/Instagram
+  };
+
+  const handleOptimizeWithAI = () => {
+    // Simular otimização com IA
+    const optimized = content + "\n\n✨ Versão otimizada com IA para maior engajamento!";
+    setContent(optimized);
+  };
+
+  const handleGenerateHashtags = () => {
+    const hashtags = "\n\n#marketing #digitalmarketing #business #growth #success";
+    setContent(content + hashtags);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Editor Principal */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Conexões de Contas Sociais */}
+        {/* Barra de Ações Rápidas */}
         <div className="glass-3d p-4">
-          <h3 className={cn(
-            "text-lg font-bold mb-4 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <Link className="w-5 h-5 text-green-400" />
-            Conexões Sociais
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {/* Facebook Connection */}
-            <div className="flex items-center justify-between p-3 rounded-lg glass-3d-light">
-              <div className="flex items-center gap-3">
-                <Facebook className="w-6 h-6 text-blue-500" />
-                <div>
-                  <div className={cn("font-medium text-sm", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-                    Facebook
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {socialAccounts.find(acc => acc.platform === 'facebook') ? 'Conectado' : 'Desconectado'}
-                  </div>
-                </div>
-              </div>
-              {socialAccounts.find(acc => acc.platform === 'facebook') ? (
-                <Badge className="bg-green-500/20 text-green-400">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Conectado
-                </Badge>
-              ) : (
-                <Button 
-                  onClick={handleConnectFacebook}
-                  size="sm"
-                  className="glass-button-3d text-xs"
-                >
-                  <Link className="w-3 h-3 mr-1" />
-                  Conectar
-                </Button>
-              )}
-            </div>
-
-            {/* Instagram Connection */}
-            <div className="flex items-center justify-between p-3 rounded-lg glass-3d-light">
-              <div className="flex items-center gap-3">
-                <Instagram className="w-6 h-6 text-pink-500" />
-                <div>
-                  <div className={cn("font-medium text-sm", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-                    Instagram
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {socialAccounts.find(acc => acc.platform === 'instagram') ? 'Conectado' : 'Desconectado'}
-                  </div>
-                </div>
-              </div>
-              {socialAccounts.find(acc => acc.platform === 'instagram') ? (
-                <Badge className="bg-green-500/20 text-green-400">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Conectado
-                </Badge>
-              ) : (
-                <Button 
-                  onClick={handleConnectInstagram}
-                  size="sm"
-                  className="glass-button-3d text-xs"
-                >
-                  <Link className="w-3 h-3 mr-1" />
-                  Conectar
-                </Button>
-              )}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={cn(
+              "text-lg font-bold flex items-center gap-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              <Share2 className="w-5 h-5 text-purple-400" />
+              Social Media Manager
+            </h3>
+            
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="glass-button-3d">
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Sincronizar
+              </Button>
+              <Button size="sm" className="gradient-purple-blue text-white">
+                <Plus className="w-4 h-4 mr-1" />
+                Nova Campanha
+              </Button>
             </div>
           </div>
-        </div>
-
-        <div className="glass-3d p-4">
-          <h3 className={cn(
-            "text-lg font-bold mb-4 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <Edit className="w-5 h-5 text-blue-400" />
-            Criar Post
-          </h3>
-
-          {/* Seleção de Contas para Publicar */}
-          <div className="mb-4">
-            <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
-              Selecionar Contas:
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {socialAccounts.map((account) => (
+          
+          {/* Status das Contas */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {connectedAccounts.map((account) => (
+              <div key={account.id} className="flex items-center justify-between p-2 rounded-lg glass-3d-light">
+                <div className="flex items-center gap-2">
+                  {account.platform === 'facebook' && <Facebook className="w-4 h-4 text-blue-500" />}
+                  {account.platform === 'instagram' && <Instagram className="w-4 h-4 text-pink-500" />}
+                  <div>
+                    <div className={cn("font-medium text-xs", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                      {account.name.split(' ')[0]}
+                    </div>
+                    <div className="text-xs text-green-400">Online</div>
+                  </div>
+                </div>
                 <button
-                  key={account.id}
                   onClick={() => {
                     if (selectedAccounts.includes(account.id)) {
                       setSelectedAccounts(prev => prev.filter(id => id !== account.id));
@@ -963,26 +875,356 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                     }
                   }}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg glass-button-3d",
-                    selectedAccounts.includes(account.id) && "gradient-purple-blue text-white"
+                    "w-4 h-4 rounded border-2 flex items-center justify-center",
+                    selectedAccounts.includes(account.id) 
+                      ? "bg-purple-500 border-purple-500" 
+                      : "border-gray-500"
                   )}
                 >
-                  {account.platform === 'facebook' ? <Facebook className="w-4 h-4" /> : <Instagram className="w-4 h-4" />}
-                  {account.accountName || account.platform}
-                  {selectedAccounts.includes(account.id) && <CheckCircle className="w-3 h-3" />}
+                  {selectedAccounts.includes(account.id) && <CheckCircle className="w-3 h-3 text-white" />}
+                </button>
+              </div>
+            ))}
+            
+            {/* Adicionar nova conta */}
+            <button 
+              onClick={() => handleConnectAccount('new')}
+              className="flex items-center justify-center p-2 rounded-lg glass-3d-light border-2 border-dashed border-gray-500/30 hover:border-purple-400 transition-colors"
+            >
+              <Plus className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Editor de Conteúdo Expandido */}
+        <div className="glass-3d p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={cn(
+              "text-lg font-bold flex items-center gap-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              <Edit className="w-5 h-5 text-blue-400" />
+              Editor de Conteúdo
+            </h3>
+            
+            {/* Botões de ação do editor */}
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="glass-button-3d" onClick={handleGenerateHashtags}>
+                <Brain className="w-4 h-4 mr-1" />
+                Hashtags
+              </Button>
+              <Button size="sm" variant="outline" className="glass-button-3d" onClick={handleOptimizeWithAI}>
+                <Zap className="w-4 h-4 mr-1" />
+                IA
+              </Button>
+            </div>
+          </div>
+
+          {/* Barra de Ferramentas do Editor */}
+          <div className="flex items-center gap-2 mb-4 p-2 rounded-lg glass-3d-light">
+            <div className="flex gap-1">
+              {platforms.map((platform) => (
+                <button
+                  key={platform.id}
+                  onClick={() => setSelectedPlatform(platform.id)}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1 rounded text-xs font-medium transition-all",
+                    selectedPlatform === platform.id 
+                      ? `bg-gradient-to-r ${platform.color} text-white` 
+                      : "glass-button-3d"
+                  )}
+                >
+                  <platform.icon className="w-3 h-3" />
+                  {platform.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Área de Texto */}
+          {/* Área de Texto Principal */}
           <div className="mb-4">
             <Textarea
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              placeholder="Digite seu conteúdo aqui..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={`Escreva seu conteúdo para ${platforms.find(p => p.id === selectedPlatform)?.name}...`}
               className={cn(
-                "min-h-32 glass-3d text-sm resize-none border-0",
+                "min-h-40 glass-3d text-sm resize-none border-0",
+                theme === 'dark' 
+                  ? 'bg-white/10 text-white placeholder-gray-400' 
+                  : 'bg-black/5 text-gray-900 placeholder-gray-500'
+              )}
+            />
+            
+            {/* Contador de caracteres e validação */}
+            <div className="flex justify-between items-center mt-2 text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                {content.length} caracteres
+                {selectedPlatform === 'twitter' && content.length > 280 && ' • Muito longo para Twitter'}
+                {selectedPlatform === 'instagram' && content.length > 2200 && ' • Muito longo para Instagram'}
+              </span>
+              <span className="text-purple-400">
+                {selectedAccounts.length} conta{selectedAccounts.length !== 1 ? 's' : ''} selecionada{selectedAccounts.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Upload e Mídia */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <label className={cn("text-sm font-medium", theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
+                Adicionar Mídia
+              </label>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="glass-button-3d">
+                  <Image className="w-4 h-4 mr-1" />
+                  Imagem
+                </Button>
+                <Button size="sm" variant="outline" className="glass-button-3d">
+                  <VideoIcon className="w-4 h-4 mr-1" />
+                  Vídeo
+                </Button>
+                <Button size="sm" variant="outline" className="glass-button-3d">
+                  <Upload className="w-4 h-4 mr-1" />
+                  Arquivo
+                </Button>
+              </div>
+            </div>
+            
+            {/* Preview de mídia upload */}
+            {uploadedMedia.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {uploadedMedia.map((media, index) => (
+                  <div key={index} className="aspect-square rounded-lg glass-3d-light flex items-center justify-center">
+                    <Image className="w-6 h-6 text-gray-400" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Configurações de Publicação */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Modo de Publicação */}
+            <div>
+              <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
+                Modo de Publicação:
+              </label>
+              <div className="flex gap-2">
+                {[
+                  { id: 'now', label: 'Agora', icon: Send },
+                  { id: 'schedule', label: 'Agendar', icon: Clock },
+                  { id: 'draft', label: 'Rascunho', icon: Save }
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setPublishMode(mode.id as any)}
+                    className={cn(
+                      "flex items-center gap-1 px-3 py-2 rounded text-xs font-medium transition-all",
+                      publishMode === mode.id 
+                        ? "gradient-purple-blue text-white" 
+                        : "glass-button-3d"
+                    )}
+                  >
+                    <mode.icon className="w-3 h-3" />
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Agendamento */}
+            {publishMode === 'schedule' && (
+              <div>
+                <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
+                  Data e Hora:
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className={cn(
+                    "glass-3d text-sm border-0",
+                    theme === 'dark' 
+                      ? 'bg-white/10 text-white' 
+                      : 'bg-black/5 text-gray-900'
+                  )}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Botões de Ação Principais */}
+          <div className="flex gap-3 mb-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="glass-button-3d flex-1"
+              disabled={!content.trim()}
+            >
+              <Eye className="w-4 h-4 mr-1" />
+              Visualizar
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="glass-button-3d flex-1"
+              disabled={!content.trim()}
+            >
+              <Save className="w-4 h-4 mr-1" />
+              Salvar Rascunho
+            </Button>
+            
+            <Button 
+              onClick={handlePublish}
+              disabled={!content.trim() || selectedAccounts.length === 0 || isPublishing}
+              className="gradient-purple-blue text-white flex-1"
+              size="sm"
+            >
+              {isPublishing ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Publicando...
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  {publishMode === 'schedule' ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      Agendar Post
+                    </>
+                  ) : publishMode === 'draft' ? (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Salvar
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Publicar Agora
+                    </>
+                  )}
+                </div>
+              )}
+            </Button>
+          </div>
+
+          {/* Status de Publicação */}
+          {isPublishing && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-500/20 border border-blue-500/30">
+              <div className="flex items-center gap-2 text-blue-400 text-sm">
+                <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin" />
+                Publicando em {selectedAccounts.length} conta{selectedAccounts.length !== 1 ? 's' : ''}...
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sidebar com Analytics e Ferramentas */}
+      <div className="space-y-4">
+        {/* Performance Recente */}
+        <div className="glass-3d p-4">
+          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+            📊 Performance Recente
+          </h4>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instagram:</span>
+              <span className="text-pink-400 font-medium">1.8K curtidas</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
+              <span className="text-blue-400 font-medium">2.4K curtidas</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Engajamento:</span>
+              <span className="text-green-400 font-medium">8.2%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sugestões de IA */}
+        <div className="glass-3d p-4">
+          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+            🤖 Sugestões de IA
+          </h4>
+          
+          <div className="space-y-2 mb-3">
+            {suggestions.slice(0, 3).map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => setContent(suggestion)}
+                className={cn(
+                  "w-full text-left p-2 rounded-lg text-xs glass-button-3d hover:gradient-purple-blue hover:text-white transition-all",
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                )}
+              >
+                {suggestion.slice(0, 60)}...
+              </button>
+            ))}
+          </div>
+          
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="w-full glass-button-3d"
+            disabled={!content.trim()}
+            onClick={handleOptimizeWithAI}
+          >
+            <Brain className="w-3 h-3 mr-1" />
+            Otimizar com IA
+          </Button>
+        </div>
+
+        {/* Melhores Horários */}
+        <div className="glass-3d p-4">
+          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+            ⏰ Melhores Horários
+          </h4>
+          
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
+              <span className="text-blue-400">14h - 16h</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instagram:</span>
+              <span className="text-pink-400">19h - 21h</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Hoje:</span>
+              <span className="text-green-400 font-medium">Ótimo período</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Posts Recentes */}
+        <div className="glass-3d p-4">
+          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+            📝 Posts Recentes
+          </h4>
+          
+          <div className="space-y-2">
+            {[
+              { platform: 'instagram', text: 'Promoção especial...', time: '2h', likes: '1.2K' },
+              { platform: 'facebook', text: 'Novo produto...', time: '4h', likes: '890' },
+              { platform: 'twitter', text: 'Dica rápida...', time: '6h', likes: '456' }
+            ].map((post, index) => (
+              <div key={index} className="p-2 rounded glass-3d-light">
+                <div className="flex items-center gap-2 mb-1">
+                  {post.platform === 'instagram' && <Instagram className="w-3 h-3 text-pink-400" />}
+                  {post.platform === 'facebook' && <Facebook className="w-3 h-3 text-blue-400" />}
+                  {post.platform === 'twitter' && <Twitter className="w-3 h-3 text-gray-400" />}
+                  <span className="text-xs text-gray-400">{post.time}</span>
+                </div>
+                <div className="text-xs text-gray-300 mb-1">{post.text}</div>
+                <div className="text-xs text-green-400">{post.likes} curtidas</div>
+              </div>
+            ))}
+          </div>
+        </div>
                 theme === 'dark' 
                   ? 'bg-white/10 text-white placeholder-gray-400' 
                   : 'bg-black/5 text-gray-900 placeholder-gray-500'
@@ -990,10 +1232,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             />
             <div className="flex justify-between items-center mt-2 text-xs">
               <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                {postContent.length} caracteres
+                {content.length} caracteres
               </span>
-              <span className="text-purple-400 flex items-center gap-1">
-                {selectedAccounts.length > 0 ? `${selectedAccounts.length} contas selecionadas` : 'Selecione contas para publicar'}
+              <span className="text-purple-400">
+                {selectedPlatform === 'instagram' && content.length > 2200 ? 'Muito longo para Instagram' : 'Tamanho ok'}
               </span>
             </div>
           </div>
@@ -1009,19 +1251,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 Imagem
               </Button>
               <Button size="sm" variant="outline" className="glass-button-3d">
-                <Play className="w-4 h-4 mr-1" />
+                <VideoIcon className="w-4 h-4 mr-1" />
                 Vídeo
               </Button>
             </div>
-            {uploadedMedia.length > 0 && (
-              <div className="mt-2 flex gap-2 flex-wrap">
-                {uploadedMedia.map((media, index) => (
-                  <div key={index} className="w-20 h-20 rounded-lg glass-3d-light flex items-center justify-center">
-                    <Image className="w-6 h-6 text-gray-400" />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Agendamento */}
@@ -1051,7 +1284,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               variant="outline" 
               size="sm" 
               className="glass-button-3d"
-              disabled={!postContent.trim()}
+              disabled={!content.trim()}
             >
               <Save className="w-4 h-4 mr-1" />
               Salvar Rascunho
@@ -1059,177 +1292,59 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             
             <Button 
               onClick={handlePublish}
-              disabled={!postContent.trim() || selectedAccounts.length === 0 || isPublishing}
+              disabled={!content.trim()}
               className="gradient-purple-blue text-white"
               size="sm"
             >
-              {isPublishing ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Publicando...
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  {scheduleDate ? (
-                    <>
-                      <Clock className="w-4 h-4" />
-                      Agendar Post
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Publicar Agora
-                    </>
-                  )}
-                </div>
-              )}
+              <Send className="w-4 h-4 mr-1" />
+              {scheduleDate ? 'Agendar Post' : 'Publicar Agora'}
             </Button>
           </div>
-
-          {/* Status de Publicação */}
-          {publishPostMutation.isError && (
-            <div className="mt-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30">
-              <div className="flex items-center gap-2 text-red-400 text-sm">
-                <AlertCircle className="w-4 h-4" />
-                Erro ao publicar: Verifique suas conexões de conta
-              </div>
-            </div>
-          )}
-          
-          {publishPostMutation.isSuccess && (
-            <div className="mt-4 p-3 rounded-lg bg-green-500/20 border border-green-500/30">
-              <div className="flex items-center gap-2 text-green-400 text-sm">
-                <CheckCircle className="w-4 h-4" />
-                {scheduleDate ? 'Post agendado com sucesso!' : 'Post publicado com sucesso!'}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Sidebar com Analytics e Sugestões */}
+      {/* Sidebar */}
       <div className="space-y-4">
-        {/* Analytics Recentes */}
-        <div className="glass-3d p-4">
-          <h3 className={cn(
-            "text-lg font-bold mb-4 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <BarChart3 className="w-5 h-5 text-cyan-400" />
-            Performance Recente
-          </h3>
-          
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className={cn("text-sm", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}>
-                Último Post Facebook:
-              </span>
-              <span className="text-blue-400 text-sm font-medium">2.4K curtidas</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className={cn("text-sm", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}>
-                Último Post Instagram:
-              </span>
-              <span className="text-pink-400 text-sm font-medium">1.8K curtidas</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className={cn("text-sm", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}>
-                Engajamento Médio:
-              </span>
-              <span className="text-green-400 text-sm font-medium">8.2%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Status das Contas */}
-        <div className="glass-3d p-4">
-          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-            Status das Contas
-          </h4>
-          
-          <div className="space-y-2">
-            {socialAccounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  {account.platform === 'facebook' ? (
-                    <Facebook className="w-3 h-3 text-blue-500" />
-                  ) : (
-                    <Instagram className="w-3 h-3 text-pink-500" />
-                  )}
-                  <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
-                    {account.accountName || account.platform}
-                  </span>
-                </div>
-                <Badge className="bg-green-500/20 text-green-400 text-xs">
-                  Ativo
-                </Badge>
-              </div>
-            ))}
-            
-            {socialAccounts.length === 0 && (
-              <div className="text-center py-2">
-                <span className={cn("text-xs", theme === 'dark' ? 'text-gray-500' : 'text-gray-400')}>
-                  Conecte suas contas sociais
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Sugestões de IA */}
         <div className="glass-3d p-4">
-          <h4 className={cn(
-            "text-sm font-bold mb-3 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <Brain className="w-4 h-4 text-purple-400" />
-            Sugestões de IA
+          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+            💡 Sugestões de IA
           </h4>
           
           <div className="space-y-2">
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
-                onClick={() => setPostContent(suggestion)}
+                onClick={() => setContent(suggestion)}
                 className={cn(
-                  "w-full text-left p-2 text-xs rounded-lg glass-button-3d hover:gradient-purple-blue transition-all",
-                  theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-white'
+                  "w-full text-left p-2 rounded-lg text-xs glass-3d-light hover:glass-3d transition-all",
+                  theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'
                 )}
               >
                 {suggestion}
               </button>
             ))}
           </div>
-
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="w-full mt-3 glass-button-3d"
-            disabled={!postContent.trim()}
-          >
-            <Zap className="w-3 h-3 mr-1" />
-            Otimizar com IA
-          </Button>
         </div>
 
-        {/* Melhores Horários */}
+        {/* Analytics Rápidas */}
         <div className="glass-3d p-4">
           <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-            Melhores Horários
+            📊 Performance Recente
           </h4>
           
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between items-center">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
-              <span className="text-blue-400">14h - 16h</span>
-            </div>
-            <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
               <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instagram:</span>
-              <span className="text-pink-400">19h - 21h</span>
+              <span className="text-pink-400">1.8K curtidas</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Hoje:</span>
-              <span className="text-green-400">Ótimo dia</span>
+            <div className="flex justify-between text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
+              <span className="text-blue-400">2.4K curtidas</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Engajamento:</span>
+              <span className="text-green-400">8.2%</span>
             </div>
           </div>
         </div>
