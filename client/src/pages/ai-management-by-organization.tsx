@@ -397,7 +397,7 @@ export default function AIManagementByOrganization() {
         {/* Header com botão de voltar */}
         <div className="flex items-center justify-between mb-8">
           <Button 
-            onClick={() => setLocation('/admin-dashboard-final')}
+            onClick={() => setLocation('/admin-dashboard')}
             className="bg-gradient-to-r from-gray-700/20 to-gray-600/20 border border-gray-500/30 text-gray-300 hover:from-gray-600/40 hover:to-gray-500/40 hover:border-gray-400/50 hover:text-gray-200 transition-all duration-200"
           >
             <Home className="w-4 h-4 mr-2" />
