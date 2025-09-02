@@ -32,7 +32,7 @@ function Router() {
   return (
     <Switch>
       {/* Admin Master Platform - Main entry point */}
-      <Route path="/" component={AdminDashboardComplete} />
+      <Route path="/" component={AdminDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/admin-dashboard-complete" component={AdminDashboardComplete} />
       
