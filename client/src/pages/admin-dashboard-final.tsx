@@ -849,7 +849,7 @@ export default function AdminDashboardFinal() {
           </div>
           
           {/* Navigation Items */}
-          <div className="space-y-4">
+          <div className="space-y-5">
           {navigationItems.map((item) => (
             item.id === 'organizations' || item.id === 'ai-management' ? (
               <Link href={item.path} key={item.id}>
@@ -890,7 +890,7 @@ export default function AdminDashboardFinal() {
           <div className="pt-8 mt-8 border-t border-gray-700/50">
             <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-6">CONTROLES</h3>
             
-            <div className="space-y-4">
+            <div className="space-y-5">
             {/* Auto Refresh Toggle */}
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
