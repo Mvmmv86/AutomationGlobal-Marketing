@@ -570,6 +570,124 @@ export class DatabaseStorage implements IStorage {
     return preference;
   }
 
+  // Organization Access Control Methods
+  async createOrganizationWithCredentials(
+    orgData: InsertOrganization,
+    credentialsData: {
+      loginEmail: string;
+      loginPassword: string; // Already hashed
+      displayName: string;
+      createdByAdmin: string;
+    }
+  ): Promise<{ organization: Organization; credentials: OrganizationCredential }> {
+    // Create organization first
+    const [organization] = await db.insert(schema.organizations).values(orgData).returning();
+    
+    // Create credentials for the organization
+    const [credentials] = await db.insert(schema.organizationCredentials).values({
+      organizationId: organization.id,
+      loginEmail: credentialsData.loginEmail,
+      loginPassword: credentialsData.loginPassword,
+      displayName: credentialsData.displayName,
+      createdByAdmin: credentialsData.createdByAdmin
+    }).returning();
+    
+    return { organization, credentials };
+  }
+
+  async getOrganizationCredentialsByEmail(email: string): Promise<OrganizationCredential | undefined> {
+    const [credentials] = await db.select()
+      .from(schema.organizationCredentials)
+      .where(and(
+        eq(schema.organizationCredentials.loginEmail, email),
+        eq(schema.organizationCredentials.isActive, true)
+      ));
+    return credentials;
+  }
+
+  async getOrganizationCredentialsById(id: string): Promise<OrganizationCredential | undefined> {
+    const [credentials] = await db.select()
+      .from(schema.organizationCredentials)
+      .where(and(
+        eq(schema.organizationCredentials.id, id),
+        eq(schema.organizationCredentials.isActive, true)
+      ));
+    return credentials;
+  }
+
+  async updateOrganizationCredentialsLastLogin(credentialId: string): Promise<void> {
+    await db.update(schema.organizationCredentials)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(schema.organizationCredentials.id, credentialId));
+  }
+
+  async createOrganizationSession(sessionData: InsertOrganizationSession): Promise<OrganizationSession> {
+    const [session] = await db.insert(schema.organizationSessions)
+      .values(sessionData)
+      .returning();
+    return session;
+  }
+
+  async getOrganizationSession(token: string): Promise<OrganizationSession | undefined> {
+    const [session] = await db.select()
+      .from(schema.organizationSessions)
+      .where(and(
+        eq(schema.organizationSessions.sessionToken, token),
+        gt(schema.organizationSessions.expiresAt, new Date())
+      ));
+    return session;
+  }
+
+  async getOrganizationBySession(token: string): Promise<Organization | undefined> {
+    const [result] = await db.select({ organization: schema.organizations })
+      .from(schema.organizationSessions)
+      .innerJoin(schema.organizations, eq(schema.organizationSessions.organizationId, schema.organizations.id))
+      .where(and(
+        eq(schema.organizationSessions.sessionToken, token),
+        gt(schema.organizationSessions.expiresAt, new Date()),
+        eq(schema.organizations.isActive, true)
+      ));
+    return result?.organization;
+  }
+
+  async revokeOrganizationSession(token: string): Promise<void> {
+    await db.delete(schema.organizationSessions)
+      .where(eq(schema.organizationSessions.sessionToken, token));
+  }
+
+  async getOrganizationsByType(type: 'marketing' | 'support' | 'trading'): Promise<Organization[]> {
+    return await db.select()
+      .from(schema.organizations)
+      .where(and(
+        eq(schema.organizations.type, type),
+        eq(schema.organizations.isActive, true)
+      ))
+      .orderBy(desc(schema.organizations.createdAt));
+  }
+
+  async getOrganizationWithCredentials(orgId: string): Promise<{
+    organization: Organization;
+    credentials: OrganizationCredential | undefined;
+  } | undefined> {
+    const [orgResult] = await db.select()
+      .from(schema.organizations)
+      .where(eq(schema.organizations.id, orgId));
+    
+    if (!orgResult) return undefined;
+    
+    const [credentialsResult] = await db.select()
+      .from(schema.organizationCredentials)
+      .where(and(
+        eq(schema.organizationCredentials.organizationId, orgId),
+        eq(schema.organizationCredentials.isActive, true)
+      ));
+    
+    return {
+      organization: orgResult,
+      credentials: credentialsResult
+    };
+  }
+
   // Utility methods
   private getPeriodStart(period: 'today' | 'week' | 'month'): Date {
     const now = new Date();

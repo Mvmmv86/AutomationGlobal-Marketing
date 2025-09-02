@@ -1147,6 +1147,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/permissions', permissionsBlueprint);
   console.log('✅ Permissions blueprint registered at /api/permissions');
 
+  // Register Organization Auth routes (Independent Login System)
+  const organizationAuthRoutes = await import('./routes/organization-auth');
+  app.use('/api/org-auth', organizationAuthRoutes.default);
+  console.log('✅ Organization Auth routes registered at /api/org-auth');
+
   // Simple test router for permission validation (removed due to ES module issues)
   // Will debug permissions directly in the page interface
 

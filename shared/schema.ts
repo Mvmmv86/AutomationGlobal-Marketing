@@ -329,6 +329,36 @@ export const marketingPreferences = pgTable("marketing_preferences", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Organization Access Control - Independent Login System
+export const organizationCredentials = pgTable("organization_credentials", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  loginEmail: text("login_email").notNull().unique(), // e.g., marketing@empresa.com
+  loginPassword: text("login_password").notNull(), // hashed
+  displayName: text("display_name").notNull(),
+  accessLevel: text("access_level").default('full'), // 'full', 'readonly'
+  permissions: jsonb("permissions").default({}),
+  isActive: boolean("is_active").default(true),
+  createdByAdmin: uuid("created_by_admin").references(() => users.id).notNull(),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Organization Sessions - Independent session management
+export const organizationSessions = pgTable("organization_sessions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  credentialId: uuid("credential_id").references(() => organizationCredentials.id),
+  adminUserId: uuid("admin_user_id").references(() => users.id), // Se foi acessado pelo admin
+  sessionToken: text("session_token").notNull().unique(),
+  accessType: text("access_type").notNull(), // 'organization', 'admin_impersonate'
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 export const analyticsInsights = pgTable("analytics_insights", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
@@ -431,6 +461,17 @@ export const insertMarketingPreferenceSchema = createInsertSchema(marketingPrefe
   updatedAt: true,
 });
 
+export const insertOrganizationCredentialSchema = createInsertSchema(organizationCredentials).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOrganizationSessionSchema = createInsertSchema(organizationSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -482,3 +523,10 @@ export type InsertMarketingAiInsight = z.infer<typeof insertMarketingAiInsightSc
 
 export type MarketingPreference = typeof marketingPreferences.$inferSelect;
 export type InsertMarketingPreference = z.infer<typeof insertMarketingPreferenceSchema>;
+
+// Organization Access Types
+export type OrganizationCredential = typeof organizationCredentials.$inferSelect;
+export type InsertOrganizationCredential = z.infer<typeof insertOrganizationCredentialSchema>;
+
+export type OrganizationSession = typeof organizationSessions.$inferSelect;
+export type InsertOrganizationSession = z.infer<typeof insertOrganizationSessionSchema>;

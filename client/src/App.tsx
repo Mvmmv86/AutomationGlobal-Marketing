@@ -3,6 +3,11 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+// New Authentication System
+import AccessHub from "@/pages/AccessHub";
+import OrganizationLogin from "@/pages/OrganizationLogin";
+import AdminPanel from "@/pages/AdminPanel";
+// Legacy Pages (keeping for testing)
 import Dashboard from "@/pages/dashboard";
 import DatabaseTest from "@/pages/database-test";
 import DatabaseConnectionTest from "@/pages/database-connection-test";
@@ -28,7 +33,17 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      {/* New Multi-Tenant Authentication System */}
+      <Route path="/" component={AccessHub} />
+      <Route path="/access" component={AccessHub} />
+      <Route path="/org-login" component={OrganizationLogin} />
+      <Route path="/admin" component={AdminPanel} />
+      
+      {/* Organization Dashboards */}
+      <Route path="/marketing/:id" component={MarketingDashboard} />
+      <Route path="/marketing" component={() => <MarketingDashboard />} />
+      
+      {/* Legacy Pages - Keep for testing/development */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/database-test" component={DatabaseTest} />
       <Route path="/database-connection" component={DatabaseConnectionTest} />
@@ -48,8 +63,8 @@ function Router() {
       <Route path="/organizations-simple" component={OrganizationsManagement} />
       <Route path="/ai-management" component={AIManagementGlobal} />
       <Route path="/ai-management-org" component={AIManagementByOrganization} />
-      <Route path="/marketing/:id" component={MarketingDashboard} />
-      <Route path="/marketing" component={() => <MarketingDashboard />} />
+      
+      {/* 404 Page */}
       <Route component={NotFound} />
     </Switch>
   );
