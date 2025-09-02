@@ -78,7 +78,8 @@ function MetricCard({
   change, 
   icon, 
   color,
-  format = 'number' 
+  format = 'number',
+  theme = 'dark'
 }: { 
   title: string;
   value: number;
@@ -86,6 +87,7 @@ function MetricCard({
   icon: any;
   color: string;
   format?: 'number' | 'currency' | 'percentage';
+  theme?: 'dark' | 'light';
 }) {
   const formatValue = (val: number) => {
     switch (format) {
@@ -111,10 +113,16 @@ function MetricCard({
         </div>
       </div>
       <div className="space-y-2">
-        <div className="text-2xl font-bold text-white">
+        <div className={cn(
+          "text-2xl font-bold",
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        )}>
           {formatValue(value)}
         </div>
-        <div className="text-sm text-gray-400">
+        <div className={cn(
+          "text-sm",
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+        )}>
           {title}
         </div>
       </div>
@@ -122,7 +130,7 @@ function MetricCard({
   );
 }
 
-function ChannelCard({ channel }: { channel: ChannelPerformance }) {
+function ChannelCard({ channel, theme = 'dark' }: { channel: ChannelPerformance; theme?: 'dark' | 'light' }) {
   return (
     <div className="glass-3d p-4">
       <div className="flex items-center gap-3 mb-3">
@@ -130,14 +138,25 @@ function ChannelCard({ channel }: { channel: ChannelPerformance }) {
           {React.createElement(channel.icon, { className: "w-5 h-5 text-white" })}
         </div>
         <div className="flex-1">
-          <div className="font-semibold text-white">{channel.channel}</div>
-          <div className="text-sm text-gray-400">{channel.traffic}% do tráfego</div>
+          <div className={cn(
+            "font-semibold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>{channel.channel}</div>
+          <div className={cn(
+            "text-sm",
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          )}>{channel.traffic}% do tráfego</div>
         </div>
       </div>
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Engagement</span>
-          <span className="text-white font-semibold">{channel.engagement}%</span>
+          <span className={cn(
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          )}>Engagement</span>
+          <span className={cn(
+            "font-semibold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>{channel.engagement}%</span>
         </div>
         <div className="w-full bg-gray-700 rounded-full h-2">
           <div 
@@ -150,7 +169,7 @@ function ChannelCard({ channel }: { channel: ChannelPerformance }) {
   );
 }
 
-function AIInsightCard({ insight }: { insight: AIInsight }) {
+function AIInsightCard({ insight, theme = 'dark' }: { insight: AIInsight; theme?: 'dark' | 'light' }) {
   return (
     <div className="glass-3d p-4">
       <div className="flex items-start gap-3">
@@ -158,10 +177,16 @@ function AIInsightCard({ insight }: { insight: AIInsight }) {
           <Brain className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <div className="text-sm font-medium text-white mb-1">
+          <div className={cn(
+            "text-sm font-medium mb-1",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             {insight.text}
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className={cn(
+            "flex items-center gap-2 text-xs",
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          )}>
             <span>{insight.category}</span>
             <span>•</span>
             <span>Confiança: {insight.confidence}%</span>
@@ -190,7 +215,10 @@ function MarketingSidebar({
             <Brain className="w-6 h-6 text-white" />
           </div>
           <div>
-            <div className="font-bold text-white">Marketing</div>
+            <div className={cn(
+              "font-bold",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>Marketing</div>
             <div className="text-xs text-purple-400">Dashboard</div>
           </div>
         </div>
@@ -213,7 +241,8 @@ function MarketingSidebar({
               onClick={() => setActiveTab(item.id)}
               className={cn(
                 "w-full p-3 rounded-lg text-left flex items-center gap-3 marketing-nav-item text-sm",
-                activeTab === item.id && "active"
+                activeTab === item.id && "active",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
               )}
             >
               <item.icon className="w-4 h-4" />
@@ -229,8 +258,13 @@ function MarketingSidebar({
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-green-400" />
             <div className="text-xs">
-              <div className="text-white font-semibold">Online</div>
-              <div className="text-gray-400">Tempo real ativo</div>
+              <div className={cn(
+                "font-semibold",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>Online</div>
+              <div className={cn(
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              )}>Tempo real ativo</div>
             </div>
           </div>
         </div>
@@ -339,7 +373,9 @@ function MarketingDashboardCompleteInner() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
                 Marketing Dashboard
               </h1>
-              <p className="text-gray-400">
+              <p className={cn(
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              )}>
                 Visão completa em tempo real das suas campanhas
               </p>
             </div>
@@ -368,7 +404,10 @@ function MarketingDashboardCompleteInner() {
 
         {/* Métricas Globais */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             <TrendingUp className="w-5 h-5 text-green-400" />
             Métricas Globais (Tempo Real)
           </h2>
@@ -380,6 +419,7 @@ function MarketingDashboardCompleteInner() {
               change={metricsData.impressionsChange}
               icon={TrendingUp}
               color="bg-gradient-to-r from-green-500 to-emerald-500"
+              theme={theme}
             />
             
             <MetricCard
@@ -388,6 +428,7 @@ function MarketingDashboardCompleteInner() {
               change={metricsData.clicksChange}
               icon={MousePointer}
               color="bg-gradient-to-r from-blue-500 to-cyan-500"
+              theme={theme}
             />
             
             <MetricCard
@@ -396,6 +437,7 @@ function MarketingDashboardCompleteInner() {
               change={metricsData.conversionsChange}
               icon={Target}
               color="bg-gradient-to-r from-purple-500 to-pink-500"
+              theme={theme}
             />
             
             <MetricCard
@@ -405,6 +447,7 @@ function MarketingDashboardCompleteInner() {
               icon={DollarSign}
               color="bg-gradient-to-r from-yellow-500 to-orange-500"
               format="percentage"
+              theme={theme}
             />
             
             <MetricCard
@@ -414,34 +457,41 @@ function MarketingDashboardCompleteInner() {
               icon={DollarSign}
               color="bg-gradient-to-r from-indigo-500 to-purple-500"
               format="currency"
+              theme={theme}
             />
           </div>
         </div>
 
         {/* Performance por Canal */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             <Target className="w-5 h-5 text-purple-400" />
             Performance por Canal
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {channelsData.map((channel, index) => (
-              <ChannelCard key={index} channel={channel} />
+              <ChannelCard key={index} channel={channel} theme={theme} />
             ))}
           </div>
         </div>
 
         {/* IA Insights */}
         <div>
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
             <Brain className="w-5 h-5 text-cyan-400" />
             IA Insights (Tempo Real)
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {aiInsights.map((insight) => (
-              <AIInsightCard key={insight.id} insight={insight} />
+              <AIInsightCard key={insight.id} insight={insight} theme={theme} />
             ))}
           </div>
         </div>
