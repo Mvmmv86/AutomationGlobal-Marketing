@@ -10,6 +10,7 @@ import { storage, db } from "./storage";
 import { securityManager } from "./database/security-policies";
 import { cacheManager } from "./cache/cache-manager";
 import { queueManager } from "./queue/queue-manager";
+import { socialMediaService } from "./socialMediaService";
 import * as schema from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1552,6 +1553,238 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+
+  // Social Media Routes
+  // Get social media accounts for organization
+  app.get('/api/organizations/:id/social-media/accounts', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const accounts = await storage.getSocialMediaAccounts(id);
+        res.json(accounts);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Connect social media account
+  app.post('/api/organizations/:id/social-media/connect', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { platform, accessToken, accountId } = req.body;
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const account = await socialMediaService.connectAccount({
+          organizationId: id,
+          platform,
+          accessToken,
+          accountId
+        });
+        
+        res.json(account);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Get posts for organization
+  app.get('/api/organizations/:id/social-media/posts', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { accountId, status } = req.query as { accountId?: string, status?: string };
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        let posts;
+        if (status) {
+          posts = await storage.getPostsByStatus(id, status);
+        } else {
+          posts = await storage.getSocialMediaPosts(id, accountId);
+        }
+        
+        res.json(posts);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Create and publish post
+  app.post('/api/organizations/:id/social-media/posts', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { accountId, content, mediaUrls, scheduledAt, platforms } = req.body;
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const post = await socialMediaService.createPost({
+          organizationId: id,
+          accountId,
+          content,
+          mediaUrls,
+          scheduledAt,
+          platforms
+        });
+        
+        res.json(post);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Get content templates
+  app.get('/api/organizations/:id/social-media/templates', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { category } = req.query as { category?: string };
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const templates = await storage.getContentTemplates(id, category);
+        res.json(templates);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Create content template
+  app.post('/api/organizations/:id/social-media/templates', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { name, content, category, variables } = req.body;
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const template = await storage.createContentTemplate({
+          organizationId: id,
+          name,
+          content,
+          category: category || 'general',
+          variables: variables || {}
+        });
+        
+        res.json(template);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Get social media insights
+  app.get('/api/organizations/:id/social-media/insights', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { accountId, postId } = req.query as { accountId?: string, postId?: string };
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const insights = await storage.getSocialMediaInsights(id, accountId, postId);
+        res.json(insights);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  // Facebook OAuth callback
+  app.get('/api/auth/facebook/callback', async (req, res) => {
+    try {
+      const { code, state } = req.query as { code: string, state: string };
+      
+      if (!code) {
+        return res.status(400).json({ error: 'Authorization code is required' });
+      }
+      
+      const accessToken = await socialMediaService.exchangeCodeForToken('facebook', code);
+      
+      // Redirect back to app with token
+      res.redirect(`/marketing?facebook_token=${accessToken}&state=${state}`);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Instagram OAuth callback
+  app.get('/api/auth/instagram/callback', async (req, res) => {
+    try {
+      const { code, state } = req.query as { code: string, state: string };
+      
+      if (!code) {
+        return res.status(400).json({ error: 'Authorization code is required' });
+      }
+      
+      const accessToken = await socialMediaService.exchangeCodeForToken('instagram', code);
+      
+      // Redirect back to app with token
+      res.redirect(`/marketing?instagram_token=${accessToken}&state=${state}`);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Social Media Management API Routes
+  app.post('/api/social-media/accounts/connect', socialMediaService.connectAccount.bind(socialMediaService));
+  app.get('/api/social-media/accounts', socialMediaService.getAccounts.bind(socialMediaService));
+  
+  app.post('/api/social-media/posts', socialMediaService.createPost.bind(socialMediaService));
+  app.get('/api/social-media/posts', socialMediaService.getPosts.bind(socialMediaService));
+  app.post('/api/social-media/posts/:postId/publish', socialMediaService.publishPost.bind(socialMediaService));
+  
+  app.get('/api/social-media/templates', socialMediaService.getTemplates.bind(socialMediaService));
+  app.post('/api/social-media/templates', socialMediaService.createTemplate.bind(socialMediaService));
+  
+  app.get('/api/social-media/analytics', socialMediaService.getAnalytics.bind(socialMediaService));
+  app.get('/api/social-media/best-times', socialMediaService.getBestPostingTimes.bind(socialMediaService));
+  app.get('/api/social-media/suggestions', socialMediaService.generateContentSuggestions.bind(socialMediaService));
 
   const httpServer = createServer(app);
   return httpServer;

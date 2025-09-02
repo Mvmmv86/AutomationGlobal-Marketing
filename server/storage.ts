@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and, desc, count, sum, gte, or } from "drizzle-orm";
+import { eq, and, desc, count, sum, gte, or, gt } from "drizzle-orm";
 import { CONFIG } from "./config";
 import * as schema from "@shared/schema";
 import type { 
@@ -25,7 +25,20 @@ import type {
   MarketingAiInsight,
   InsertMarketingAiInsight,
   MarketingPreference,
-  InsertMarketingPreference
+  InsertMarketingPreference,
+  OrganizationCredential,
+  OrganizationSession,
+  InsertOrganizationSession,
+  SocialMediaAccount,
+  InsertSocialMediaAccount,
+  SocialMediaPost,
+  InsertSocialMediaPost,
+  ContentTemplate,
+  InsertContentTemplate,
+  ScheduledJob,
+  InsertScheduledJob,
+  SocialMediaInsight,
+  InsertSocialMediaInsight
 } from "@shared/schema";
 
 // Database connection for production
@@ -110,6 +123,41 @@ export interface IStorage {
   getMarketingPreferences(organizationId: string, userId: string): Promise<MarketingPreference | undefined>;
   createMarketingPreference(data: InsertMarketingPreference): Promise<MarketingPreference>;
   updateMarketingPreference(organizationId: string, userId: string, data: Partial<MarketingPreference>): Promise<MarketingPreference>;
+
+  // Social Media Account methods
+  getSocialMediaAccounts(organizationId: string): Promise<SocialMediaAccount[]>;
+  getSocialMediaAccount(id: string): Promise<SocialMediaAccount | undefined>;
+  createSocialMediaAccount(data: InsertSocialMediaAccount): Promise<SocialMediaAccount>;
+  updateSocialMediaAccount(id: string, data: Partial<SocialMediaAccount>): Promise<SocialMediaAccount>;
+  deleteSocialMediaAccount(id: string): Promise<void>;
+  
+  // Social Media Post methods
+  getSocialMediaPosts(organizationId: string, accountId?: string): Promise<SocialMediaPost[]>;
+  getSocialMediaPost(id: string): Promise<SocialMediaPost | undefined>;
+  createSocialMediaPost(data: InsertSocialMediaPost): Promise<SocialMediaPost>;
+  updateSocialMediaPost(id: string, data: Partial<SocialMediaPost>): Promise<SocialMediaPost>;
+  deleteSocialMediaPost(id: string): Promise<void>;
+  getScheduledPosts(organizationId: string): Promise<SocialMediaPost[]>;
+  getPostsByStatus(organizationId: string, status: string): Promise<SocialMediaPost[]>;
+  
+  // Content Template methods
+  getContentTemplates(organizationId: string, category?: string): Promise<ContentTemplate[]>;
+  getContentTemplate(id: string): Promise<ContentTemplate | undefined>;
+  createContentTemplate(data: InsertContentTemplate): Promise<ContentTemplate>;
+  updateContentTemplate(id: string, data: Partial<ContentTemplate>): Promise<ContentTemplate>;
+  deleteContentTemplate(id: string): Promise<void>;
+  
+  // Scheduled Job methods
+  getScheduledJobs(organizationId: string, jobType?: string): Promise<ScheduledJob[]>;
+  createScheduledJob(data: InsertScheduledJob): Promise<ScheduledJob>;
+  updateScheduledJob(id: string, data: Partial<ScheduledJob>): Promise<ScheduledJob>;
+  deleteScheduledJob(id: string): Promise<void>;
+  getPendingJobs(): Promise<ScheduledJob[]>;
+  
+  // Social Media Insights methods
+  getSocialMediaInsights(organizationId: string, accountId?: string, postId?: string): Promise<SocialMediaInsight[]>;
+  createSocialMediaInsight(data: InsertSocialMediaInsight): Promise<SocialMediaInsight>;
+  updateSocialMediaInsights(accountId: string, insights: any[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -686,6 +734,229 @@ export class DatabaseStorage implements IStorage {
       organization: orgResult,
       credentials: credentialsResult
     };
+  }
+
+  // Social Media Account methods
+  async getSocialMediaAccounts(organizationId: string): Promise<SocialMediaAccount[]> {
+    return await db.select()
+      .from(schema.socialMediaAccounts)
+      .where(and(
+        eq(schema.socialMediaAccounts.organizationId, organizationId),
+        eq(schema.socialMediaAccounts.isActive, true)
+      ))
+      .orderBy(desc(schema.socialMediaAccounts.createdAt));
+  }
+
+  async getSocialMediaAccount(id: string): Promise<SocialMediaAccount | undefined> {
+    const [account] = await db.select()
+      .from(schema.socialMediaAccounts)
+      .where(eq(schema.socialMediaAccounts.id, id));
+    return account;
+  }
+
+  async createSocialMediaAccount(data: InsertSocialMediaAccount): Promise<SocialMediaAccount> {
+    const [account] = await db.insert(schema.socialMediaAccounts)
+      .values(data)
+      .returning();
+    return account;
+  }
+
+  async updateSocialMediaAccount(id: string, data: Partial<SocialMediaAccount>): Promise<SocialMediaAccount> {
+    const [account] = await db.update(schema.socialMediaAccounts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.socialMediaAccounts.id, id))
+      .returning();
+    return account;
+  }
+
+  async deleteSocialMediaAccount(id: string): Promise<void> {
+    await db.update(schema.socialMediaAccounts)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.socialMediaAccounts.id, id));
+  }
+
+  // Social Media Post methods
+  async getSocialMediaPosts(organizationId: string, accountId?: string): Promise<SocialMediaPost[]> {
+    const conditions = [eq(schema.socialMediaPosts.organizationId, organizationId)];
+    if (accountId) {
+      conditions.push(eq(schema.socialMediaPosts.accountId, accountId));
+    }
+
+    return await db.select()
+      .from(schema.socialMediaPosts)
+      .where(and(...conditions))
+      .orderBy(desc(schema.socialMediaPosts.createdAt));
+  }
+
+  async getSocialMediaPost(id: string): Promise<SocialMediaPost | undefined> {
+    const [post] = await db.select()
+      .from(schema.socialMediaPosts)
+      .where(eq(schema.socialMediaPosts.id, id));
+    return post;
+  }
+
+  async createSocialMediaPost(data: InsertSocialMediaPost): Promise<SocialMediaPost> {
+    const [post] = await db.insert(schema.socialMediaPosts)
+      .values(data)
+      .returning();
+    return post;
+  }
+
+  async updateSocialMediaPost(id: string, data: Partial<SocialMediaPost>): Promise<SocialMediaPost> {
+    const [post] = await db.update(schema.socialMediaPosts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.socialMediaPosts.id, id))
+      .returning();
+    return post;
+  }
+
+  async deleteSocialMediaPost(id: string): Promise<void> {
+    await db.delete(schema.socialMediaPosts)
+      .where(eq(schema.socialMediaPosts.id, id));
+  }
+
+  async getScheduledPosts(organizationId: string): Promise<SocialMediaPost[]> {
+    return await db.select()
+      .from(schema.socialMediaPosts)
+      .where(and(
+        eq(schema.socialMediaPosts.organizationId, organizationId),
+        eq(schema.socialMediaPosts.status, 'scheduled'),
+        gte(schema.socialMediaPosts.scheduledAt, new Date())
+      ))
+      .orderBy(schema.socialMediaPosts.scheduledAt);
+  }
+
+  async getPostsByStatus(organizationId: string, status: string): Promise<SocialMediaPost[]> {
+    return await db.select()
+      .from(schema.socialMediaPosts)
+      .where(and(
+        eq(schema.socialMediaPosts.organizationId, organizationId),
+        eq(schema.socialMediaPosts.status, status)
+      ))
+      .orderBy(desc(schema.socialMediaPosts.createdAt));
+  }
+
+  // Content Template methods
+  async getContentTemplates(organizationId: string, category?: string): Promise<ContentTemplate[]> {
+    const conditions = [
+      eq(schema.contentTemplates.organizationId, organizationId),
+      eq(schema.contentTemplates.isActive, true)
+    ];
+    
+    if (category) {
+      conditions.push(eq(schema.contentTemplates.category, category));
+    }
+
+    return await db.select()
+      .from(schema.contentTemplates)
+      .where(and(...conditions))
+      .orderBy(desc(schema.contentTemplates.createdAt));
+  }
+
+  async getContentTemplate(id: string): Promise<ContentTemplate | undefined> {
+    const [template] = await db.select()
+      .from(schema.contentTemplates)
+      .where(eq(schema.contentTemplates.id, id));
+    return template;
+  }
+
+  async createContentTemplate(data: InsertContentTemplate): Promise<ContentTemplate> {
+    const [template] = await db.insert(schema.contentTemplates)
+      .values(data)
+      .returning();
+    return template;
+  }
+
+  async updateContentTemplate(id: string, data: Partial<ContentTemplate>): Promise<ContentTemplate> {
+    const [template] = await db.update(schema.contentTemplates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.contentTemplates.id, id))
+      .returning();
+    return template;
+  }
+
+  async deleteContentTemplate(id: string): Promise<void> {
+    await db.update(schema.contentTemplates)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.contentTemplates.id, id));
+  }
+
+  // Scheduled Job methods
+  async getScheduledJobs(organizationId: string, jobType?: string): Promise<ScheduledJob[]> {
+    const conditions = [eq(schema.scheduledJobs.organizationId, organizationId)];
+    if (jobType) {
+      conditions.push(eq(schema.scheduledJobs.jobType, jobType));
+    }
+
+    return await db.select()
+      .from(schema.scheduledJobs)
+      .where(and(...conditions))
+      .orderBy(schema.scheduledJobs.scheduledAt);
+  }
+
+  async createScheduledJob(data: InsertScheduledJob): Promise<ScheduledJob> {
+    const [job] = await db.insert(schema.scheduledJobs)
+      .values(data)
+      .returning();
+    return job;
+  }
+
+  async updateScheduledJob(id: string, data: Partial<ScheduledJob>): Promise<ScheduledJob> {
+    const [job] = await db.update(schema.scheduledJobs)
+      .set(data)
+      .where(eq(schema.scheduledJobs.id, id))
+      .returning();
+    return job;
+  }
+
+  async deleteScheduledJob(id: string): Promise<void> {
+    await db.delete(schema.scheduledJobs)
+      .where(eq(schema.scheduledJobs.id, id));
+  }
+
+  async getPendingJobs(): Promise<ScheduledJob[]> {
+    return await db.select()
+      .from(schema.scheduledJobs)
+      .where(and(
+        eq(schema.scheduledJobs.status, 'pending'),
+        gte(schema.scheduledJobs.scheduledAt, new Date())
+      ))
+      .orderBy(schema.scheduledJobs.scheduledAt);
+  }
+
+  // Social Media Insights methods
+  async getSocialMediaInsights(organizationId: string, accountId?: string, postId?: string): Promise<SocialMediaInsight[]> {
+    const conditions = [eq(schema.socialMediaInsights.organizationId, organizationId)];
+    
+    if (accountId) {
+      conditions.push(eq(schema.socialMediaInsights.accountId, accountId));
+    }
+    if (postId) {
+      conditions.push(eq(schema.socialMediaInsights.postId, postId));
+    }
+
+    return await db.select()
+      .from(schema.socialMediaInsights)
+      .where(and(...conditions))
+      .orderBy(desc(schema.socialMediaInsights.date));
+  }
+
+  async createSocialMediaInsight(data: InsertSocialMediaInsight): Promise<SocialMediaInsight> {
+    const [insight] = await db.insert(schema.socialMediaInsights)
+      .values(data)
+      .returning();
+    return insight;
+  }
+
+  async updateSocialMediaInsights(accountId: string, insights: any[]): Promise<void> {
+    for (const insight of insights) {
+      await db.insert(schema.socialMediaInsights)
+        .values({
+          ...insight,
+          accountId
+        })
+        .onConflictDoNothing();
+    }
   }
 
   // Utility methods
