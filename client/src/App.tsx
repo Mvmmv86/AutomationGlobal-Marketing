@@ -4,9 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // New Authentication System
-import AccessHub from "@/pages/AccessHub";
-import OrganizationLogin from "@/pages/OrganizationLogin";
-import AdminPanel from "@/pages/AdminPanel";
+
 // Legacy Pages (keeping for testing)
 import Dashboard from "@/pages/dashboard";
 import DatabaseTest from "@/pages/database-test";
@@ -33,17 +31,25 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      {/* New Multi-Tenant Authentication System */}
-      <Route path="/" component={AccessHub} />
-      <Route path="/access" component={AccessHub} />
-      <Route path="/org-login" component={OrganizationLogin} />
-      <Route path="/admin" component={AdminPanel} />
+      {/* Admin Master Platform - Main entry point */}
+      <Route path="/" component={AdminDashboardComplete} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/admin-dashboard-complete" component={AdminDashboardComplete} />
       
-      {/* Organization Dashboards */}
+      {/* Organization Management - Create and access organizations */}
+      <Route path="/organizations" component={OrganizationsManagementComplete} />
+      <Route path="/organizations-advanced" component={OrganizationsManagementAdvanced} />
+      <Route path="/organizations-simple" component={OrganizationsManagement} />
+      
+      {/* AI Management */}
+      <Route path="/ai-management" component={AIManagementGlobal} />
+      <Route path="/ai-management-org" component={AIManagementByOrganization} />
+      
+      {/* Organization Dashboards - Accessed from admin platform */}
       <Route path="/marketing/:id" component={MarketingDashboard} />
       <Route path="/marketing" component={() => <MarketingDashboard />} />
       
-      {/* Legacy Pages - Keep for testing/development */}
+      {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/database-test" component={DatabaseTest} />
       <Route path="/database-connection" component={DatabaseConnectionTest} />
@@ -56,13 +62,6 @@ function Router() {
       <Route path="/multi-tenant-test" component={MultiTenantTest} />
       <Route path="/permissions-test" component={PermissionsTest} />
       <Route path="/rate-limit-test" component={RateLimitTest} />
-      <Route path="/admin-dashboard" component={AdminDashboard} />
-      <Route path="/admin-dashboard-complete" component={AdminDashboardComplete} />
-      <Route path="/organizations" component={OrganizationsManagementComplete} />
-      <Route path="/organizations-advanced" component={OrganizationsManagementAdvanced} />
-      <Route path="/organizations-simple" component={OrganizationsManagement} />
-      <Route path="/ai-management" component={AIManagementGlobal} />
-      <Route path="/ai-management-org" component={AIManagementByOrganization} />
       
       {/* 404 Page */}
       <Route component={NotFound} />
