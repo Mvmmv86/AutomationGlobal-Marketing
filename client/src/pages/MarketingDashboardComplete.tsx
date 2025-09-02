@@ -72,6 +72,235 @@ const navigationItems = [
   { id: 'settings', label: 'Configurações', icon: Settings }
 ];
 
+function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
+  const [activeContentTab, setActiveContentTab] = useState('library');
+
+  const contentTabs = [
+    { id: 'library', label: 'Biblioteca', icon: Video },
+    { id: 'editor', label: 'Editor', icon: MessageCircle },
+    { id: 'calendar', label: 'Calendário', icon: Calendar },
+    { id: 'templates', label: 'Templates', icon: Activity }
+  ];
+
+  const contentStats = [
+    { label: 'Posts Criados', value: 156, change: '+12%', icon: MessageCircle, color: 'text-blue-400' },
+    { label: 'Templates Ativos', value: 24, change: '+3', icon: Activity, color: 'text-purple-400' },
+    { label: 'Posts Agendados', value: 89, change: '+18', icon: Calendar, color: 'text-green-400' },
+    { label: 'Engajamento Médio', value: '8.2%', change: '+1.5%', icon: TrendingUp, color: 'text-orange-400' }
+  ];
+
+  const recentContent = [
+    { id: 1, title: 'Promoção Black Friday', platform: 'Instagram', status: 'Publicado', engagement: '15.2K', date: '2 horas atrás' },
+    { id: 2, title: 'Tutorial Produto X', platform: 'YouTube', status: 'Agendado', engagement: '-', date: 'Amanhã 14h' },
+    { id: 3, title: 'Depoimento Cliente', platform: 'Facebook', status: 'Rascunho', engagement: '-', date: '1 dia atrás' },
+    { id: 4, title: 'Lançamento Nova Linha', platform: 'LinkedIn', status: 'Aprovação', engagement: '-', date: '3 horas atrás' }
+  ];
+
+  const templates = [
+    { id: 1, name: 'Post Promocional', category: 'Vendas', uses: 45, preview: 'Oferta especial por tempo limitado!' },
+    { id: 2, name: 'Story Interativo', category: 'Engagement', uses: 32, preview: 'Qual sua opinião sobre...' },
+    { id: 3, name: 'Carrossel Educativo', category: 'Educação', uses: 28, preview: '5 dicas essenciais para...' },
+    { id: 4, name: 'Depoimento Cliente', category: 'Social Proof', uses: 19, preview: 'Veja o que nossos clientes dizem' }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-1">
+            Gestão de Conteúdo
+          </h1>
+          <p className={cn(
+            "text-sm",
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          )}>
+            Crie, organize e programe seu conteúdo de marketing
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {contentTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveContentTab(tab.id)}
+              className={cn(
+                "glass-button-3d px-3 py-2 text-xs font-medium flex items-center gap-2",
+                activeContentTab === tab.id && "gradient-purple-blue text-white",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}
+            >
+              <tab.icon className="w-3 h-3" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats Cards - Menores */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {contentStats.map((stat, index) => (
+          <div key={index} className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-2">
+              <stat.icon className={cn("w-4 h-4", stat.color)} />
+              <span className={cn(
+                "text-xs font-medium",
+                stat.change.startsWith('+') ? 'text-green-400' : 'text-blue-400'
+              )}>
+                {stat.change}
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className={cn(
+                "text-lg font-bold",
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              )}>
+                {stat.value}
+              </div>
+              <div className={cn(
+                "text-xs",
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              )}>
+                {stat.label}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Conteúdo Principal baseado na aba ativa */}
+      {activeContentTab === 'library' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Conteúdo Recente */}
+          <div className="space-y-4">
+            <h3 className={cn(
+              "text-lg font-bold flex items-center gap-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              <Video className="w-5 h-5 text-purple-400" />
+              Conteúdo Recente
+            </h3>
+            
+            <div className="space-y-3">
+              {recentContent.map((content) => (
+                <div key={content.id} className="glass-3d p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-400 to-blue-400" />
+                      <div>
+                        <div className={cn(
+                          "font-medium text-sm",
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        )}>
+                          {content.title}
+                        </div>
+                        <div className={cn(
+                          "text-xs",
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        )}>
+                          {content.platform} • {content.date}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className={cn(
+                        "text-xs px-2 py-1 rounded-md",
+                        content.status === 'Publicado' ? 'bg-green-500/20 text-green-400' :
+                        content.status === 'Agendado' ? 'bg-blue-500/20 text-blue-400' :
+                        content.status === 'Rascunho' ? 'bg-gray-500/20 text-gray-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      )}>
+                        {content.status}
+                      </div>
+                      {content.engagement !== '-' && (
+                        <div className={cn(
+                          "text-xs mt-1",
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        )}>
+                          {content.engagement}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Templates Populares */}
+          <div className="space-y-4">
+            <h3 className={cn(
+              "text-lg font-bold flex items-center gap-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              <Activity className="w-5 h-5 text-cyan-400" />
+              Templates Populares
+            </h3>
+            
+            <div className="space-y-3">
+              {templates.map((template) => (
+                <div key={template.id} className="glass-3d p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className={cn(
+                        "font-medium text-sm mb-1",
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      )}>
+                        {template.name}
+                      </div>
+                      <div className={cn(
+                        "text-xs mb-2",
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                      )}>
+                        {template.preview}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 rounded-md bg-purple-500/20 text-purple-400">
+                          {template.category}
+                        </span>
+                        <span className={cn(
+                          "text-xs",
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        )}>
+                          {template.uses} usos
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Outras abas mostram funcionalidade em desenvolvimento */}
+      {activeContentTab !== 'library' && (
+        <div className="glass-3d p-6 text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-xl gradient-purple-blue flex items-center justify-center">
+            {React.createElement(contentTabs.find(tab => tab.id === activeContentTab)?.icon || Video, { 
+              className: "w-6 h-6 text-white" 
+            })}
+          </div>
+          <h3 className={cn(
+            "text-xl font-bold mb-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            {contentTabs.find(tab => tab.id === activeContentTab)?.label}
+          </h3>
+          <p className={cn(
+            "text-sm",
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          )}>
+            Funcionalidade em desenvolvimento - Editor avançado e calendário editorial
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MetricCard({ 
   title, 
   value, 
@@ -101,26 +330,26 @@ function MetricCard({
   };
 
   return (
-    <div className="glass-3d p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl ${color} backdrop-blur-sm`}>
-          {React.createElement(icon, { className: "w-6 h-6 text-white" })}
+    <div className="glass-3d p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-2 rounded-lg ${color} backdrop-blur-sm`}>
+          {React.createElement(icon, { className: "w-4 h-4 text-white" })}
         </div>
-        <div className={`text-sm font-semibold ${
+        <div className={`text-xs font-medium ${
           change > 0 ? 'text-green-400' : 'text-red-400'
         }`}>
           {change > 0 ? '+' : ''}{change}%
         </div>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className={cn(
-          "text-2xl font-bold",
+          "text-lg font-bold",
           theme === 'dark' ? 'text-white' : 'text-gray-900'
         )}>
           {formatValue(value)}
         </div>
         <div className={cn(
-          "text-sm",
+          "text-xs",
           theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
         )}>
           {title}
@@ -327,6 +556,23 @@ function MarketingDashboardCompleteInner() {
     }
   ];
 
+  if (activeTab === 'content') {
+    return (
+      <div className={cn(
+        "min-h-screen flex transition-all duration-500",
+        theme === 'dark' 
+          ? "marketing-gradient-bg text-white" 
+          : "marketing-gradient-bg light text-gray-900"
+      )}>
+        <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        <div className="flex-1 p-8">
+          <ContentManagement theme={theme} />
+        </div>
+      </div>
+    );
+  }
+
   if (activeTab !== 'dashboard') {
     return (
       <div className={cn(
@@ -338,16 +584,22 @@ function MarketingDashboardCompleteInner() {
         <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
         <div className="flex-1 p-8">
-          <div className="glass-3d p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl gradient-purple-blue flex items-center justify-center">
+          <div className="glass-3d p-6 text-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl gradient-purple-blue flex items-center justify-center">
               {React.createElement(navigationItems.find(item => item.id === activeTab)?.icon || Home, { 
-                className: "w-8 h-8 text-white" 
+                className: "w-6 h-6 text-white" 
               })}
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">
+            <h3 className={cn(
+              "text-xl font-bold mb-2",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
               {navigationItems.find(item => item.id === activeTab)?.label}
             </h3>
-            <p className="text-gray-400">
+            <p className={cn(
+              "text-sm",
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            )}>
               Funcionalidade em desenvolvimento - Dashboard completo em construção
             </p>
           </div>
