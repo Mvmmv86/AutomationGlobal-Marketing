@@ -236,7 +236,8 @@ export default function AdminDashboardFinal() {
   const navigationItems = [
     { id: 'overview', icon: BarChart3, label: 'Visão Geral', color: 'from-cyan-600 to-blue-600', path: '/admin-dashboard' },
     { id: 'organizations', icon: Building2, label: 'Organizações', color: 'from-purple-600 to-pink-600', path: '/organizations' },
-    { id: 'system', icon: Server, label: 'Sistema', color: 'from-green-600 to-emerald-600', path: '/admin-dashboard' },
+    { id: 'ai-management', icon: Brain, label: 'Gestão de IA', color: 'from-green-600 to-emerald-600', path: '/ai-management-org' },
+    { id: 'system', icon: Server, label: 'Sistema', color: 'from-orange-600 to-red-600', path: '/admin-dashboard' },
     { id: 'analytics', icon: LineChart, label: 'IA Analytics', color: 'from-yellow-600 to-orange-600', path: '/admin-dashboard' }
   ];
 
@@ -849,7 +850,7 @@ export default function AdminDashboardFinal() {
           
           {/* Navigation Items */}
           {navigationItems.map((item) => (
-            item.id === 'organizations' ? (
+            item.id === 'organizations' || item.id === 'ai-management' ? (
               <Link href={item.path} key={item.id}>
                 <button
                   className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group glass hover:glass-dark card-hover`}
