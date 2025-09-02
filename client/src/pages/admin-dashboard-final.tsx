@@ -843,13 +843,13 @@ export default function AdminDashboardFinal() {
         </div>
 
         {/* NAVIGATION MENU */}
-        <div className="flex-1 p-6 space-y-4">
+        <div className="flex-1 p-6 space-y-6">
           <div className="mb-6">
             <h2 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-6">PAINEL ADMINISTRATIVO</h2>
           </div>
           
           {/* Navigation Items */}
-          <div className="space-y-5">
+          <div className="space-y-6">
           {navigationItems.map((item) => (
             item.id === 'organizations' || item.id === 'ai-management' ? (
               <Link href={item.path} key={item.id}>
@@ -887,7 +887,7 @@ export default function AdminDashboardFinal() {
           ))}
           </div>
           
-          <div className="pt-8 mt-8 border-t border-gray-700/50">
+          <div className="pt-10 mt-10 border-t border-gray-700/50">
             <h3 className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-6">CONTROLES</h3>
             
             <div className="space-y-5">
