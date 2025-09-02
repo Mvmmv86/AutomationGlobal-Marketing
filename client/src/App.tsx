@@ -26,6 +26,7 @@ import OrganizationsManagementComplete from "@/pages/organizations-management-co
 import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboard from "@/pages/MarketingDashboard";
+import MarketingDashboard3D from "@/pages/MarketingDashboard3D";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -48,6 +49,8 @@ function Router() {
       {/* Organization Dashboards - Accessed from admin platform */}
       <Route path="/marketing/:id" component={MarketingDashboard} />
       <Route path="/marketing" component={() => <MarketingDashboard />} />
+      <Route path="/marketing-3d/:id" component={MarketingDashboard3D} />
+      <Route path="/marketing-3d" component={() => <MarketingDashboard3D />} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
