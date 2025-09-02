@@ -25,7 +25,8 @@ import {
   Activity,
   Calendar,
   Mail,
-  MessageCircle
+  MessageCircle,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -275,27 +276,19 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         </div>
       )}
 
-      {/* Outras abas mostram funcionalidade em desenvolvimento */}
-      {activeContentTab !== 'library' && (
-        <div className="glass-3d p-6 text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl gradient-purple-blue flex items-center justify-center">
-            {React.createElement(contentTabs.find(tab => tab.id === activeContentTab)?.icon || Video, { 
-              className: "w-6 h-6 text-white" 
-            })}
-          </div>
-          <h3 className={cn(
-            "text-xl font-bold mb-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            {contentTabs.find(tab => tab.id === activeContentTab)?.label}
-          </h3>
-          <p className={cn(
-            "text-sm",
-            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-          )}>
-            Funcionalidade em desenvolvimento - Editor avançado e calendário editorial
-          </p>
-        </div>
+      {/* Editor de Conteúdo */}
+      {activeContentTab === 'editor' && (
+        <ContentEditor theme={theme} />
+      )}
+
+      {/* Calendário Editorial */}
+      {activeContentTab === 'calendar' && (
+        <EditorialCalendar theme={theme} />
+      )}
+
+      {/* Gestão de Templates */}
+      {activeContentTab === 'templates' && (
+        <TemplateManager theme={theme} />
       )}
     </div>
   );
@@ -744,6 +737,481 @@ function MarketingDashboardCompleteInner() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {aiInsights.map((insight) => (
               <AIInsightCard key={insight.id} insight={insight} theme={theme} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
+  const [postContent, setPostContent] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState('instagram');
+  const [scheduleDate, setScheduleDate] = useState('');
+
+  const platforms = [
+    { id: 'instagram', name: 'Instagram', icon: '📸', color: 'bg-pink-500' },
+    { id: 'facebook', name: 'Facebook', icon: '📘', color: 'bg-blue-600' },
+    { id: 'twitter', name: 'Twitter/X', icon: '🐦', color: 'bg-black' },
+    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: 'bg-blue-700' }
+  ];
+
+  const suggestions = [
+    'Aproveite nossa promoção especial de verão! 🌞',
+    'Conheça nosso novo produto revolucionário',
+    'Depoimentos de clientes satisfeitos ⭐',
+    'Dicas exclusivas para você',
+    'Tutorial: Como aproveitar ao máximo nosso serviço'
+  ];
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Editor Principal */}
+      <div className="lg:col-span-2 space-y-6">
+        <div className="glass-3d p-4">
+          <h3 className={cn(
+            "text-lg font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <MessageCircle className="w-5 h-5 text-blue-400" />
+            Editor de Post
+          </h3>
+
+          {/* Seleção de Plataforma */}
+          <div className="flex gap-2 mb-4">
+            {platforms.map((platform) => (
+              <button
+                key={platform.id}
+                onClick={() => setSelectedPlatform(platform.id)}
+                className={cn(
+                  "glass-button-3d px-3 py-2 text-xs font-medium flex items-center gap-2",
+                  selectedPlatform === platform.id && "gradient-purple-blue text-white"
+                )}
+              >
+                <span>{platform.icon}</span>
+                {platform.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Área de Texto */}
+          <div className="mb-4">
+            <textarea
+              value={postContent}
+              onChange={(e) => setPostContent(e.target.value)}
+              placeholder="Digite seu conteúdo aqui..."
+              className={cn(
+                "w-full h-32 p-3 rounded-lg border-0 glass-3d text-sm resize-none",
+                theme === 'dark' 
+                  ? 'bg-white/10 text-white placeholder-gray-400' 
+                  : 'bg-black/5 text-gray-900 placeholder-gray-500'
+              )}
+            />
+            <div className="flex justify-between items-center mt-2 text-xs">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                {postContent.length}/280 caracteres
+              </span>
+              <span className="text-purple-400">
+                {selectedPlatform === 'instagram' ? '📸 Instagram' : 
+                 selectedPlatform === 'facebook' ? '📘 Facebook' :
+                 selectedPlatform === 'twitter' ? '🐦 Twitter' : '💼 LinkedIn'}
+              </span>
+            </div>
+          </div>
+
+          {/* Agendamento */}
+          <div className="mb-4">
+            <label className={cn(
+              "block text-sm font-medium mb-2",
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            )}>
+              Agendar publicação
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduleDate}
+              onChange={(e) => setScheduleDate(e.target.value)}
+              className={cn(
+                "w-full p-2 rounded-lg border-0 glass-3d text-sm",
+                theme === 'dark' 
+                  ? 'bg-white/10 text-white' 
+                  : 'bg-black/5 text-gray-900'
+              )}
+            />
+          </div>
+
+          {/* Botões de Ação */}
+          <div className="flex gap-3">
+            <button className="glass-button-3d px-4 py-2 text-sm font-medium text-gray-400">
+              Salvar Rascunho
+            </button>
+            <button className="gradient-purple-blue px-4 py-2 rounded-lg text-sm font-medium text-white">
+              {scheduleDate ? 'Agendar' : 'Publicar Agora'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar com Sugestões */}
+      <div className="space-y-4">
+        <div className="glass-3d p-4">
+          <h4 className={cn(
+            "text-sm font-bold mb-3 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <Zap className="w-4 h-4 text-yellow-400" />
+            Sugestões IA
+          </h4>
+          <div className="space-y-2">
+            {suggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => setPostContent(suggestion)}
+                className={cn(
+                  "w-full p-2 text-left text-xs rounded-lg glass-button-3d hover:gradient-purple-blue hover:text-white transition-all",
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                )}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-3d p-4">
+          <h4 className={cn(
+            "text-sm font-bold mb-3",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            Métricas Previstas
+          </h4>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Alcance:</span>
+              <span className="text-green-400">2.3K - 4.1K</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Engajamento:</span>
+              <span className="text-blue-400">180 - 320</span>
+            </div>
+            <div className="flex justify-between">
+              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Melhor horário:</span>
+              <span className="text-purple-400">19h - 21h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('month');
+
+  const scheduledPosts = [
+    { id: 1, title: 'Promoção Black Friday', date: '2024-09-03', time: '14:00', platform: 'Instagram', status: 'agendado' },
+    { id: 2, title: 'Tutorial Produto X', date: '2024-09-04', time: '10:30', platform: 'YouTube', status: 'aprovacao' },
+    { id: 3, title: 'Depoimento Cliente', date: '2024-09-05', time: '16:15', platform: 'Facebook', status: 'rascunho' },
+    { id: 4, title: 'Lançamento Nova Linha', date: '2024-09-06', time: '12:00', platform: 'LinkedIn', status: 'agendado' }
+  ];
+
+  const monthDays = Array.from({ length: 30 }, (_, i) => i + 1);
+
+  return (
+    <div className="space-y-6">
+      {/* Header do Calendário */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className={cn(
+            "text-lg font-bold flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <Calendar className="w-5 h-5 text-cyan-400" />
+            Calendário Editorial
+          </h3>
+          <p className={cn(
+            "text-sm",
+            theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+          )}>
+            Setembro 2024
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('week')}
+            className={cn(
+              "glass-button-3d px-3 py-2 text-xs font-medium",
+              viewMode === 'week' && "gradient-purple-blue text-white"
+            )}
+          >
+            Semana
+          </button>
+          <button
+            onClick={() => setViewMode('month')}
+            className={cn(
+              "glass-button-3d px-3 py-2 text-xs font-medium",
+              viewMode === 'month' && "gradient-purple-blue text-white"
+            )}
+          >
+            Mês
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Calendário Visual */}
+        <div className="lg:col-span-3">
+          <div className="glass-3d p-4">
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+                <div key={day} className={cn(
+                  "text-center text-xs font-medium py-2",
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                )}>
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {monthDays.map((day) => {
+                const hasPost = scheduledPosts.some(post => 
+                  new Date(post.date).getDate() === day
+                );
+                
+                return (
+                  <div key={day} className={cn(
+                    "aspect-square p-2 rounded-lg text-center glass-button-3d relative",
+                    hasPost && "ring-2 ring-purple-400"
+                  )}>
+                    <span className={cn(
+                      "text-xs font-medium",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>
+                      {day}
+                    </span>
+                    {hasPost && (
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de Posts Agendados */}
+        <div className="space-y-4">
+          <h4 className={cn(
+            "text-sm font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            Próximas Publicações
+          </h4>
+          
+          <div className="space-y-3">
+            {scheduledPosts.map((post) => (
+              <div key={post.id} className="glass-3d p-3">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <div className={cn(
+                      "font-medium text-xs mb-1",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>
+                      {post.title}
+                    </div>
+                    <div className={cn(
+                      "text-xs",
+                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    )}>
+                      {post.date} às {post.time}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-xs px-2 py-1 rounded-md bg-blue-500/20 text-blue-400">
+                    {post.platform}
+                  </span>
+                  <span className={cn(
+                    "text-xs px-2 py-1 rounded-md",
+                    post.status === 'agendado' ? 'bg-green-500/20 text-green-400' :
+                    post.status === 'aprovacao' ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  )}>
+                    {post.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TemplateManager({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
+  const [selectedCategory, setSelectedCategory] = useState('todos');
+
+  const categories = [
+    { id: 'todos', name: 'Todos', count: 28 },
+    { id: 'promocional', name: 'Promocional', count: 8 },
+    { id: 'educativo', name: 'Educativo', count: 12 },
+    { id: 'social-proof', name: 'Social Proof', count: 5 },
+    { id: 'engagement', name: 'Engagement', count: 3 }
+  ];
+
+  const allTemplates = [
+    { id: 1, name: 'Post Promocional Black Friday', category: 'promocional', uses: 45, preview: '🔥 SUPER OFERTA! Aproveite desconto de até 70% em todos os produtos. Apenas por tempo limitado!', platforms: ['instagram', 'facebook'], status: 'ativo' },
+    { id: 2, name: 'Story Interativo Enquete', category: 'engagement', uses: 32, preview: '🤔 Ajude-nos a decidir! Qual produto vocês querem ver em nossa próxima coleção?', platforms: ['instagram'], status: 'ativo' },
+    { id: 3, name: 'Carrossel Tutorial', category: 'educativo', uses: 28, preview: '📚 Tutorial completo em 5 slides: Como aproveitar ao máximo nosso produto', platforms: ['instagram', 'linkedin'], status: 'ativo' },
+    { id: 4, name: 'Depoimento Cliente', category: 'social-proof', uses: 19, preview: '⭐ "Produto incrível! Superou todas as minhas expectativas" - Maria S., Cliente Satisfeita', platforms: ['facebook', 'instagram'], status: 'ativo' },
+    { id: 5, name: 'Dica do Dia', category: 'educativo', uses: 15, preview: '💡 Dica do Dia: Sabia que você pode otimizar seus resultados fazendo isso?', platforms: ['linkedin', 'twitter'], status: 'rascunho' },
+    { id: 6, name: 'Lançamento de Produto', category: 'promocional', uses: 12, preview: '🚀 NOVIDADE! Conheça nosso mais novo produto que vai revolucionar sua rotina', platforms: ['instagram', 'facebook', 'linkedin'], status: 'ativo' }
+  ];
+
+  const filteredTemplates = selectedCategory === 'todos' 
+    ? allTemplates 
+    : allTemplates.filter(template => template.category === selectedCategory);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className={cn(
+          "text-lg font-bold flex items-center gap-2",
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        )}>
+          <Activity className="w-5 h-5 text-orange-400" />
+          Gerenciar Templates
+        </h3>
+
+        <button className="gradient-purple-blue px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          Novo Template
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar com Categorias */}
+        <div className="space-y-4">
+          <h4 className={cn(
+            "text-sm font-bold",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            Categorias
+          </h4>
+          
+          <div className="space-y-2">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={cn(
+                  "w-full p-3 text-left glass-button-3d text-sm font-medium flex items-center justify-between",
+                  selectedCategory === category.id && "gradient-purple-blue text-white"
+                )}
+              >
+                <span>{category.name}</span>
+                <span className="text-xs opacity-70">{category.count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="glass-3d p-4 mt-6">
+            <h4 className={cn(
+              "text-sm font-bold mb-3",
+              theme === 'dark' ? 'text-white' : 'text-gray-900'
+            )}>
+              Estatísticas
+            </h4>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Templates Ativos:</span>
+                <span className="text-green-400">24</span>
+              </div>
+              <div className="flex justify-between">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Mais Usado:</span>
+                <span className="text-purple-400">Promocional</span>
+              </div>
+              <div className="flex justify-between">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Conversão Média:</span>
+                <span className="text-blue-400">8.2%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid de Templates */}
+        <div className="lg:col-span-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {filteredTemplates.map((template) => (
+              <div key={template.id} className="glass-3d p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h5 className={cn(
+                      "font-medium text-sm mb-1",
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    )}>
+                      {template.name}
+                    </h5>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs px-2 py-1 rounded-md bg-purple-500/20 text-purple-400">
+                        {template.category}
+                      </span>
+                      <span className={cn(
+                        "text-xs px-2 py-1 rounded-md",
+                        template.status === 'ativo' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                      )}>
+                        {template.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={cn(
+                  "text-xs mb-3 p-2 rounded-lg glass-3d-light",
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                )}>
+                  {template.preview}
+                </div>
+
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex gap-1">
+                    {template.platforms.map((platform) => (
+                      <span key={platform} className="text-xs">
+                        {platform === 'instagram' ? '📸' :
+                         platform === 'facebook' ? '📘' :
+                         platform === 'linkedin' ? '💼' : '🐦'}
+                      </span>
+                    ))}
+                  </div>
+                  <span className={cn(
+                    "text-xs",
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  )}>
+                    {template.uses} usos
+                  </span>
+                </div>
+
+                <div className="flex gap-2">
+                  <button className="glass-button-3d px-3 py-1 text-xs font-medium flex-1">
+                    Usar
+                  </button>
+                  <button className="glass-button-3d px-3 py-1 text-xs font-medium">
+                    Editar
+                  </button>
+                  <button className="glass-button-3d px-3 py-1 text-xs font-medium text-red-400">
+                    Excluir
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         </div>
