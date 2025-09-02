@@ -25,8 +25,6 @@ import OrganizationsManagementAdvanced from "@/pages/organizations-management-ad
 import OrganizationsManagementComplete from "@/pages/organizations-management-complete";
 import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
-import MarketingDashboard from "@/pages/MarketingDashboard";
-import MarketingDashboard3D from "@/pages/MarketingDashboard3D";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import NotFound from "@/pages/not-found";
 
@@ -47,11 +45,9 @@ function Router() {
       <Route path="/ai-management" component={AIManagementGlobal} />
       <Route path="/ai-management-org" component={AIManagementByOrganization} />
       
-      {/* Organization Dashboards - Accessed from admin platform */}
-      <Route path="/marketing/:id" component={MarketingDashboard} />
-      <Route path="/marketing" component={() => <MarketingDashboard />} />
-      <Route path="/marketing-3d/:id" component={MarketingDashboard3D} />
-      <Route path="/marketing-3d" component={() => <MarketingDashboard3D />} />
+      {/* Marketing Organization Dashboard - Main marketing interface with social media integration */}
+      <Route path="/marketing/:id" component={MarketingDashboardComplete} />
+      <Route path="/marketing" component={() => <MarketingDashboardComplete />} />
       <Route path="/marketing-complete/:id" component={MarketingDashboardComplete} />
       <Route path="/marketing-complete" component={() => <MarketingDashboardComplete />} />
       
