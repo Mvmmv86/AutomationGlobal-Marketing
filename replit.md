@@ -6,10 +6,36 @@ Automation Global is an enterprise-grade AI automation platform designed to stre
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Design System - Automation Global v4.0 Futuristic UI
+## Design System - Multi-Tenant Architecture
 
-### Core Design Philosophy
-O design system foi baseado na referência visual do Freepik (elementos UI futurísticos com fundo escuro e efeitos neon azul/ciano), criando uma experiência imersiva e tecnológica que reflete a natureza avançada da plataforma de automação com IA.
+### Admin Platform Design (Futuristic Neon)
+O sistema administrativo principal mantém o design futurístico baseado na referência visual do Freepik (elementos UI futurísticos com fundo escuro e efeitos neon azul/ciano), criando uma experiência imersiva e tecnológica.
+
+### Organization-Specific Design Systems
+Cada tipo de organização possui seu próprio design system personalizado:
+
+#### Marketing Organizations - 3D Glass Morphism Design
+- **Background Options:** Preto (#0f0f0f) OU Branco (#ffffff) - configurável por usuário
+- **Cards:** Glass morphism com backdrop-filter: blur(20px)
+- **Gradientes:** Roxo para Azul (#8B5CF6 → #3B82F6)
+- **Bordas:** Arredondadas (20px) com transparência rgba(255,255,255,0.1)
+- **Sombras:** 3D profundas com efeito elevação e rgba(139,92,246,0.3)
+- **Efeitos:** Hover com translateY(-8px) e scale(1.02)
+- **Componentes:** Cards 3D, gráficos circulares, barras 3D, botões glass
+- **Layout:** Grid responsivo moderno (auto-fit, minmax(300px, 1fr))
+- **Referência:** Design baseado na imagem dashboard 3D fornecida
+- **Implementação:** SEMPRE usar este design APENAS para organizações tipo "marketing"
+
+#### Future Organization Types (Planejado)
+- **Support Organizations:** Será implementado design específico diferente
+- **Trading Organizations:** Será implementado design específico diferente
+
+### Design System Architecture Rules
+1. **Admin Platform:** SEMPRE usar design futurístico neon/matrix existente
+2. **Marketing Organizations:** SEMPRE usar design 3D glass morphism
+3. **Outras Organizações:** Cada tipo terá seu design único específico
+4. **Isolamento:** Designs não se misturam entre tipos de organização
+5. **Consistência:** Dentro do mesmo tipo, todas orgs usam mesmo design
 
 ### Color Palette
 **Primary Background Colors:**
