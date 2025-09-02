@@ -854,7 +854,7 @@ export default function AdminDashboardFinal() {
             item.id === 'organizations' || item.id === 'ai-management' ? (
               <Link href={item.path} key={item.id}>
                 <button
-                  className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group glass hover:glass-dark card-hover ${item.id === 'organizations' ? 'mt-6' : ''} ${item.id === 'ai-management' ? 'mt-6' : ''}`}
+                  className={`w-full p-3 rounded-xl transition-all duration-300 flex items-center gap-3 text-left group glass hover:glass-dark card-hover ${item.id === 'organizations' ? 'mt-4' : ''} ${item.id === 'ai-management' ? 'mt-4' : ''}`}
                   data-testid={`nav-${item.id}`}
                 >
                   <div className={`p-2 rounded-lg icon-container-futuristic`}>
@@ -869,7 +869,7 @@ export default function AdminDashboardFinal() {
               <button
                 key={item.id}
                 onClick={() => setSelectedTab(item.id)}
-                className={`w-full p-4 rounded-xl transition-all duration-300 flex items-center gap-4 text-left group ${
+                className={`w-full p-3 rounded-xl transition-all duration-300 flex items-center gap-3 text-left group ${
                   selectedTab === item.id 
                     ? `bg-gradient-to-r ${item.color} neon-cyan transform scale-105` 
                     : 'glass hover:glass-dark card-hover'
@@ -894,7 +894,7 @@ export default function AdminDashboardFinal() {
             {/* Auto Refresh Toggle */}
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`w-full p-4 rounded-xl neon-panel transition-all duration-300 flex items-center gap-4 card-hover ${
+              className={`w-full p-3 rounded-xl neon-panel transition-all duration-300 flex items-center gap-3 card-hover ${
                 autoRefresh ? 'neon-cyan' : ''
               }`}
               data-testid="toggle-auto-refresh"
@@ -910,7 +910,7 @@ export default function AdminDashboardFinal() {
             {/* Manual Refresh */}
             <button
               onClick={() => refetchMetrics()}
-              className="w-full p-4 rounded-xl neon-panel transition-all duration-300 flex items-center gap-4 card-hover btn-glow"
+              className="w-full p-3 rounded-xl neon-panel transition-all duration-300 flex items-center gap-3 card-hover btn-glow"
               data-testid="manual-refresh"
             >
               <div className="p-2 rounded-lg icon-container-futuristic border-cyan-500">
