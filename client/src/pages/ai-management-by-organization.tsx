@@ -637,9 +637,8 @@ export default function AIManagementByOrganization() {
                             />
                             <Button 
                               size="sm" 
-                              variant="ghost"
                               onClick={() => openLimitsDialog(org, 'openai')}
-                              className="mt-1 text-xs h-6 px-2 text-gray-400 hover:text-white"
+                              className="mt-2 h-8 px-3 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-500/30 text-cyan-300 hover:from-cyan-600/40 hover:to-blue-600/40 hover:border-cyan-400/50 hover:text-cyan-200 transition-all duration-200 text-xs font-medium"
                             >
                               <Settings className="w-3 h-3 mr-1" />
                               Ajustar Limites
@@ -710,9 +709,8 @@ export default function AIManagementByOrganization() {
                             />
                             <Button 
                               size="sm" 
-                              variant="ghost"
                               onClick={() => openLimitsDialog(org, 'anthropic')}
-                              className="mt-1 text-xs h-6 px-2 text-gray-400 hover:text-white"
+                              className="mt-2 h-8 px-3 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 text-purple-300 hover:from-purple-600/40 hover:to-pink-600/40 hover:border-purple-400/50 hover:text-purple-200 transition-all duration-200 text-xs font-medium"
                             >
                               <Settings className="w-3 h-3 mr-1" />
                               Ajustar Limites
