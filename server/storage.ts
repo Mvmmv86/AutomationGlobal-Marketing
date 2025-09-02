@@ -17,7 +17,15 @@ import type {
   ActivityLog,
   InsertActivityLog,
   Module,
-  OrganizationModule
+  OrganizationModule,
+  MarketingMetric,
+  InsertMarketingMetric,
+  MarketingChannel,
+  InsertMarketingChannel,
+  MarketingAiInsight,
+  InsertMarketingAiInsight,
+  MarketingPreference,
+  InsertMarketingPreference
 } from "@shared/schema";
 
 // Database connection for production
@@ -90,6 +98,18 @@ export interface IStorage {
 
   // Health check
   healthCheck(): Promise<boolean>;
+
+  // Marketing methods
+  getMarketingMetrics(organizationId: string, period?: 'today' | 'week' | 'month'): Promise<MarketingMetric[]>;
+  createMarketingMetric(data: InsertMarketingMetric): Promise<MarketingMetric>;
+  getMarketingChannels(organizationId: string): Promise<MarketingChannel[]>;
+  createMarketingChannel(data: InsertMarketingChannel): Promise<MarketingChannel>;
+  updateMarketingChannel(id: string, data: Partial<MarketingChannel>): Promise<MarketingChannel>;
+  getMarketingAiInsights(organizationId: string): Promise<MarketingAiInsight[]>;
+  createMarketingAiInsight(data: InsertMarketingAiInsight): Promise<MarketingAiInsight>;
+  getMarketingPreferences(organizationId: string, userId: string): Promise<MarketingPreference | undefined>;
+  createMarketingPreference(data: InsertMarketingPreference): Promise<MarketingPreference>;
+  updateMarketingPreference(organizationId: string, userId: string, data: Partial<MarketingPreference>): Promise<MarketingPreference>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -464,6 +484,90 @@ export class DatabaseStorage implements IStorage {
     } catch {
       return false;
     }
+  }
+
+  // Marketing methods
+  async getMarketingMetrics(organizationId: string, period?: 'today' | 'week' | 'month'): Promise<MarketingMetric[]> {
+    let query = db.select().from(schema.marketingMetrics)
+      .where(eq(schema.marketingMetrics.organizationId, organizationId))
+      .orderBy(desc(schema.marketingMetrics.date));
+    
+    if (period) {
+      const periodStart = this.getPeriodStart(period);
+      query = query.where(and(
+        eq(schema.marketingMetrics.organizationId, organizationId),
+        gte(schema.marketingMetrics.date, periodStart)
+      ));
+    }
+    
+    return await query;
+  }
+
+  async createMarketingMetric(data: InsertMarketingMetric): Promise<MarketingMetric> {
+    const [metric] = await db.insert(schema.marketingMetrics).values(data).returning();
+    return metric;
+  }
+
+  async getMarketingChannels(organizationId: string): Promise<MarketingChannel[]> {
+    return await db.select().from(schema.marketingChannels)
+      .where(and(
+        eq(schema.marketingChannels.organizationId, organizationId),
+        eq(schema.marketingChannels.isActive, true)
+      ))
+      .orderBy(desc(schema.marketingChannels.trafficPercentage));
+  }
+
+  async createMarketingChannel(data: InsertMarketingChannel): Promise<MarketingChannel> {
+    const [channel] = await db.insert(schema.marketingChannels).values(data).returning();
+    return channel;
+  }
+
+  async updateMarketingChannel(id: string, data: Partial<MarketingChannel>): Promise<MarketingChannel> {
+    const [channel] = await db.update(schema.marketingChannels)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.marketingChannels.id, id))
+      .returning();
+    return channel;
+  }
+
+  async getMarketingAiInsights(organizationId: string): Promise<MarketingAiInsight[]> {
+    return await db.select().from(schema.marketingAiInsights)
+      .where(and(
+        eq(schema.marketingAiInsights.organizationId, organizationId),
+        eq(schema.marketingAiInsights.isActive, true)
+      ))
+      .orderBy(desc(schema.marketingAiInsights.createdAt))
+      .limit(10);
+  }
+
+  async createMarketingAiInsight(data: InsertMarketingAiInsight): Promise<MarketingAiInsight> {
+    const [insight] = await db.insert(schema.marketingAiInsights).values(data).returning();
+    return insight;
+  }
+
+  async getMarketingPreferences(organizationId: string, userId: string): Promise<MarketingPreference | undefined> {
+    const preferences = await db.select().from(schema.marketingPreferences)
+      .where(and(
+        eq(schema.marketingPreferences.organizationId, organizationId),
+        eq(schema.marketingPreferences.userId, userId)
+      ));
+    return preferences[0];
+  }
+
+  async createMarketingPreference(data: InsertMarketingPreference): Promise<MarketingPreference> {
+    const [preference] = await db.insert(schema.marketingPreferences).values(data).returning();
+    return preference;
+  }
+
+  async updateMarketingPreference(organizationId: string, userId: string, data: Partial<MarketingPreference>): Promise<MarketingPreference> {
+    const [preference] = await db.update(schema.marketingPreferences)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(
+        eq(schema.marketingPreferences.organizationId, organizationId),
+        eq(schema.marketingPreferences.userId, userId)
+      ))
+      .returning();
+    return preference;
   }
 
   // Utility methods

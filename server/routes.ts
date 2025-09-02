@@ -1338,6 +1338,216 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const organizationsAdminRoutes = (await import('./routes/organizations-admin')).default;
   app.use('/api/admin/organizations', organizationsAdminRoutes);
 
+  // Marketing module routes
+  app.get('/api/organizations/:id/marketing/metrics', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const { period } = req.query as { period?: 'today' | 'week' | 'month' };
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const metrics = await storage.getMarketingMetrics(id, period);
+        
+        // Se não houver dados, criar dados de exemplo
+        if (metrics.length === 0) {
+          const sampleMetrics = [
+            {
+              organizationId: id,
+              date: new Date(),
+              impressions: 125000,
+              clicks: 3200,
+              conversions: 45,
+              roi: 240,
+              impressionsChange: 15,
+              clicksChange: 8,
+              conversionsChange: 12,
+              roiChange: 25
+            }
+          ];
+          
+          for (const metric of sampleMetrics) {
+            await storage.createMarketingMetric(metric);
+          }
+          
+          const newMetrics = await storage.getMarketingMetrics(id, period);
+          res.json(newMetrics);
+        } else {
+          res.json(metrics);
+        }
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  app.get('/api/organizations/:id/marketing/channels', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        let channels = await storage.getMarketingChannels(id);
+        
+        // Se não houver dados, criar dados de exemplo
+        if (channels.length === 0) {
+          const sampleChannels = [
+            {
+              organizationId: id,
+              channelName: 'Instagram',
+              trafficPercentage: 70,
+              performanceData: { impressions: 87500, engagement: 8.5 }
+            },
+            {
+              organizationId: id,
+              channelName: 'Facebook',
+              trafficPercentage: 30,
+              performanceData: { impressions: 37500, engagement: 6.2 }
+            }
+          ];
+          
+          for (const channel of sampleChannels) {
+            await storage.createMarketingChannel(channel);
+          }
+          
+          channels = await storage.getMarketingChannels(id);
+        }
+        
+        res.json(channels);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  app.get('/api/organizations/:id/marketing/ai-insights', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        let insights = await storage.getMarketingAiInsights(id);
+        
+        // Se não houver dados, criar insights de exemplo
+        if (insights.length === 0) {
+          const sampleInsights = [
+            {
+              organizationId: id,
+              insightText: 'Melhor horário para posts: 19h-21h (35% mais engajamento)',
+              category: 'timing',
+              confidenceScore: 0.92
+            },
+            {
+              organizationId: id,
+              insightText: 'Público principal: 25-34 anos, interessados em tecnologia',
+              category: 'audience',
+              confidenceScore: 0.87
+            },
+            {
+              organizationId: id,
+              insightText: 'Conteúdo em vídeo gera 40% mais conversões',
+              category: 'content',
+              confidenceScore: 0.95
+            }
+          ];
+          
+          for (const insight of sampleInsights) {
+            await storage.createMarketingAiInsight(insight);
+          }
+          
+          insights = await storage.getMarketingAiInsights(id);
+        }
+        
+        res.json(insights);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  app.get('/api/organizations/:id/marketing/preferences', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const userId = req.user?.id;
+        
+        if (!userId) {
+          return res.status(401).json({ error: 'User not authenticated' });
+        }
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        let preferences = await storage.getMarketingPreferences(id, userId);
+        
+        // Se não houver preferências, criar padrão
+        if (!preferences) {
+          preferences = await storage.createMarketingPreference({
+            organizationId: id,
+            userId: userId,
+            theme: 'dark',
+            dashboardSettings: {}
+          });
+        }
+        
+        res.json(preferences);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
+  app.put('/api/organizations/:id/marketing/preferences', 
+    requireAuth, 
+    loadOrganizationContext, 
+    requireActiveOrganization, 
+    async (req: TenantRequest, res) => {
+      try {
+        const { id } = req.params;
+        const userId = req.user?.id;
+        const { theme, dashboardSettings } = req.body;
+        
+        if (!userId) {
+          return res.status(401).json({ error: 'User not authenticated' });
+        }
+        
+        if (req.organization?.type !== 'marketing') {
+          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
+        }
+        
+        const preferences = await storage.updateMarketingPreference(id, userId, {
+          theme,
+          dashboardSettings
+        });
+        
+        res.json(preferences);
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
   return httpServer;
 }

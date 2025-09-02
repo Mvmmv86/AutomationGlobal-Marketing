@@ -273,12 +273,58 @@ export const analyticsReports = pgTable("analytics_reports", {
   description: text("description"),
   type: text("type").notNull(), // 'dashboard', 'scheduled', 'alert', 'insight'
   configuration: jsonb("configuration").notNull(), // Charts, filters, ML model refs
-  schedule: text("schedule"), // Cron expression for scheduled reports
-  recipients: text("recipients").array(), // Email addresses for scheduled reports
-  lastGenerated: timestamp("last_generated"),
-  nextScheduled: timestamp("next_scheduled"),
-  isActive: boolean("is_active").default(true),
+  schedule: jsonb("schedule"),
+  lastRunAt: timestamp("last_run_at"),
   createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Marketing Module Tables
+export const marketingMetrics = pgTable("marketing_metrics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  date: timestamp("date").notNull(),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  conversions: integer("conversions").default(0),
+  roi: decimal("roi", { precision: 5, scale: 2 }).default('0'),
+  impressionsChange: decimal("impressions_change", { precision: 5, scale: 2 }).default('0'),
+  clicksChange: decimal("clicks_change", { precision: 5, scale: 2 }).default('0'),
+  conversionsChange: decimal("conversions_change", { precision: 5, scale: 2 }).default('0'),
+  roiChange: decimal("roi_change", { precision: 5, scale: 2 }).default('0'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const marketingChannels = pgTable("marketing_channels", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  channelName: text("channel_name").notNull(),
+  trafficPercentage: decimal("traffic_percentage", { precision: 5, scale: 2 }).default('0'),
+  performanceData: jsonb("performance_data").default({}),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const marketingAiInsights = pgTable("marketing_ai_insights", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  insightText: text("insight_text").notNull(),
+  category: text("category").notNull(), // 'audience', 'timing', 'content', 'optimization'
+  confidenceScore: decimal("confidence_score", { precision: 3, scale: 2 }).default('0'),
+  metadata: jsonb("metadata").default({}),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const marketingPreferences = pgTable("marketing_preferences", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  theme: text("theme").default('dark'), // 'dark' or 'light'
+  dashboardSettings: jsonb("dashboard_settings").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -361,6 +407,30 @@ export const insertAnalyticsInsightSchema = createInsertSchema(analyticsInsights
   createdAt: true,
 });
 
+// Marketing Schemas
+export const insertMarketingMetricSchema = createInsertSchema(marketingMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMarketingChannelSchema = createInsertSchema(marketingChannels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMarketingAiInsightSchema = createInsertSchema(marketingAiInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMarketingPreferenceSchema = createInsertSchema(marketingPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -399,3 +469,16 @@ export type InsertAnalyticsReport = z.infer<typeof insertAnalyticsReportSchema>;
 
 export type AnalyticsInsight = typeof analyticsInsights.$inferSelect;
 export type InsertAnalyticsInsight = z.infer<typeof insertAnalyticsInsightSchema>;
+
+// Marketing Types
+export type MarketingMetric = typeof marketingMetrics.$inferSelect;
+export type InsertMarketingMetric = z.infer<typeof insertMarketingMetricSchema>;
+
+export type MarketingChannel = typeof marketingChannels.$inferSelect;
+export type InsertMarketingChannel = z.infer<typeof insertMarketingChannelSchema>;
+
+export type MarketingAiInsight = typeof marketingAiInsights.$inferSelect;
+export type InsertMarketingAiInsight = z.infer<typeof insertMarketingAiInsightSchema>;
+
+export type MarketingPreference = typeof marketingPreferences.$inferSelect;
+export type InsertMarketingPreference = z.infer<typeof insertMarketingPreferenceSchema>;

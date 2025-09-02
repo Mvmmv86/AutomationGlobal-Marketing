@@ -22,6 +22,7 @@ import OrganizationsManagementAdvanced from "@/pages/organizations-management-ad
 import OrganizationsManagementComplete from "@/pages/organizations-management-complete";
 import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
+import MarketingDashboard from "@/pages/MarketingDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -47,6 +48,8 @@ function Router() {
       <Route path="/organizations-simple" component={OrganizationsManagement} />
       <Route path="/ai-management" component={AIManagementGlobal} />
       <Route path="/ai-management-org" component={AIManagementByOrganization} />
+      <Route path="/marketing/:id" component={MarketingDashboard} />
+      <Route path="/marketing" component={() => <MarketingDashboard />} />
       <Route component={NotFound} />
     </Switch>
   );
