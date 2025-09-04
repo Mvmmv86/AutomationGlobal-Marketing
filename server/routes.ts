@@ -1704,6 +1704,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple AI optimization endpoint (working version)
+  app.post('/api/social-media/optimize-content', async (req: Request, res) => {
+    try {
+      console.log('🤖 Recebida requisição de otimização:', req.body);
+      
+      const { content, platform = 'instagram' } = req.body;
+      
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ 
+          error: 'Conteúdo é obrigatório para otimização' 
+        });
+      }
+
+      let optimizedContent = content;
+      let improvements: string[] = [];
+      let optimizationType = '';
+      let aiPowered = false;
+
+      // Try real AI optimization first
+      try {
+        if (process.env.OPENAI_API_KEY) {
+          const { OpenAI } = require('openai');
+          const openai = new OpenAI({ 
+            apiKey: process.env.OPENAI_API_KEY 
+          });
+
+          const prompt = `Você é um especialista em marketing digital. Otimize este texto para ${platform}:
+
+"${content}"
+
+REGRAS:
+1. Reescreva para ser mais envolvente
+2. Adicione emojis estratégicos
+3. Inclua call-to-action
+4. Adicione hashtags relevantes
+5. Mantenha tom profissional
+
+Retorne APENAS o texto otimizado.`;
+
+          const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+              { role: "system", content: "Você é especialista em marketing digital." },
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 300,
+            temperature: 0.7,
+          });
+
+          optimizedContent = response.choices[0].message.content?.trim() || content;
+          optimizationType = '🚀 Otimizado com IA real (OpenAI) para máximo engajamento!';
+          aiPowered = true;
+          improvements = [
+            'Reescrito com IA avançada',
+            'Linguagem otimizada',
+            'Emojis estratégicos',
+            'Call-to-action incluído',
+            'Hashtags inteligentes'
+          ];
+
+          console.log('✅ IA real funcionou!');
+
+        } else {
+          throw new Error('OpenAI não disponível');
+        }
+
+      } catch (aiError) {
+        console.log('⚠️ IA fallback - usando otimização local');
+        
+        // Enhanced local optimization
+        optimizedContent = content;
+        
+        // Add emoji if missing
+        if (!content.includes('🚀') && !content.includes('✨') && !content.includes('💡')) {
+          optimizedContent = '🚀 ' + optimizedContent;
+          improvements.push('Emoji estratégico adicionado');
+        }
+        
+        // Add CTA if missing
+        if (!content.toLowerCase().includes('comente') && 
+            !content.toLowerCase().includes('compartilhe')) {
+          optimizedContent += '\n\n💬 Comente sua opinião! ❤️ Curta se concordar!';
+          improvements.push('Call-to-action incluído');
+        }
+        
+        // Add hashtags
+        const hashtags = platform === 'instagram' 
+          ? '\n\n#marketing #digitalmarketing #negócios #sucesso'
+          : '\n\n#marketing #business #crescimento';
+        
+        if (!content.includes('#')) {
+          optimizedContent += hashtags;
+          improvements.push('Hashtags otimizadas');
+        }
+
+        optimizationType = '✨ Versão otimizada com algoritmos inteligentes!';
+        
+        if (improvements.length === 0) {
+          improvements = ['Conteúdo já otimizado'];
+        }
+      }
+      
+      const result = {
+        success: true,
+        data: {
+          originalContent: content,
+          optimizedContent: optimizedContent,
+          platform: platform,
+          optimizationType: optimizationType,
+          improvements: improvements,
+          aiPowered: aiPowered
+        },
+        message: 'Conteúdo otimizado com sucesso!'
+      };
+
+      console.log('✅ Resposta enviada:', result);
+      res.json(result);
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao otimizar conteúdo:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error.message 
+      });
+    }
+  });
+
   // Analytics endpoint for performance data
   app.get('/api/social-media/analytics', async (req: Request, res) => {
     try {
@@ -1740,134 +1867,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Content Optimization endpoint
-  app.post('/api/social-media/optimize-content', async (req: Request, res) => {
-    try {
-      const { content, platform = 'instagram' } = req.body;
-      
-      if (!content || content.trim().length === 0) {
-        return res.status(400).json({ 
-          error: 'Conteúdo é obrigatório para otimização' 
-        });
-      }
-
-      let optimizedContent = content;
-      let improvements: string[] = [];
-      let optimizationType = '';
-
-      // Try real AI optimization first, fallback to simulated if fails
-      try {
-        // Use OpenAI for content optimization
-        if (process.env.OPENAI_API_KEY) {
-          const OpenAI = require('openai');
-          const openai = new OpenAI({ 
-            apiKey: process.env.OPENAI_API_KEY 
-          });
-
-          const prompt = `Você é um especialista em marketing digital e redes sociais. Otimize o seguinte texto para ${platform}:
-
-"${content}"
-
-INSTRUÇÕES:
-1. Reescreva o texto para ser mais envolvente e persuasivo
-2. Adicione emojis estratégicos (mas não exagere)
-3. Inclua um call-to-action natural
-4. Adicione hashtags relevantes para ${platform}
-5. Mantenha o tom autêntico e profissional
-6. Foque em engajamento e conversão
-
-Retorne APENAS o texto otimizado, sem explicações.`;
-
-          const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo", // Using GPT-3.5 for faster response
-            messages: [
-              { 
-                role: "system", 
-                content: "Você é um especialista em marketing digital. Sempre otimize textos para máximo engajamento." 
-              },
-              { role: "user", content: prompt }
-            ],
-            max_tokens: 500,
-            temperature: 0.7,
-          });
-
-          optimizedContent = response.choices[0].message.content?.trim() || content;
-          optimizationType = '🚀 Otimizado com IA real (OpenAI) para máximo engajamento!';
-          improvements = [
-            'Reescrito com IA avançada',
-            'Linguagem otimizada para conversão',
-            'Emojis estratégicos adicionados',
-            'Call-to-action persuasivo',
-            'Hashtags inteligentes'
-          ];
-
-        } else {
-          throw new Error('OpenAI API key not available');
-        }
-
-      } catch (aiError) {
-        console.log('AI fallback - usando otimização inteligente local');
-        
-        // Fallback to enhanced local optimization
-        const optimizations = [
-          '✨ Versão otimizada com emojis estratégicos e call-to-action poderoso!',
-          '🚀 Conteúdo reescrito para máximo engajamento e conversão!',
-          '💡 Texto aprimorado com gatilhos mentais e storytelling envolvente!',
-          '🎯 Versão otimizada para algoritmo das redes sociais!',
-          '💪 Conteúdo potencializado com linguagem persuasiva e urgência!'
-        ];
-
-        optimizationType = optimizations[Math.floor(Math.random() * optimizations.length)];
-        
-        // Enhanced local optimization
-        optimizedContent = content;
-        
-        // Add strategic emojis if not present
-        if (!content.includes('🚀') && !content.includes('✨') && !content.includes('💡')) {
-          optimizedContent = '🚀 ' + optimizedContent;
-          improvements.push('Emoji estratégico adicionado');
-        }
-        
-        // Add call-to-action if missing
-        if (!content.toLowerCase().includes('comente') && 
-            !content.toLowerCase().includes('compartilhe') && 
-            !content.toLowerCase().includes('like')) {
-          optimizedContent += '\n\n💬 Comente sua opinião! ❤️ Curta se concordar!';
-          improvements.push('Call-to-action incluído');
-        }
-        
-        // Add trending hashtags based on platform
-        const instagramHashtags = '\n\n#marketing #digitalmarketing #negócios #empreendedorismo #sucesso';
-        const facebookHashtags = '\n\n#marketing #business #crescimento #estratégia';
-        
-        if (!content.includes('#')) {
-          optimizedContent += platform === 'instagram' ? instagramHashtags : facebookHashtags;
-          improvements.push('Hashtags otimizadas para ' + platform);
-        }
-
-        if (improvements.length === 0) {
-          improvements = ['Conteúdo já otimizado', 'Estrutura mantida'];
-        }
-      }
-      
-      res.json({
-        success: true,
-        data: {
-          originalContent: content,
-          optimizedContent: optimizedContent,
-          platform: platform,
-          optimizationType: optimizationType,
-          improvements: improvements,
-          aiPowered: process.env.OPENAI_API_KEY ? true : false
-        },
-        message: 'Conteúdo otimizado com sucesso!'
-      });
-      
-    } catch (error: any) {
-      console.error('Erro ao otimizar conteúdo:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   // Create content template
   app.post('/api/organizations/:id/social-media/templates', 
