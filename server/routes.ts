@@ -2362,7 +2362,10 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         debug: {
           totalPostsResult: totalPosts,
           publishedPostsResult: publishedPosts,
-          scheduledPostsResult: scheduledPosts
+          scheduledPostsResult: scheduledPosts,
+          totalPostsCount: totalPosts[0]?.count,
+          publishedPostsCount: publishedPosts[0]?.count,
+          scheduledPostsCount: scheduledPosts[0]?.count
         }
       });
 
@@ -2559,6 +2562,54 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       // Redirect back to app with token
       res.redirect(`/marketing?instagram_token=${accessToken}&state=${state}`);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Endpoint para buscar posts agendados para o calendário editorial
+  app.get('/api/social-media/scheduled-posts', async (req: Request, res) => {
+    try {
+      console.log('📅 Buscando posts agendados para calendário editorial...');
+      
+      // Buscar posts com status 'scheduled' e scheduledAt não nulo
+      const scheduledPosts = await db
+        .select({
+          id: socialMediaPosts.id,
+          title: socialMediaPosts.title,
+          content: socialMediaPosts.content,
+          status: socialMediaPosts.status,
+          scheduledAt: socialMediaPosts.scheduledAt,
+          platforms: socialMediaPosts.platforms,
+          selectedAccounts: socialMediaPosts.selectedAccounts,
+          createdAt: socialMediaPosts.createdAt,
+          publishMode: socialMediaPosts.publishMode
+        })
+        .from(socialMediaPosts)
+        .where(eq(socialMediaPosts.status, 'scheduled'))
+        .orderBy(socialMediaPosts.scheduledAt);
+
+      console.log(`📋 Encontrados ${scheduledPosts.length} posts agendados`);
+      console.log('📋 Posts agendados:', scheduledPosts.map(p => ({ 
+        id: p.id.substring(0, 8), 
+        status: p.status, 
+        scheduledAt: p.scheduledAt,
+        publishMode: p.publishMode
+      })));
+
+      const formattedPosts = scheduledPosts.map(post => ({
+        id: post.id,
+        title: post.title || post.content?.substring(0, 50) + '...',
+        content: post.content,
+        date: post.scheduledAt ? new Date(post.scheduledAt).toISOString().split('T')[0] : null,
+        time: post.scheduledAt ? new Date(post.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null,
+        platform: Array.isArray(post.platforms) && post.platforms.length > 0 ? post.platforms[0] : 'Instagram',
+        status: 'agendado',
+        scheduledAt: post.scheduledAt
+      }));
+
+      res.json({ success: true, data: formattedPosts });
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar posts agendados:', error);
       res.status(500).json({ error: error.message });
     }
   });

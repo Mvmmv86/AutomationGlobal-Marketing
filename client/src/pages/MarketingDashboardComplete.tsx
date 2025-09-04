@@ -2103,12 +2103,13 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
 
-  const scheduledPosts = [
-    { id: 1, title: 'Promoção Black Friday', date: '2024-09-03', time: '14:00', platform: 'Instagram', status: 'agendado' },
-    { id: 2, title: 'Tutorial Produto X', date: '2024-09-04', time: '10:30', platform: 'YouTube', status: 'aprovacao' },
-    { id: 3, title: 'Depoimento Cliente', date: '2024-09-05', time: '16:15', platform: 'Facebook', status: 'rascunho' },
-    { id: 4, title: 'Lançamento Nova Linha', date: '2024-09-06', time: '12:00', platform: 'LinkedIn', status: 'agendado' }
-  ];
+  // Buscar posts agendados reais do banco de dados
+  const { data: scheduledPostsResponse, isLoading } = useQuery({
+    queryKey: ['/api/social-media/scheduled-posts'],
+    refetchInterval: 30000, // Atualizar a cada 30s
+  });
+
+  const scheduledPosts = scheduledPostsResponse?.data || [];
 
   const monthDays = Array.from({ length: 30 }, (_, i) => i + 1);
 
@@ -2207,42 +2208,67 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             Próximas Publicações
           </h4>
           
-          <div className="space-y-3">
-            {scheduledPosts.map((post) => (
-              <div key={post.id} className="glass-3d p-3">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <div className={cn(
-                      "font-medium text-xs mb-1",
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    )}>
-                      {post.title}
-                    </div>
-                    <div className={cn(
-                      "text-xs",
-                      theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    )}>
-                      {post.date} às {post.time}
-                    </div>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1,2,3].map((i) => (
+                <div key={i} className="glass-3d p-3 animate-pulse">
+                  <div className="h-3 bg-gray-600 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-700 rounded w-2/3 mb-2"></div>
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-700 rounded w-16"></div>
+                    <div className="h-3 bg-gray-700 rounded w-16"></div>
                   </div>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-xs px-2 py-1 rounded-md bg-blue-500/20 text-blue-400">
-                    {post.platform}
-                  </span>
-                  <span className={cn(
-                    "text-xs px-2 py-1 rounded-md",
-                    post.status === 'agendado' ? 'bg-green-500/20 text-green-400' :
-                    post.status === 'aprovacao' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-gray-500/20 text-gray-400'
-                  )}>
-                    {post.status}
-                  </span>
+              ))}
+            </div>
+          ) : scheduledPosts.length > 0 ? (
+            <div className="space-y-3">
+              {scheduledPosts.map((post: any) => (
+                <div key={post.id} className="glass-3d p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className={cn(
+                        "font-medium text-xs mb-1",
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      )}>
+                        {post.title}
+                      </div>
+                      <div className={cn(
+                        "text-xs",
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                      )}>
+                        {post.date} às {post.time}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs px-2 py-1 rounded-md bg-blue-500/20 text-blue-400">
+                      {post.platform}
+                    </span>
+                    <span className={cn(
+                      "text-xs px-2 py-1 rounded-md",
+                      post.status === 'agendado' ? 'bg-green-500/20 text-green-400' :
+                      post.status === 'aprovacao' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-gray-500/20 text-gray-400'
+                    )}>
+                      {post.status}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3 opacity-50" />
+              <p className={cn("text-xs", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}>
+                Nenhum post agendado
+              </p>
+              <p className={cn("text-xs mt-1 opacity-75", theme === 'dark' ? 'text-gray-500' : 'text-gray-500')}>
+                Seus posts agendados aparecerão aqui
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
