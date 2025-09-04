@@ -1722,55 +1722,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let optimizationType = '';
       let aiPowered = false;
 
-      // Try real AI optimization first
+      // Try real AI optimization first - Using Anthropic Claude
       try {
-        if (process.env.OPENAI_API_KEY) {
-          const { OpenAI } = require('openai');
+        if (process.env.ANTHROPIC_API_KEY) {
+          const Anthropic = require('@anthropic-ai/sdk');
+          const anthropic = new Anthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+          });
+
+          const prompt = `Você é um copywriter especialista em marketing digital para ${platform}. 
+
+TEXTO ORIGINAL: "${content}"
+
+TAREFA: Reescreva COMPLETAMENTE este texto seguindo estas diretrizes:
+
+🎯 OBJETIVO: Transformar em copy persuasiva de alta conversão
+📱 PLATAFORMA: ${platform}
+✍️ ESTILO: Natural, envolvente e persuasivo
+
+INSTRUÇÕES OBRIGATÓRIAS:
+1. REESCREVA completamente a mensagem (não apenas adicione elementos)
+2. Use gatilhos mentais (urgência, escassez, prova social)
+3. Inclua emojis estratégicos (máximo 3-4)
+4. Adicione call-to-action poderoso
+5. Inclua 3-5 hashtags relevantes ao tema
+6. Mantenha o tom autêntico e profissional
+7. Foque na dor/desejo do cliente
+8. Use linguagem de conversão
+
+RETORNE APENAS O TEXTO OTIMIZADO. Seja criativo e transforme completamente a mensagem original!`;
+
+          const response = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022', // Using Claude 3.5 Sonnet
+            max_tokens: 400,
+            temperature: 0.8,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+          });
+
+          optimizedContent = response.content[0].text?.trim() || content;
+          optimizationType = '🤖 Otimizado com IA real (Anthropic Claude) - Reescrito completamente!';
+          aiPowered = true;
+          improvements = [
+            'Texto completamente reescrito com IA avançada',
+            'Gatilhos mentais aplicados',
+            'Copy persuasiva de alta conversão',
+            'Call-to-action otimizado',
+            'Hashtags inteligentes baseadas no contexto',
+            'Linguagem de vendas profissional'
+          ];
+
+          console.log('✅ Anthropic Claude funcionou! Texto reescrito completamente!');
+
+        } else if (process.env.OPENAI_API_KEY) {
+          // Fallback to OpenAI
+          const OpenAI = require('openai');
           const openai = new OpenAI({ 
             apiKey: process.env.OPENAI_API_KEY 
           });
 
-          const prompt = `Você é um especialista em marketing digital. Otimize este texto para ${platform}:
+          const prompt = `Você é um copywriter especialista em marketing digital para ${platform}.
 
-"${content}"
+TEXTO ORIGINAL: "${content}"
 
-REGRAS:
-1. Reescreva para ser mais envolvente
-2. Adicione emojis estratégicos
-3. Inclua call-to-action
-4. Adicione hashtags relevantes
-5. Mantenha tom profissional
+Reescreva COMPLETAMENTE esta mensagem aplicando:
+- Gatilhos mentais de persuasão
+- Linguagem de alta conversão  
+- Emojis estratégicos
+- Call-to-action poderoso
+- Hashtags relevantes
 
-Retorne APENAS o texto otimizado.`;
+IMPORTANTE: NÃO apenas adicione elementos. REESCREVA completamente a mensagem para ser mais persuasiva.
+
+Retorne APENAS o texto otimizado:`;
 
           const response = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [
-              { role: "system", content: "Você é especialista em marketing digital." },
+              { role: "system", content: "Você é um copywriter especialista que reescreve textos completamente." },
               { role: "user", content: prompt }
             ],
-            max_tokens: 300,
-            temperature: 0.7,
+            max_tokens: 400,
+            temperature: 0.8,
           });
 
           optimizedContent = response.choices[0].message.content?.trim() || content;
-          optimizationType = '🚀 Otimizado com IA real (OpenAI) para máximo engajamento!';
+          optimizationType = '🚀 Otimizado com IA real (OpenAI) - Texto reescrito!';
           aiPowered = true;
           improvements = [
-            'Reescrito com IA avançada',
-            'Linguagem otimizada',
-            'Emojis estratégicos',
-            'Call-to-action incluído',
-            'Hashtags inteligentes'
+            'Texto completamente reescrito',
+            'Linguagem persuasiva aplicada',
+            'Gatilhos de conversão',
+            'Call-to-action otimizado',
+            'Hashtags contextuais'
           ];
 
-          console.log('✅ IA real funcionou!');
+          console.log('✅ OpenAI funcionou! Texto reescrito!');
 
         } else {
-          throw new Error('OpenAI não disponível');
+          throw new Error('Nenhuma IA disponível');
         }
 
       } catch (aiError) {
+        console.log('⚠️ IA real falhou:', aiError.message);
         console.log('⚠️ IA fallback - usando otimização local');
         
         // Enhanced local optimization
@@ -1824,6 +1882,125 @@ Retorne APENAS o texto otimizado.`;
       
     } catch (error: any) {
       console.error('❌ Erro ao otimizar conteúdo:', error);
+      res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        details: error.message 
+      });
+    }
+  });
+
+  // AI-powered contextual suggestions endpoint  
+  app.post('/api/social-media/generate-suggestions', async (req: Request, res) => {
+    try {
+      console.log('🧠 Gerando sugestões contextuais:', req.body);
+      
+      const { content, platform = 'instagram' } = req.body;
+      
+      if (!content || content.trim().length < 10) {
+        return res.json({
+          success: true,
+          suggestions: [
+            'Digite algo e verei sugestões personalizadas! 🤖',
+            'Comece a escrever para receber ideias...',
+            'Sugestões inteligentes aparecerão aqui ✨'
+          ]
+        });
+      }
+
+      let suggestions: string[] = [];
+
+      // Try real AI for suggestions first
+      try {
+        if (process.env.ANTHROPIC_API_KEY) {
+          const Anthropic = require('@anthropic-ai/sdk');
+          const anthropic = new Anthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+          });
+
+          const prompt = `Analise este conteúdo de marketing: "${content}"
+
+Baseado no tema e contexto, gere 3 sugestões CURTAS e PRÁTICAS para melhorar este post para ${platform}.
+
+REGRAS:
+1. Cada sugestão deve ter no máximo 50 caracteres
+2. Use emojis relevantes
+3. Seja específico ao tema do conteúdo  
+4. Foque em ações concretas (não genéricas)
+5. Mantenha tom profissional mas criativo
+
+Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
+
+          const response = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 200,
+            temperature: 0.9,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+          });
+
+          const aiSuggestions = response.content[0].text?.trim().split('\n').filter(s => s.trim());
+          if (aiSuggestions && aiSuggestions.length >= 3) {
+            suggestions = aiSuggestions.slice(0, 3);
+            console.log('✅ Sugestões IA geradas:', suggestions);
+          } else {
+            throw new Error('IA retornou sugestões insuficientes');
+          }
+
+        } else {
+          throw new Error('Anthropic não disponível');
+        }
+
+      } catch (aiError) {
+        console.log('⚠️ Fallback: gerando sugestões inteligentes locais');
+        
+        // Advanced local suggestions based on content analysis
+        const contentLower = content.toLowerCase();
+        
+        if (contentLower.includes('produto') || contentLower.includes('venda')) {
+          suggestions = [
+            '🚀 Destaque os benefícios únicos do produto',
+            '💰 Adicione oferta especial limitada',
+            '⭐ Inclua depoimento de cliente real'
+          ];
+        } else if (contentLower.includes('serviço') || contentLower.includes('qualidade')) {
+          suggestions = [
+            '🎯 Mostre diferencial do seu serviço',
+            '👥 Adicione casos de sucesso',
+            '🔥 Crie urgência com tempo limitado'
+          ];
+        } else if (contentLower.includes('empresa') || contentLower.includes('negócio')) {
+          suggestions = [
+            '🏢 Conte história da empresa',
+            '📈 Mostre números de crescimento',
+            '🤝 Destaque parcerias importantes'
+          ];
+        } else if (contentLower.includes('preço') || contentLower.includes('desconto')) {
+          suggestions = [
+            '💸 Destaque melhor custo-benefício',
+            '⏰ Crie senso de urgência',
+            '🎁 Adicione bônus exclusivos'
+          ];
+        } else {
+          suggestions = [
+            '✨ Adicione emojis estratégicos',
+            '💬 Inclua pergunta para interação',
+            '🎯 Crie call-to-action persuasivo'
+          ];
+        }
+      }
+      
+      res.json({
+        success: true,
+        suggestions: suggestions,
+        aiPowered: process.env.ANTHROPIC_API_KEY ? true : false
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao gerar sugestões:', error);
       res.status(500).json({ 
         error: 'Erro interno do servidor',
         details: error.message 

@@ -809,13 +809,102 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     { id: 'youtube', name: 'YouTube', icon: YoutubeIcon, color: 'from-red-600 to-red-700' }
   ];
 
-  const suggestions = [
-    'Aproveite nossa promoção especial de verão! 🌞',
-    'Conheça nosso novo produto revolucionário',
-    'Depoimentos de clientes satisfeitos ⭐',
-    'Dicas exclusivas para você',
-    'Tutorial: Como aproveitar ao máximo nosso serviço'
-  ];
+  // Dynamic AI-powered suggestions based on content
+  const [suggestions, setSuggestions] = useState([
+    'Digite algo e verei sugestões personalizadas! 🤖',
+    'Comece a escrever para receber ideias...',
+    'Sugestões inteligentes aparecerão aqui ✨'
+  ]);
+  
+  const [lastContentForSuggestions, setLastContentForSuggestions] = useState('');
+
+  // Generate contextual suggestions based on user's content
+  const generateContextualSuggestions = async (userContent: string) => {
+    if (!userContent || userContent.trim().length < 10) {
+      setSuggestions([
+        'Digite algo e verei sugestões personalizadas! 🤖',
+        'Comece a escrever para receber ideias...',
+        'Sugestões inteligentes aparecerão aqui ✨'
+      ]);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/social-media/generate-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          content: userContent,
+          platform: selectedPlatform || 'instagram'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestions(data.suggestions || []);
+      }
+    } catch (error) {
+      console.log('Usando sugestões inteligentes locais');
+      // Smart fallback suggestions based on content analysis
+      const fallbackSuggestions = generateFallbackSuggestions(userContent);
+      setSuggestions(fallbackSuggestions);
+    }
+  };
+
+  // Smart fallback suggestions based on content analysis
+  const generateFallbackSuggestions = (userContent: string): string[] => {
+    const contentLower = userContent.toLowerCase();
+    
+    if (contentLower.includes('produto') || contentLower.includes('venda')) {
+      return [
+        '🚀 Destaque os benefícios únicos do seu produto',
+        '💰 Adicione uma oferta especial limitada',
+        '⭐ Inclua depoimentos de clientes satisfeitos'
+      ];
+    }
+    
+    if (contentLower.includes('serviço') || contentLower.includes('qualidade')) {
+      return [
+        '🎯 Mostre o diferencial do seu serviço',
+        '👥 Adicione casos de sucesso reais',
+        '🔥 Crie urgência com tempo limitado'
+      ];
+    }
+    
+    if (contentLower.includes('empresa') || contentLower.includes('negócio')) {
+      return [
+        '🏢 Conte a história da sua empresa',
+        '📈 Mostre números de crescimento',
+        '🤝 Destaque parcerias importantes'
+      ];
+    }
+    
+    if (contentLower.includes('preço') || contentLower.includes('barato') || contentLower.includes('desconto')) {
+      return [
+        '💸 Destaque o melhor custo-benefício',
+        '⏰ Crie senso de urgência na oferta',
+        '🎁 Adicione bônus exclusivos'
+      ];
+    }
+    
+    return [
+      '✨ Adicione emojis para mais engajamento',
+      '💬 Inclua uma pergunta para interação',
+      '🎯 Crie um call-to-action persuasivo'
+    ];
+  };
+
+  // Debounced effect to generate suggestions when content changes
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (content !== lastContentForSuggestions) {
+        setLastContentForSuggestions(content);
+        generateContextualSuggestions(content);
+      }
+    }, 1500); // Wait 1.5s after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  }, [content, lastContentForSuggestions, selectedPlatform]);
 
   // Especificações de dimensões por plataforma e tipo
   const mediaSpecs = {
