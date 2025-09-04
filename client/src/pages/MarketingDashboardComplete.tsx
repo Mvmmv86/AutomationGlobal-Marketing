@@ -1592,18 +1592,25 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                     </div>
 
                     {/* Conteúdo da imagem */}
-                    {uploadedMedia.length > 0 && (
+                    {uploadedMedia.length > 0 && uploadedMedia[0]?.url && (
                       <div className="mb-3">
                         <div className={cn(
-                          "relative rounded-lg overflow-hidden bg-gray-100",
+                          "relative rounded-lg overflow-hidden bg-gray-100 border border-gray-200",
                           selectedMediaType === 'story' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
                           selectedMediaType === 'reel' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
                           'aspect-square max-w-[400px] mx-auto'
                         )}>
                           <img 
                             src={uploadedMedia[0].url} 
-                            alt="Preview"
+                            alt="Preview do Post"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Erro ao carregar imagem:', uploadedMedia[0]);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('Imagem carregada com sucesso:', uploadedMedia[0].url);
+                            }}
                           />
                           {selectedMediaType === 'story' && (
                             <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
@@ -1616,6 +1623,14 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                             </div>
                           )}
                         </div>
+                      </div>
+                    )}
+                    
+                    {/* Debug info - remover depois */}
+                    {uploadedMedia.length > 0 && (
+                      <div className="mb-2 text-xs text-gray-500 font-mono">
+                        Debug: {uploadedMedia.length} mídia(s) carregada(s)
+                        {uploadedMedia[0]?.url && <div>URL: {uploadedMedia[0].url.substring(0, 50)}...</div>}
                       </div>
                     )}
 
