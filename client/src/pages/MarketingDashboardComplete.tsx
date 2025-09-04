@@ -776,6 +776,14 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [selectedMediaType, setSelectedMediaType] = useState<'feed' | 'story' | 'reel'>('feed');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string>('');
+  const [mediaItems, setMediaItems] = useState<Array<{
+    file: File;
+    url: string;
+    type: 'image' | 'video';
+    name: string;
+    mediaType: 'feed' | 'story' | 'reel';
+    dimensions: string;
+  }>>([]);
   
   // Estados de conexões sociais
   const [connectedAccounts, setConnectedAccounts] = useState([
@@ -945,20 +953,30 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       }
     }
 
-    // Simular upload
-    const newMedia = {
-      id: Date.now(),
+    // Adicionar mídia à lista
+    const newMediaItem = {
       file: mediaFile,
-      type: selectedMediaType,
-      platform: selectedPlatform,
       url: mediaPreview,
-      specs: specs?.[0]
+      type: mediaFile.type.startsWith('image/') ? 'image' as const : 'video' as const,
+      name: mediaFile.name,
+      mediaType: selectedMediaType,
+      dimensions: `${selectedPlatform} ${selectedMediaType}`
     };
 
-    setUploadedMedia([...uploadedMedia, newMedia]);
+    setMediaItems([...mediaItems, newMediaItem]);
     setShowMediaModal(false);
     setMediaFile(null);
     setMediaPreview('');
+    
+    // Mostrar confirmação
+    toast({
+      title: "Mídia adicionada!",
+      description: `${mediaFile.name} foi adicionada como ${selectedMediaType} para ${selectedPlatform}`,
+    });
+  };
+
+  const removeMediaItem = (index: number) => {
+    setMediaItems(mediaItems.filter((_, i) => i !== index));
   };
 
   return (
@@ -1146,11 +1164,43 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             </div>
             
             {/* Preview de mídia upload */}
-            {uploadedMedia.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {uploadedMedia.map((media, index) => (
-                  <div key={index} className="aspect-square rounded-lg glass-3d-light flex items-center justify-center">
-                    <Image className="w-6 h-6 text-gray-400" />
+            {mediaItems.length > 0 && (
+              <div className="space-y-3 mb-3">
+                {mediaItems.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 glass-3d rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {/* Preview da mídia */}
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                        {item.type === 'image' ? (
+                          <img 
+                            src={item.url} 
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                            <VideoIcon className="w-6 h-6 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className={cn("text-sm font-medium", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                          {item.name}
+                        </div>
+                        <div className={cn("text-xs", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}>
+                          {item.mediaType} • {selectedPlatform}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeMediaItem(index)}
+                      className="text-red-400 hover:text-red-300"
+                      data-testid={`button-remove-media-${index}`}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
