@@ -184,6 +184,32 @@ The server is implemented using Express.js with TypeScript, following a modular 
 ### Database Design
 The system uses PostgreSQL with Drizzle ORM for type-safe operations. It implements a multi-tenant architecture with row-level security (RLS) policies to ensure data isolation. Core entities include users, organizations, and memberships with RBAC. The schema supports horizontal scaling through organization-based partitioning and includes audit trails.
 
+### **REGRA OBRIGATÓRIA - SEMPRE USAR DRIZZLE ORM** ⚠️
+**CRITICAL REQUIREMENT: SEMPRE usar Drizzle ORM para qualquer operação de banco de dados**
+
+**Database Operations Policy:**
+- ✅ **SEMPRE** usar Drizzle ORM para conexão com banco de dados
+- ✅ **SEMPRE** usar Drizzle ORM para criar tabelas e colunas
+- ✅ **SEMPRE** usar Drizzle ORM para todos os serviços de CRUD
+- ✅ **SEMPRE** definir schemas em `shared/schema.ts` como fonte única da verdade
+- ❌ **NUNCA** usar SQL direto via `db.execute()` ou queries raw
+- ❌ **NUNCA** usar outros ORMs ou bibliotecas de banco
+- ❌ **NUNCA** criar tabelas manualmente via SQL
+
+**Padrão de Implementação:**
+1. **Schema Definition**: Definir todas as tabelas em `shared/schema.ts`
+2. **Type Safety**: Usar tipos TypeScript gerados pelo Drizzle
+3. **Operations**: Usar `db.select()`, `db.insert()`, `db.update()`, `db.delete()`
+4. **Migrations**: Usar `npm run db:push` para sincronizar schema
+5. **Consistency**: Drizzle garante consistência entre desenvolvimento e produção
+
+**Benefícios Garantidos:**
+- Type safety completa
+- Migrations automáticas
+- Consistência de dados
+- Performance otimizada
+- Debugging simplificado
+
 ### Authentication & Authorization
 Multi-layered security is implemented with JWT-based authentication supporting organization context switching. It enforces role-based access control (RBAC) across 6 permission levels. Session management includes token refresh and secure cookie handling. Organization isolation is enforced at both application and database levels.
 
