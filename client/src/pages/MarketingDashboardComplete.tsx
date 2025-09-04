@@ -115,12 +115,23 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     { label: 'Engajamento Médio', value: '8.2%', change: '+1.5%', icon: TrendingUp, color: 'text-orange-400' }
   ];
 
-  const recentContent = [
-    { id: 1, title: 'Promoção Black Friday', platform: 'Instagram', status: 'Publicado', engagement: '15.2K', date: '2 horas atrás' },
-    { id: 2, title: 'Tutorial Produto X', platform: 'YouTube', status: 'Agendado', engagement: '-', date: 'Amanhã 14h' },
-    { id: 3, title: 'Depoimento Cliente', platform: 'Facebook', status: 'Rascunho', engagement: '-', date: '1 dia atrás' },
-    { id: 4, title: 'Lançamento Nova Linha', platform: 'LinkedIn', status: 'Aprovação', engagement: '-', date: '3 horas atrás' }
-  ];
+  // Buscar dados reais dos posts via API
+  const { data: postsData = [], isLoading: postsLoading } = useQuery({
+    queryKey: ['/api/social-media/recent-posts'],
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
+  });
+
+  console.log('📝 Posts recentes carregados:', postsData);
+
+  // Transformar dados reais para o formato da interface
+  const recentContent = postsData.map((post: any) => ({
+    id: post.id,
+    title: post.fullText || post.text || 'Sem título',
+    platform: post.platform || 'Instagram',
+    status: post.status === 'published' ? 'Publicado' : 'Rascunho',
+    engagement: post.likes > 0 ? `${post.likes}` : '-',
+    date: post.time || 'agora'
+  }));
 
   const templates = [
     { id: 1, name: 'Post Promocional', category: 'Vendas', uses: 45, preview: 'Oferta especial por tempo limitado!' },
