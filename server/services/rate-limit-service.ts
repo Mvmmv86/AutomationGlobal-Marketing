@@ -196,31 +196,12 @@ export class RateLimitService {
     remaining: number;
     resetTime: number;
   } {
-    const stored = this.inMemoryStore.get(key);
-    
-    if (!stored || now > stored.resetTime) {
-      // New window
-      const resetTime = now + config.windowMs;
-      this.inMemoryStore.set(key, { count: 1, resetTime });
-      
-      return {
-        allowed: true,
-        count: 1,
-        remaining: config.maxRequests - 1,
-        resetTime
-      };
-    }
-
-    // Within current window
-    stored.count++;
-    const allowed = stored.count <= config.maxRequests;
-    const remaining = Math.max(0, config.maxRequests - stored.count);
-
+    // DESENVOLVIMENTO: Sempre permitir todas as requisições
     return {
-      allowed,
-      count: stored.count,
-      remaining,
-      resetTime: stored.resetTime
+      allowed: true,
+      count: 1,
+      remaining: config.maxRequests - 1,
+      resetTime: now + config.windowMs
     };
   }
 

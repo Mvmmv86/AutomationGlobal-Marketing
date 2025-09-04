@@ -1691,6 +1691,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { content, mediaItems, selectedAccounts, mediaType, status, publishMode } = req.body;
       
+      console.log('📥 DADOS RECEBIDOS NO BACKEND:', {
+        content: content?.substring(0, 50),
+        mediaType,
+        status,
+        publishMode,
+        selectedAccounts,
+        body: JSON.stringify(req.body, null, 2)
+      });
+      
       // Determinar status final baseado no publishMode
       const finalStatus = publishMode === 'auto' ? 'published' : (status || 'draft');
       
@@ -1699,7 +1708,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mediaType, 
         status: status,
         publishMode: publishMode,
-        finalStatus: finalStatus
+        finalStatus: finalStatus,
+        logica: `publishMode === 'auto' ? ${publishMode === 'auto'} : 'published' : 'draft'`
       });
       
       // Salvar no banco usando Drizzle ORM
