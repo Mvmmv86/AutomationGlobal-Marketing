@@ -778,6 +778,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishMode, setPublishMode] = useState<'now' | 'schedule' | 'draft'>('now');
   const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [recentPosts, setRecentPosts] = useState<any[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [uploadedMedia, setUploadedMedia] = useState<any[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -1146,9 +1147,25 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
-  // Carregar analytics quando componente monta
+  // Função para buscar posts recentes REAIS
+  const fetchRecentPosts = async () => {
+    try {
+      const response = await fetch('/api/social-media/recent-posts');
+      const data = await response.json();
+      if (data.success) {
+        setRecentPosts(data.data);
+        console.log('📝 Posts recentes carregados:', data.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar posts recentes:', error);
+      setRecentPosts([]); // Manter vazio em caso de erro
+    }
+  };
+
+  // Carregar analytics e posts quando componente monta
   React.useEffect(() => {
     fetchAnalytics();
+    fetchRecentPosts();
   }, []);
 
   // Funções de upload de mídia
@@ -1690,29 +1707,41 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
           </div>
         </div>
 
-        {/* Posts Recentes */}
+        {/* Posts Recentes - DADOS REAIS */}
         <div className="glass-3d p-4">
           <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
             📝 Posts Recentes
           </h4>
           
           <div className="space-y-2">
-            {[
-              { platform: 'instagram', text: 'Promoção especial...', time: '2h', likes: '1.2K' },
-              { platform: 'facebook', text: 'Novo produto...', time: '4h', likes: '890' },
-              { platform: 'twitter', text: 'Dica rápida...', time: '6h', likes: '456' }
-            ].map((post, index) => (
-              <div key={index} className="p-2 rounded glass-3d-light">
-                <div className="flex items-center gap-2 mb-1">
-                  {post.platform === 'instagram' && <InstagramIcon className="w-3 h-3 text-pink-400" />}
-                  {post.platform === 'facebook' && <FacebookIcon className="w-3 h-3 text-blue-400" />}
-                  {post.platform === 'twitter' && <TwitterIcon className="w-3 h-3 text-gray-400" />}
-                  <span className="text-xs text-gray-400">{post.time}</span>
-                </div>
-                <div className="text-xs text-gray-300 mb-1">{post.text}</div>
-                <div className="text-xs text-green-400">{post.likes} curtidas</div>
+            {recentPosts.length === 0 ? (
+              <div className="p-3 text-center">
+                <div className="text-gray-400 text-xs mb-2">📭</div>
+                <div className="text-xs text-gray-400">Nenhum post encontrado</div>
+                <div className="text-xs text-gray-500 mt-1">Publique seu primeiro post!</div>
               </div>
-            ))}
+            ) : (
+              recentPosts.map((post, index) => (
+                <div key={post.id || index} className="p-2 rounded glass-3d-light">
+                  <div className="flex items-center gap-2 mb-1">
+                    {post.platform === 'instagram' && <InstagramIcon className="w-3 h-3 text-pink-400" />}
+                    {post.platform === 'facebook' && <FacebookIcon className="w-3 h-3 text-blue-400" />}
+                    <span className="text-xs text-gray-400">{post.time}</span>
+                  </div>
+                  <div className="text-xs text-gray-300 mb-1" title={post.fullText}>
+                    {post.text}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-green-400">{post.likes} curtidas</span>
+                    <span className="text-blue-400">{post.comments} comentários</span>
+                    <span className="text-purple-400">{post.shares} shares</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Status: {post.status === 'published' ? '✅ Publicado' : post.status === 'scheduled' ? '⏰ Agendado' : '📝 Rascunho'}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

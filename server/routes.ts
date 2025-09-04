@@ -2066,7 +2066,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       console.log('📊 Buscando analytics REAIS do banco de dados...');
       
       // Buscar posts reais do banco de dados
-      const posts = await storage.getAllSocialMediaPosts();
+      const posts = await storage.getSocialMediaPosts('test-org'); // Por enquanto usando org padrão
       console.log(`📈 Encontrados ${posts.length} posts reais para análise`);
       
       // Calcular métricas REAIS baseadas nos posts salvos
@@ -2246,6 +2246,81 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         dataSource: 'Erro - dados zerados para não iludir',
         lastUpdated: new Date().toISOString(),
         error: 'Falha ao carregar dados reais'
+      });
+    }
+  });
+
+  // Recent Posts endpoint for REAL data - NO MOCK DATA
+  app.get('/api/social-media/recent-posts', async (req: Request, res) => {
+    try {
+      console.log('📝 Buscando posts recentes REAIS do banco de dados...');
+      
+      // Buscar os 4 posts mais recentes do banco
+      const posts = await storage.getSocialMediaPosts('test-org'); // Por enquanto usando org padrão
+      console.log(`📋 Encontrados ${posts.length} posts totais no banco`);
+      
+      // Ordenar por data mais recente e pegar apenas os 4 primeiros
+      const recentPosts = posts
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 4)
+        .map(post => {
+          // Calcular tempo relativo
+          const now = new Date();
+          const postDate = new Date(post.createdAt);
+          const diffMs = now.getTime() - postDate.getTime();
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+          const diffDays = Math.floor(diffHours / 24);
+          
+          let timeAgo = '';
+          if (diffDays > 0) {
+            timeAgo = `${diffDays}d`;
+          } else if (diffHours > 0) {
+            timeAgo = `${diffHours}h`;
+          } else {
+            timeAgo = 'agora';
+          }
+          
+          // Truncar texto para exibição
+          const truncatedText = post.content.length > 30 
+            ? post.content.substring(0, 30) + '...'
+            : post.content;
+          
+          return {
+            id: post.id,
+            platform: post.platform,
+            text: truncatedText,
+            fullText: post.content,
+            time: timeAgo,
+            likes: post.likes || 0,
+            comments: post.comments || 0,
+            shares: post.shares || 0,
+            status: post.status,
+            createdAt: post.createdAt,
+            scheduledAt: post.scheduledAt
+          };
+        });
+      
+      console.log(`✅ Posts recentes processados: ${recentPosts.length} posts`);
+      
+      res.json({
+        success: true,
+        data: recentPosts,
+        total: posts.length,
+        dataSource: recentPosts.length > 0 ? 'Dados reais dos seus posts' : 'Nenhum post encontrado',
+        lastUpdated: new Date().toISOString()
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar posts recentes REAIS:', error);
+      
+      // Em caso de erro, retornar array vazio - SEM DADOS FALSOS
+      res.json({
+        success: true,
+        data: [],
+        total: 0,
+        dataSource: 'Erro - sem posts para não iludir',
+        lastUpdated: new Date().toISOString(),
+        error: 'Falha ao carregar posts reais'
       });
     }
   });
