@@ -108,11 +108,27 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     { id: 'templates', label: 'Templates', icon: Activity }
   ];
 
+  // Buscar estatísticas reais via API
+  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/social-media/content-stats'],
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
+  });
+
+  console.log('📊 Stats recebidas:', statsResponse);
+
+  // Usar dados reais das estatísticas ou valores padrão
+  const stats = statsResponse?.data || {
+    postsCreated: 0,
+    templatesActive: 0,
+    postsScheduled: 0,
+    averageEngagement: '0%'
+  };
+
   const contentStats = [
-    { label: 'Posts Criados', value: 156, change: '+12%', icon: MessageCircle, color: 'text-blue-400' },
-    { label: 'Templates Ativos', value: 24, change: '+3', icon: Activity, color: 'text-purple-400' },
-    { label: 'Posts Agendados', value: 89, change: '+18', icon: Calendar, color: 'text-green-400' },
-    { label: 'Engajamento Médio', value: '8.2%', change: '+1.5%', icon: TrendingUp, color: 'text-orange-400' }
+    { label: 'Posts Criados', value: stats.postsCreated, change: '+12%', icon: MessageCircle, color: 'text-blue-400' },
+    { label: 'Templates Ativos', value: stats.templatesActive, change: '+3', icon: Activity, color: 'text-purple-400' },
+    { label: 'Posts Agendados', value: stats.postsScheduled, change: '+18', icon: Calendar, color: 'text-green-400' },
+    { label: 'Engajamento Médio', value: stats.averageEngagement, change: '+1.5%', icon: TrendingUp, color: 'text-orange-400' }
   ];
 
   // Buscar dados reais dos posts via API

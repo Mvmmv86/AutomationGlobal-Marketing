@@ -2311,6 +2311,55 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
+  // Get content statistics endpoint (NOVO)
+  app.get('/api/social-media/content-stats', async (req, res) => {
+    try {
+      console.log('📊 Calculando estatísticas de conteúdo REAIS...');
+
+      // Posts criados (total de posts no banco)
+      const totalPosts = await db.select({ count: sql`count(*)` }).from(socialMediaPosts);
+      const postsCreated = Number(totalPosts[0]?.count) || 0;
+
+      // Templates ativos (total de templates no banco)
+      const totalTemplates = await db.select({ count: sql`count(*)` }).from(contentTemplates);
+      const templatesActive = Number(totalTemplates[0]?.count) || 0;
+
+      // Posts agendados (posts com status 'scheduled')
+      const scheduledPosts = await db.select({ count: sql`count(*)` })
+        .from(socialMediaPosts)
+        .where(eq(socialMediaPosts.status, 'scheduled'));
+      const postsScheduled = Number(scheduledPosts[0]?.count) || 0;
+
+      // Engajamento médio (calculado dos posts existentes)
+      const postsWithAnalytics = await db.select({
+        likes: socialMediaPosts.analytics
+      }).from(socialMediaPosts).where(sql`${socialMediaPosts.analytics} IS NOT NULL`);
+      
+      let averageEngagement = 0;
+      if (postsWithAnalytics.length > 0) {
+        const totalLikes = postsWithAnalytics.reduce((sum, post) => {
+          const analytics = post.likes as any;
+          return sum + (analytics?.likes || 0);
+        }, 0);
+        averageEngagement = Math.round((totalLikes / postsWithAnalytics.length) * 100) / 100;
+      }
+
+      const stats = {
+        postsCreated,
+        templatesActive,
+        postsScheduled,
+        averageEngagement: `${averageEngagement}%`
+      };
+
+      console.log('📊 Stats calculadas:', stats);
+
+      res.json({ success: true, data: stats });
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar stats de conteúdo:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Recent Posts endpoint for REAL data - NO MOCK DATA
   app.get('/api/social-media/recent-posts', async (req: Request, res) => {
     try {
