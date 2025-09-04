@@ -12,6 +12,7 @@ import { cacheManager } from "./cache/cache-manager";
 import { queueManager } from "./queue/queue-manager";
 import { socialMediaService } from "./socialMediaService";
 import * as schema from "../shared/schema";
+import { desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -2065,10 +2066,15 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     try {
       console.log('📊 Buscando analytics REAIS do banco de dados...');
       
-      // Buscar posts diretamente usando SQL para todos os organizations
-      const posts = await db.select()
-        .from(schema.socialMediaPosts)
-        .orderBy(desc(schema.socialMediaPosts.createdAt));
+      // Query SQL direta usando as colunas corretas da tabela
+      const query = `
+        SELECT id, content, status, platforms, created_at, likes, comments, shares, media_type 
+        FROM social_media_posts 
+        ORDER BY created_at DESC
+      `;
+      
+      const result = await db.execute(query);
+      const posts = result.rows || [];
       console.log(`📈 Encontrados ${posts.length} posts reais para análise`);
       
       // Calcular métricas REAIS baseadas nos posts salvos
@@ -2097,11 +2103,22 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       let totalReach = 0;
       let allHashtags: string[] = [];
       
-      posts.forEach(post => {
-        const postDate = new Date(post.createdAt);
+      posts.forEach((post: any) => {
+        const postDate = new Date(post.created_at);
         const isRecent = postDate > oneWeekAgo;
         
-        if (post.platform === 'instagram') {
+        // Obter plataforma correta
+        let platform = 'instagram';
+        if (typeof post.platforms === 'string') {
+          try {
+            const platforms = JSON.parse(post.platforms);
+            platform = platforms[0] || 'instagram';
+          } catch (e) {
+            platform = 'instagram';
+          }
+        }
+        
+        if (platform === 'instagram') {
           instagramMetrics.posts++;
           const likes = post.likes || 0;
           instagramMetrics.likes += likes;
@@ -2109,7 +2126,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
           if (isRecent) recentInstagramLikes += likes;
           else oldInstagramLikes += likes;
           
-        } else if (post.platform === 'facebook') {
+        } else if (platform === 'facebook') {
           facebookMetrics.posts++;
           const likes = post.likes || 0;
           facebookMetrics.likes += likes;
@@ -2122,9 +2139,11 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         totalReach += post.reach || 0;
         
         // Extrair hashtags do conteúdo
-        const hashtags = post.content.match(/#\w+/g);
-        if (hashtags) {
-          allHashtags.push(...hashtags);
+        if (post.content) {
+          const hashtags = post.content.match(/#\w+/g);
+          if (hashtags) {
+            allHashtags.push(...hashtags);
+          }
         }
       });
       
@@ -2257,21 +2276,25 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     try {
       console.log('📝 Buscando posts recentes REAIS do banco de dados...');
       
-      // Buscar posts diretamente usando SQL para todos os organizations
-      const posts = await db.select()
-        .from(schema.socialMediaPosts)
-        .orderBy(desc(schema.socialMediaPosts.createdAt))
-        .limit(20); // Buscar os 20 mais recentes
+      // Query SQL direta usando as colunas corretas da tabela
+      const query = `
+        SELECT id, content, status, platforms, created_at, likes, comments, shares, media_type 
+        FROM social_media_posts 
+        ORDER BY created_at DESC 
+        LIMIT 20
+      `;
+      
+      const result = await db.execute(query);
+      const posts = result.rows || [];
       console.log(`📋 Encontrados ${posts.length} posts totais no banco`);
       
-      // Ordenar por data mais recente e pegar apenas os 4 primeiros
+      // Processar os primeiros 4 posts
       const recentPosts = posts
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 4)
-        .map(post => {
+        .map((post: any) => {
           // Calcular tempo relativo
           const now = new Date();
-          const postDate = new Date(post.createdAt);
+          const postDate = new Date(post.created_at);
           const diffMs = now.getTime() - postDate.getTime();
           const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
           const diffDays = Math.floor(diffHours / 24);
@@ -2285,14 +2308,25 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
             timeAgo = 'agora';
           }
           
+          // Obter primeiro platform da lista
+          let platform = 'instagram';
+          if (typeof post.platforms === 'string') {
+            try {
+              const platforms = JSON.parse(post.platforms);
+              platform = platforms[0] || 'instagram';
+            } catch (e) {
+              platform = 'instagram';
+            }
+          }
+          
           // Truncar texto para exibição
-          const truncatedText = post.content.length > 30 
+          const truncatedText = post.content && post.content.length > 30 
             ? post.content.substring(0, 30) + '...'
-            : post.content;
+            : post.content || 'Sem conteúdo';
           
           return {
             id: post.id,
-            platform: post.platform,
+            platform: platform,
             text: truncatedText,
             fullText: post.content,
             time: timeAgo,
@@ -2300,8 +2334,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
             comments: post.comments || 0,
             shares: post.shares || 0,
             status: post.status,
-            createdAt: post.createdAt,
-            scheduledAt: post.scheduledAt
+            createdAt: post.created_at,
+            scheduledAt: post.scheduled_at
           };
         });
       
