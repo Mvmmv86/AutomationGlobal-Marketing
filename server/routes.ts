@@ -2060,39 +2060,193 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
-  // Analytics endpoint for performance data
+  // Analytics endpoint for REAL performance data - NO MOCK DATA
   app.get('/api/social-media/analytics', async (req: Request, res) => {
     try {
-      // Simulated analytics data based on recent posts
+      console.log('📊 Buscando analytics REAIS do banco de dados...');
+      
+      // Buscar posts reais do banco de dados
+      const posts = await storage.getAllSocialMediaPosts();
+      console.log(`📈 Encontrados ${posts.length} posts reais para análise`);
+      
+      // Calcular métricas REAIS baseadas nos posts salvos
+      let instagramMetrics = { likes: 0, followers: 0, posts: 0, engagement: 0 };
+      let facebookMetrics = { likes: 0, followers: 0, posts: 0, engagement: 0 };
+      
+      // Buscar contas conectadas
+      const accounts = await storage.getSocialMediaAccounts();
+      console.log(`🔗 Encontradas ${accounts.length} contas conectadas`);
+      
+      // Calcular followers reais das contas conectadas
+      accounts.forEach(account => {
+        if (account.platform === 'instagram') {
+          instagramMetrics.followers += account.followers || 0;
+        } else if (account.platform === 'facebook') {
+          facebookMetrics.followers += account.followers || 0;
+        }
+      });
+      
+      // Analisar performance dos posts
+      let oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      let oldInstagramLikes = 0, oldFacebookLikes = 0;
+      let recentInstagramLikes = 0, recentFacebookLikes = 0;
+      let totalReach = 0;
+      let allHashtags: string[] = [];
+      
+      posts.forEach(post => {
+        const postDate = new Date(post.createdAt);
+        const isRecent = postDate > oneWeekAgo;
+        
+        if (post.platform === 'instagram') {
+          instagramMetrics.posts++;
+          const likes = post.likes || 0;
+          instagramMetrics.likes += likes;
+          
+          if (isRecent) recentInstagramLikes += likes;
+          else oldInstagramLikes += likes;
+          
+        } else if (post.platform === 'facebook') {
+          facebookMetrics.posts++;
+          const likes = post.likes || 0;
+          facebookMetrics.likes += likes;
+          
+          if (isRecent) recentFacebookLikes += likes;
+          else oldFacebookLikes += likes;
+        }
+        
+        // Somar reach real
+        totalReach += post.reach || 0;
+        
+        // Extrair hashtags do conteúdo
+        const hashtags = post.content.match(/#\w+/g);
+        if (hashtags) {
+          allHashtags.push(...hashtags);
+        }
+      });
+      
+      // Calcular engagement real
+      if (instagramMetrics.followers > 0) {
+        instagramMetrics.engagement = ((instagramMetrics.likes / instagramMetrics.followers) * 100);
+      }
+      if (facebookMetrics.followers > 0) {
+        facebookMetrics.engagement = ((facebookMetrics.likes / facebookMetrics.followers) * 100);
+      }
+      
+      // Calcular crescimento semanal
+      const instagramGrowth = oldInstagramLikes > 0 ? 
+        (((recentInstagramLikes - oldInstagramLikes) / oldInstagramLikes) * 100) : 0;
+      const facebookGrowth = oldFacebookLikes > 0 ? 
+        (((recentFacebookLikes - oldFacebookLikes) / oldFacebookLikes) * 100) : 0;
+      
+      // Encontrar hashtag mais popular
+      const hashtagCount: {[key: string]: number} = {};
+      allHashtags.forEach(tag => {
+        hashtagCount[tag] = (hashtagCount[tag] || 0) + 1;
+      });
+      
+      const topHashtag = Object.keys(hashtagCount).length > 0 ? 
+        Object.keys(hashtagCount).reduce((a, b) => hashtagCount[a] > hashtagCount[b] ? a : b) : '';
+      
+      // Calcular engagement total
+      const totalLikes = instagramMetrics.likes + facebookMetrics.likes;
+      const totalFollowers = instagramMetrics.followers + facebookMetrics.followers;
+      const totalEngagement = totalFollowers > 0 ? ((totalLikes / totalFollowers) * 100) : 0;
+      
+      // Analisar melhor horário baseado nos posts
+      const hourlyPerformance: {[hour: string]: number} = {};
+      posts.forEach(post => {
+        if (post.scheduledAt || post.createdAt) {
+          const hour = new Date(post.scheduledAt || post.createdAt).getHours();
+          const performance = (post.likes || 0) + (post.comments || 0) + (post.shares || 0);
+          hourlyPerformance[hour] = (hourlyPerformance[hour] || 0) + performance;
+        }
+      });
+      
+      const bestHour = Object.keys(hourlyPerformance).length > 0 ?
+        Object.keys(hourlyPerformance).reduce((a, b) => 
+          hourlyPerformance[a] > hourlyPerformance[b] ? a : b) : '';
+      
+      const bestPerformingTime = bestHour ? 
+        `${bestHour.padStart(2, '0')}:00-${(parseInt(bestHour) + 2).toString().padStart(2, '0')}:00` : 
+        'Sem dados suficientes';
+      
+      // Estrutura final com dados 100% reais
       const analytics = {
         instagram: {
-          likes: Math.floor(Math.random() * 3000) + 1000, // 1000-4000
-          followers: Math.floor(Math.random() * 1000) + 500,
-          engagement: (Math.random() * 8 + 4).toFixed(1), // 4-12%
-          lastWeekGrowth: (Math.random() * 20 + 5).toFixed(1) // 5-25%
+          likes: instagramMetrics.likes,
+          followers: instagramMetrics.followers,
+          engagement: instagramMetrics.engagement.toFixed(1),
+          lastWeekGrowth: Math.max(0, instagramGrowth).toFixed(1),
+          posts: instagramMetrics.posts
         },
         facebook: {
-          likes: Math.floor(Math.random() * 5000) + 1500, // 1500-6500
-          followers: Math.floor(Math.random() * 1500) + 800,
-          engagement: (Math.random() * 6 + 3).toFixed(1), // 3-9%
-          lastWeekGrowth: (Math.random() * 15 + 2).toFixed(1) // 2-17%
+          likes: facebookMetrics.likes,
+          followers: facebookMetrics.followers,
+          engagement: facebookMetrics.engagement.toFixed(1),
+          lastWeekGrowth: Math.max(0, facebookGrowth).toFixed(1),
+          posts: facebookMetrics.posts
         },
         overall: {
-          totalEngagement: (Math.random() * 10 + 5).toFixed(1), // 5-15%
-          totalReach: Math.floor(Math.random() * 10000) + 5000,
-          bestPerformingTime: ['14:00-16:00', '19:00-21:00'][Math.floor(Math.random() * 2)],
-          topHashtag: ['#marketing', '#business', '#growth', '#success'][Math.floor(Math.random() * 4)]
+          totalEngagement: totalEngagement.toFixed(1),
+          totalReach: totalReach,
+          bestPerformingTime: bestPerformingTime,
+          topHashtag: topHashtag || 'Nenhum encontrado',
+          totalPosts: posts.length,
+          totalAccounts: accounts.length
         }
       };
+      
+      console.log('✅ Analytics REAIS calculados:', {
+        totalPosts: posts.length,
+        totalAccounts: accounts.length,
+        instagramLikes: instagramMetrics.likes,
+        facebookLikes: facebookMetrics.likes,
+        totalReach: totalReach
+      });
       
       res.json({
         success: true,
         data: analytics,
+        dataSource: posts.length > 0 ? 'Dados reais dos seus posts' : 'Sem dados - conecte suas contas',
         lastUpdated: new Date().toISOString()
       });
+      
     } catch (error: any) {
-      console.error('Erro ao buscar analytics:', error);
-      res.status(500).json({ error: error.message });
+      console.error('❌ Erro ao buscar analytics REAIS:', error);
+      
+      // Em caso de erro, retornar tudo zerado - SEM DADOS FALSOS
+      res.json({
+        success: true,
+        data: {
+          instagram: {
+            likes: 0,
+            followers: 0,
+            engagement: "0.0",
+            lastWeekGrowth: "0.0",
+            posts: 0
+          },
+          facebook: {
+            likes: 0,
+            followers: 0,
+            engagement: "0.0",
+            lastWeekGrowth: "0.0",
+            posts: 0
+          },
+          overall: {
+            totalEngagement: "0.0",
+            totalReach: 0,
+            bestPerformingTime: "Sem dados",
+            topHashtag: "Nenhum",
+            totalPosts: 0,
+            totalAccounts: 0
+          }
+        },
+        dataSource: 'Erro - dados zerados para não iludir',
+        lastUpdated: new Date().toISOString(),
+        error: 'Falha ao carregar dados reais'
+      });
     }
   });
 
