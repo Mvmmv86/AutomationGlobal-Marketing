@@ -1601,7 +1601,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                           'aspect-square max-w-[400px] mx-auto'
                         )}>
                           <img 
-                            src={uploadedMedia[0].preview} 
+                            src={uploadedMedia[0].url} 
                             alt="Preview"
                             className="w-full h-full object-cover"
                           />
