@@ -134,6 +134,24 @@ export class SocialMediaService {
       const organizationId = req.headers['x-organization-id'] as string || 'temp-org-id';
       const userId = req.headers['x-user-id'] as string || 'temp-user-id';
 
+      // Determinar o status final baseado no publishMode
+      let finalStatus = status;
+      if (publishMode === 'schedule' && scheduledAt) {
+        finalStatus = 'scheduled';
+      } else if (publishMode === 'auto') {
+        finalStatus = 'draft'; // Will be updated to 'published' later if successful
+      }
+
+      console.log('💾 Salvando post:', {
+        content: content?.substring(0, 40) + (content?.length > 40 ? '...' : ''),
+        mediaType,
+        status,
+        publishMode,
+        finalStatus,
+        scheduledAt,
+        logica: "publishMode === 'schedule' && scheduledAt ? 'scheduled' : publishMode === 'auto' ? 'draft' (será publicado) : status original"
+      });
+
       // Create post record
       const [post] = await db.insert(socialMediaPosts).values({
         organizationId,
@@ -143,7 +161,7 @@ export class SocialMediaService {
         mediaItems,
         selectedAccounts,
         mediaType,
-        status,
+        status: finalStatus,
         publishMode,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         createdBy: userId,
@@ -168,7 +186,25 @@ export class SocialMediaService {
         }
       }
 
-      res.json({ success: true, post });
+      console.log('✅ Post salvo com sucesso:', { 
+        id: post.id, 
+        status: post.status,
+        publishMode: post.publishMode,
+        scheduledAt: post.scheduledAt 
+      });
+      
+      const message = post.status === 'scheduled' 
+        ? 'Post agendado com sucesso' 
+        : post.status === 'published' 
+          ? 'Post publicado com sucesso' 
+          : 'Rascunho salvo com sucesso';
+      
+      res.json({ 
+        success: true, 
+        message,
+        id: post.id,
+        status: post.status 
+      });
     } catch (error) {
       console.error('Create post error:', error);
       res.status(500).json({ error: 'Failed to create post' });
