@@ -541,10 +541,10 @@ function MarketingDashboardCompleteInner() {
   };
 
   const channelsData: ChannelPerformance[] = [
-    { channel: 'Instagram', icon: Instagram, traffic: 45, engagement: 78, color: 'bg-gradient-to-r from-pink-500 to-purple-500' },
-    { channel: 'Facebook', icon: Facebook, traffic: 30, engagement: 65, color: 'bg-gradient-to-r from-blue-600 to-blue-700' },
-    { channel: 'YouTube', icon: Youtube, traffic: 15, engagement: 82, color: 'bg-gradient-to-r from-red-600 to-red-700' },
-    { channel: 'Twitter', icon: Twitter, traffic: 10, engagement: 45, color: 'bg-gradient-to-r from-sky-500 to-sky-600' }
+    { channel: 'Instagram', icon: InstagramIcon, traffic: 45, engagement: 78, color: 'bg-gradient-to-r from-pink-500 to-purple-500' },
+    { channel: 'Facebook', icon: FacebookIcon, traffic: 30, engagement: 65, color: 'bg-gradient-to-r from-blue-600 to-blue-700' },
+    { channel: 'YouTube', icon: YoutubeIcon, traffic: 15, engagement: 82, color: 'bg-gradient-to-r from-red-600 to-red-700' },
+    { channel: 'Twitter', icon: TwitterIcon, traffic: 10, engagement: 45, color: 'bg-gradient-to-r from-sky-500 to-sky-600' }
   ];
 
   const aiInsights: AIInsight[] = [
@@ -796,10 +796,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(['fb1', 'ig1']);
   
   const platforms = [
-    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-500' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'from-blue-600 to-blue-700' },
-    { id: 'twitter', name: 'Twitter/X', icon: Twitter, color: 'from-gray-800 to-gray-900' },
-    { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'from-red-600 to-red-700' }
+    { id: 'instagram', name: 'Instagram', icon: InstagramIcon, color: 'from-pink-500 to-purple-500' },
+    { id: 'facebook', name: 'Facebook', icon: FacebookIcon, color: 'from-blue-600 to-blue-700' },
+    { id: 'twitter', name: 'Twitter/X', icon: TwitterIcon, color: 'from-gray-800 to-gray-900' },
+    { id: 'youtube', name: 'YouTube', icon: YoutubeIcon, color: 'from-red-600 to-red-700' }
   ];
 
   const suggestions = [
@@ -1427,7 +1427,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 <div className="flex items-center gap-2 mb-1">
                   {post.platform === 'instagram' && <InstagramIcon className="w-3 h-3 text-pink-400" />}
                   {post.platform === 'facebook' && <FacebookIcon className="w-3 h-3 text-blue-400" />}
-                  {post.platform === 'twitter' && <Twitter className="w-3 h-3 text-gray-400" />}
+                  {post.platform === 'twitter' && <TwitterIcon className="w-3 h-3 text-gray-400" />}
                   <span className="text-xs text-gray-400">{post.time}</span>
                 </div>
                 <div className="text-xs text-gray-300 mb-1">{post.text}</div>
