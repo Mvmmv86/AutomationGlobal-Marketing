@@ -2065,8 +2065,10 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     try {
       console.log('📊 Buscando analytics REAIS do banco de dados...');
       
-      // Buscar posts reais do banco de dados
-      const posts = await storage.getSocialMediaPosts('test-org'); // Por enquanto usando org padrão
+      // Buscar posts diretamente usando SQL para todos os organizations
+      const posts = await db.select()
+        .from(schema.socialMediaPosts)
+        .orderBy(desc(schema.socialMediaPosts.createdAt));
       console.log(`📈 Encontrados ${posts.length} posts reais para análise`);
       
       // Calcular métricas REAIS baseadas nos posts salvos
@@ -2255,8 +2257,11 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     try {
       console.log('📝 Buscando posts recentes REAIS do banco de dados...');
       
-      // Buscar os 4 posts mais recentes do banco
-      const posts = await storage.getSocialMediaPosts('test-org'); // Por enquanto usando org padrão
+      // Buscar posts diretamente usando SQL para todos os organizations
+      const posts = await db.select()
+        .from(schema.socialMediaPosts)
+        .orderBy(desc(schema.socialMediaPosts.createdAt))
+        .limit(20); // Buscar os 20 mais recentes
       console.log(`📋 Encontrados ${posts.length} posts totais no banco`);
       
       // Ordenar por data mais recente e pegar apenas os 4 primeiros
