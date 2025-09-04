@@ -116,12 +116,15 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   ];
 
   // Buscar dados reais dos posts via API
-  const { data: postsData = [], isLoading: postsLoading } = useQuery({
+  const { data: postsResponse, isLoading: postsLoading } = useQuery({
     queryKey: ['/api/social-media/recent-posts'],
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
-  console.log('📝 Posts recentes carregados:', postsData);
+  console.log('📝 Posts recentes carregados:', postsResponse);
+
+  // Extrair array de posts da resposta da API
+  const postsData = postsResponse?.data || [];
 
   // Transformar dados reais para o formato da interface
   const recentContent = postsData.map((post: any) => ({
