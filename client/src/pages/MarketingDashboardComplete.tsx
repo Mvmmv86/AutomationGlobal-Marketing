@@ -2117,6 +2117,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
+  const [selectedDayModal, setSelectedDayModal] = useState<{ date: Date; posts: any[] } | null>(null);
 
   // Buscar posts agendados reais do banco de dados
   const { data: scheduledPostsResponse, isLoading } = useQuery({
@@ -2126,7 +2127,71 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
   const scheduledPosts = scheduledPostsResponse?.data || [];
 
-  const monthDays = Array.from({ length: 30 }, (_, i) => i + 1);
+  // Gerar dias do mês atual
+  const generateCalendarDays = () => {
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    
+    // Começar no domingo anterior se necessário
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    const days = [];
+    for (let i = 0; i < 42; i++) { // 6 semanas x 7 dias
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + i);
+      days.push(currentDate);
+    }
+    
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+
+  // Agrupar posts por data
+  const getPostsForDate = (date: Date) => {
+    return scheduledPosts.filter((post: any) => {
+      if (!post.scheduledAt) return false;
+      const postDate = new Date(post.scheduledAt);
+      return (
+        postDate.getDate() === date.getDate() &&
+        postDate.getMonth() === date.getMonth() &&
+        postDate.getFullYear() === date.getFullYear()
+      );
+    });
+  };
+
+  // Navegar meses
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    setSelectedDate(newDate);
+  };
+
+  // Abrir modal com posts do dia
+  const openDayModal = (date: Date) => {
+    const postsForDay = getPostsForDate(date);
+    if (postsForDay.length > 0) {
+      setSelectedDayModal({ date, posts: postsForDay });
+    }
+  };
+
+  // Formatar data para exibição
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('pt-BR', { 
+      year: 'numeric', 
+      month: 'long' 
+    });
+  };
+
+  const formatTime = (scheduledAt: string) => {
+    return new Date(scheduledAt).toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -2144,8 +2209,24 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             "text-sm",
             theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
           )}>
-            Setembro 2024
+            {formatDate(selectedDate)}
           </p>
+        </div>
+
+        {/* Navegação de mês */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="glass-button-3d p-2 hover:scale-105 transition-transform"
+          >
+            <ArrowLeft className="w-4 h-4 text-cyan-400" />
+          </button>
+          <button
+            onClick={() => navigateMonth('next')}
+            className="glass-button-3d p-2 hover:scale-105 transition-transform"
+          >
+            <ArrowLeft className="w-4 h-4 text-cyan-400 rotate-180" />
+          </button>
         </div>
 
         <div className="flex gap-2">
@@ -2186,25 +2267,57 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             </div>
 
             <div className="grid grid-cols-7 gap-2">
-              {monthDays.map((day) => {
-                const hasPost = scheduledPosts.some(post => 
-                  new Date(post.date).getDate() === day
-                );
+              {calendarDays.map((date, index) => {
+                const postsForDay = getPostsForDate(date);
+                const hasPost = postsForDay.length > 0;
+                const isCurrentMonth = date.getMonth() === selectedDate.getMonth();
+                const isToday = new Date().toDateString() === date.toDateString();
                 
                 return (
-                  <div key={day} className={cn(
-                    "aspect-square p-2 rounded-lg text-center glass-button-3d relative",
-                    hasPost && "ring-2 ring-purple-400"
-                  )}>
+                  <div 
+                    key={index} 
+                    onClick={() => openDayModal(date)}
+                    className={cn(
+                      "aspect-square p-2 rounded-lg text-center glass-button-3d relative transition-all cursor-pointer",
+                      !isCurrentMonth && "opacity-30",
+                      hasPost && "ring-2 ring-cyan-400 shadow-lg shadow-cyan-400/20",
+                      isToday && "ring-2 ring-purple-400 bg-purple-500/10",
+                      hasPost && "hover:scale-105 hover:shadow-xl hover:shadow-cyan-400/30"
+                    )}
+                    data-testid={`calendar-day-${date.getDate()}`}
+                  >
                     <span className={cn(
                       "text-xs font-medium",
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      theme === 'dark' ? 'text-white' : 'text-gray-900',
+                      !isCurrentMonth && "text-gray-500",
+                      isToday && "text-purple-300 font-bold"
                     )}>
-                      {day}
+                      {date.getDate()}
                     </span>
+                    
+                    {/* Indicador de posts */}
                     {hasPost && (
-                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-1">
+                        {postsForDay.length === 1 ? (
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                        ) : (
+                          <>
+                            <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
+                            {postsForDay.length > 2 && (
+                              <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Contador de posts */}
+                    {postsForDay.length > 0 && (
+                      <div className="absolute top-1 right-1">
+                        <span className="text-[10px] bg-cyan-500 text-white rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                          {postsForDay.length}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -2246,13 +2359,13 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                         "font-medium text-xs mb-1",
                         theme === 'dark' ? 'text-white' : 'text-gray-900'
                       )}>
-                        {post.title}
+                        {post.title || post.fullText?.substring(0, 50) + '...' || 'Post agendado'}
                       </div>
                       <div className={cn(
                         "text-xs",
                         theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                       )}>
-                        {post.date} às {post.time}
+                        {new Date(post.scheduledAt).toLocaleDateString('pt-BR')} às {formatTime(post.scheduledAt)}
                       </div>
                     </div>
                   </div>
@@ -2263,11 +2376,11 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                     </span>
                     <span className={cn(
                       "text-xs px-2 py-1 rounded-md",
-                      post.status === 'agendado' ? 'bg-green-500/20 text-green-400' :
-                      post.status === 'aprovacao' ? 'bg-yellow-500/20 text-yellow-400' :
+                      post.status === 'scheduled' ? 'bg-green-500/20 text-green-400' :
+                      post.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
                       'bg-gray-500/20 text-gray-400'
                     )}>
-                      {post.status}
+                      {post.status === 'scheduled' ? 'Agendado' : post.status}
                     </span>
                   </div>
                 </div>
@@ -2286,6 +2399,102 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
           )}
         </div>
       </div>
+
+      {/* Modal de Detalhes do Dia */}
+      {selectedDayModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setSelectedDayModal(null)}>
+          <div className="glass-3d p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className={cn(
+                  "text-lg font-bold",
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                )}>
+                  Posts Agendados
+                </h3>
+                <p className={cn(
+                  "text-sm",
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                )}>
+                  {selectedDayModal.date.toLocaleDateString('pt-BR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedDayModal(null)}
+                className="glass-button-3d p-2 hover:scale-105 transition-transform"
+                data-testid="close-modal"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Lista de Posts */}
+            <div className="space-y-3">
+              {selectedDayModal.posts.map((post: any) => (
+                <div key={post.id} className="glass-3d p-4 border border-cyan-400/20">
+                  {/* Plataforma e Hora */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {post.platform === 'instagram' && (
+                        <InstagramIcon className="w-4 h-4 text-pink-400" />
+                      )}
+                      {post.platform === 'facebook' && (
+                        <FacebookIcon className="w-4 h-4 text-blue-400" />
+                      )}
+                      <span className="text-xs font-medium text-cyan-400">
+                        {post.platform}
+                      </span>
+                    </div>
+                    <span className={cn(
+                      "text-xs px-2 py-1 rounded-md bg-green-500/20 text-green-400"
+                    )}>
+                      {formatTime(post.scheduledAt)}
+                    </span>
+                  </div>
+
+                  {/* Conteúdo do Post */}
+                  <div className="mb-3">
+                    <p className={cn(
+                      "text-sm leading-relaxed",
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    )}>
+                      {post.fullText || post.text || 'Conteúdo do post...'}
+                    </p>
+                  </div>
+
+                  {/* Ações do Post */}
+                  <div className="flex items-center gap-2">
+                    <button className="glass-button-3d px-3 py-1 text-xs hover:scale-105 transition-transform">
+                      <Eye className="w-3 h-3 mr-1" />
+                      Visualizar
+                    </button>
+                    <button className="glass-button-3d px-3 py-1 text-xs hover:scale-105 transition-transform">
+                      <Edit className="w-3 h-3 mr-1" />
+                      Editar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedDayModal(null)}
+                className="glass-button-3d px-4 py-2 text-sm hover:scale-105 transition-transform"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
