@@ -404,7 +404,10 @@ export const socialMediaPosts = pgTable("social_media_posts", {
   title: text("title"),
   content: text("content").notNull(),
   mediaUrls: jsonb("media_urls").default([]), // Array of image/video URLs
+  mediaItems: jsonb("media_items").default([]), // Array with file info and base64 data
   platforms: jsonb("platforms").default([]), // Target platforms
+  selectedAccounts: jsonb("selected_accounts").default([]), // Selected social media accounts
+  mediaType: text("media_type").default('feed'), // 'feed', 'story', 'reel'
   status: text("status").default('draft'), // 'draft', 'scheduled', 'published', 'failed', 'archived'
   publishMode: text("publish_mode").default('manual'), // 'manual', 'auto', 'scheduled'
   scheduledAt: timestamp("scheduled_at"),
@@ -726,11 +729,11 @@ export type OrganizationSession = typeof organizationSessions.$inferSelect;
 export type InsertOrganizationSession = z.infer<typeof insertOrganizationSessionSchema>;
 
 // Social Media Types
-export type SocialMediaAccount = typeof socialMediaAccounts.$inferSelect;
-export type InsertSocialMediaAccount = z.infer<typeof insertSocialMediaAccountSchema>;
-
 export type SocialMediaPost = typeof socialMediaPosts.$inferSelect;
 export type InsertSocialMediaPost = z.infer<typeof insertSocialMediaPostSchema>;
+
+export type SocialMediaAccount = typeof socialMediaAccounts.$inferSelect;
+export type InsertSocialMediaAccount = z.infer<typeof insertSocialMediaAccountSchema>;
 
 export type ContentTemplate = typeof contentTemplates.$inferSelect;
 export type InsertContentTemplate = z.infer<typeof insertContentTemplateSchema>;

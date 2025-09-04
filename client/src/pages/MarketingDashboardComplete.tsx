@@ -847,6 +847,68 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     setShowPreviewModal(true);
   };
 
+  const handleSaveDraft = async () => {
+    if (!content.trim()) {
+      toast({
+        title: "Conteúdo necessário",
+        description: "Adicione algum conteúdo antes de salvar o rascunho.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const draftData = {
+        content,
+        mediaItems: mediaItems,
+        selectedAccounts,
+        mediaType: mediaItems.length > 0 ? mediaItems[0].mediaType : 'feed',
+        status: 'draft',
+        publishMode: 'manual'
+      };
+
+      const response = await fetch('/api/social-media/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-organization-id': 'temp-org-id',
+          'x-user-id': 'temp-user-id'
+        },
+        body: JSON.stringify(draftData)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Rascunho salvo!",
+          description: `Post salvo com sucesso${mediaItems.length > 0 ? ' com imagem' : ''}.`,
+        });
+        console.log('Rascunho salvo:', result);
+      } else {
+        throw new Error('Falha ao salvar');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar rascunho:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar o rascunho.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePreview = () => {
+    if (!content.trim()) {
+      toast({
+        title: "Conteúdo necessário",
+        description: "Adicione algum conteúdo para visualizar o preview.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowPreviewModal(true);
+  };
+
   const confirmPublish = async () => {
     setShowPreviewModal(false);
     setIsPublishing(true);
@@ -1279,6 +1341,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               size="sm" 
               className="glass-button-3d flex-1"
               disabled={!content.trim()}
+              onClick={handlePreview}
               data-testid="button-preview-post"
             >
               <Eye className="w-4 h-4 mr-1" />
@@ -1290,6 +1353,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               size="sm" 
               className="glass-button-3d flex-1"
               disabled={!content.trim()}
+              onClick={handleSaveDraft}
               data-testid="button-save-draft"
             >
               <Save className="w-4 h-4 mr-1" />

@@ -123,24 +123,28 @@ export class SocialMediaService {
         title,
         content,
         mediaUrls = [],
-        accountId,
+        mediaItems = [],
+        selectedAccounts = [],
+        mediaType = 'feed',
         publishMode = 'manual', // 'manual', 'auto', 'scheduled'
         scheduledAt,
-        postType = 'text'
+        status = 'draft'
       } = req.body;
 
-      const organizationId = req.headers['x-organization-id'] as string;
-      const userId = req.headers['x-user-id'] as string;
+      const organizationId = req.headers['x-organization-id'] as string || 'temp-org-id';
+      const userId = req.headers['x-user-id'] as string || 'temp-user-id';
 
       // Create post record
       const [post] = await db.insert(socialMediaPosts).values({
         organizationId,
-        accountId,
         title,
         content,
         mediaUrls,
-        postType,
-        status: publishMode === 'auto' ? 'published' : 'draft',
+        mediaItems,
+        selectedAccounts,
+        mediaType,
+        status,
+        publishMode,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         createdBy: userId,
       }).returning();
@@ -183,7 +187,9 @@ export class SocialMediaService {
           title: socialMediaPosts.title,
           content: socialMediaPosts.content,
           mediaUrls: socialMediaPosts.mediaUrls,
-          postType: socialMediaPosts.postType,
+          mediaItems: socialMediaPosts.mediaItems,
+          selectedAccounts: socialMediaPosts.selectedAccounts,
+          mediaType: socialMediaPosts.mediaType,
           status: socialMediaPosts.status,
           scheduledAt: socialMediaPosts.scheduledAt,
           publishedAt: socialMediaPosts.publishedAt,
