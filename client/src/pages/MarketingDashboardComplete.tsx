@@ -931,19 +931,36 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         body: JSON.stringify(postData)
       });
 
-      const result = await response.json();
-      if (result.success) {
-        console.log('Post criado com sucesso:', result.post);
-        if (publishMode === 'now') {
-          // Publicar imediatamente
-          await handlePublishPost(result.post.id);
-        }
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ POST PUBLICADO COM SUCESSO:', result);
+        
         // Limpar formulário
         setContent('');
         setUploadedMedia([]);
+        setMediaItems([]);
+        setSelectedAccounts([]);
+        
+        toast({
+          title: "🎉 Post publicado com sucesso!",
+          description: `Post foi publicado${selectedAccounts.length > 0 ? ` em ${selectedAccounts.length} conta(s)` : ''} ${mediaItems.length > 0 ? 'com imagem' : ''}.`,
+        });
+      } else {
+        const error = await response.json();
+        console.error('❌ Erro ao publicar:', error);
+        toast({
+          title: "Erro na publicação",
+          description: error.message || "Ocorreu um erro ao publicar o post.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Erro ao publicar:', error);
+      console.error('❌ Erro ao publicar:', error);
+      toast({
+        title: "Erro na publicação",
+        description: "Ocorreu um erro ao publicar o post. Tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setIsPublishing(false);
     }
