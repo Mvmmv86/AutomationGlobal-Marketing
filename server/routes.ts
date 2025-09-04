@@ -1724,8 +1724,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Try real AI optimization first - Using Anthropic Claude
       try {
+        console.log('🔍 Tentando IA real - Anthropic disponível:', !!process.env.ANTHROPIC_API_KEY);
+        
         if (process.env.ANTHROPIC_API_KEY) {
-          const Anthropic = require('@anthropic-ai/sdk');
+          console.log('🚀 Iniciando chamada Anthropic...');
+          const { default: Anthropic } = await import('@anthropic-ai/sdk');
           const anthropic = new Anthropic({
             apiKey: process.env.ANTHROPIC_API_KEY,
           });
@@ -1752,6 +1755,8 @@ INSTRUÇÕES OBRIGATÓRIAS:
 
 RETORNE APENAS O TEXTO OTIMIZADO. Seja criativo e transforme completamente a mensagem original!`;
 
+          console.log('📝 Enviando prompt para Anthropic...');
+          
           const response = await anthropic.messages.create({
             model: 'claude-3-5-sonnet-20241022', // Using Claude 3.5 Sonnet
             max_tokens: 400,
@@ -1764,6 +1769,8 @@ RETORNE APENAS O TEXTO OTIMIZADO. Seja criativo e transforme completamente a men
             ],
           });
 
+          console.log('📨 Resposta recebida do Anthropic:', response);
+          
           optimizedContent = response.content[0].text?.trim() || content;
           optimizationType = '🤖 Otimizado com IA real (Anthropic Claude) - Reescrito completamente!';
           aiPowered = true;
@@ -1776,11 +1783,11 @@ RETORNE APENAS O TEXTO OTIMIZADO. Seja criativo e transforme completamente a men
             'Linguagem de vendas profissional'
           ];
 
-          console.log('✅ Anthropic Claude funcionou! Texto reescrito completamente!');
+          console.log('✅ Anthropic Claude funcionou! Texto reescrito:', optimizedContent);
 
         } else if (process.env.OPENAI_API_KEY) {
           // Fallback to OpenAI
-          const OpenAI = require('openai');
+          const { default: OpenAI } = await import('openai');
           const openai = new OpenAI({ 
             apiKey: process.env.OPENAI_API_KEY 
           });
@@ -1889,6 +1896,51 @@ Retorne APENAS o texto otimizado:`;
     }
   });
 
+  // *** TEST ENDPOINT - Simple AI test without complex types ***
+  app.post('/api/test-ai', async (req: any, res: any) => {
+    try {
+      console.log('🧪 TESTE IA SIMPLES:', req.body);
+      
+      const { content } = req.body;
+      
+      // Direct Anthropic test
+      if (process.env.ANTHROPIC_API_KEY) {
+        console.log('🔑 Anthropic key available!');
+        const { default: Anthropic } = await import('@anthropic-ai/sdk');
+        const anthropic = new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY,
+        });
+
+        console.log('📤 Sending to Anthropic...');
+        const response = await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 200,
+          temperature: 0.8,
+          messages: [{
+            role: 'user',
+            content: `Reescreva este texto de marketing de forma mais persuasiva: "${content}"`
+          }],
+        });
+
+        const result = response.content[0].text;
+        console.log('✅ Anthropic SUCCESS:', result);
+        
+        return res.json({
+          success: true,
+          original: content,
+          rewritten: result,
+          aiPowered: true
+        });
+      }
+      
+      res.json({ success: false, error: 'No AI available' });
+      
+    } catch (error: any) {
+      console.error('❌ TEST AI ERROR:', error.message);
+      res.json({ success: false, error: error.message });
+    }
+  });
+
   // AI-powered contextual suggestions endpoint  
   app.post('/api/social-media/generate-suggestions', async (req: Request, res) => {
     try {
@@ -1912,7 +1964,7 @@ Retorne APENAS o texto otimizado:`;
       // Try real AI for suggestions first
       try {
         if (process.env.ANTHROPIC_API_KEY) {
-          const Anthropic = require('@anthropic-ai/sdk');
+          const { default: Anthropic } = await import('@anthropic-ai/sdk');
           const anthropic = new Anthropic({
             apiKey: process.env.ANTHROPIC_API_KEY,
           });
