@@ -1697,8 +1697,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('💾 Salvando post:', { 
         content: content.substring(0, 50), 
         mediaType, 
-        finalStatus,
-        publishMode 
+        status: status,
+        publishMode: publishMode,
+        finalStatus: finalStatus
       });
       
       // Salvar no banco usando Drizzle ORM
