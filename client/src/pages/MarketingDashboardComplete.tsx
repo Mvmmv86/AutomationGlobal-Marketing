@@ -35,7 +35,10 @@ import {
   AlertCircle,
   Play,
   Share2,
-  RefreshCw
+  RefreshCw,
+  X,
+  Video,
+  Heart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,7 +48,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SiInstagram as Instagram, SiFacebook as Facebook, SiX as Twitter, SiYoutube as Youtube } from "react-icons/si";
+import { SiInstagram as InstagramIcon, SiFacebook as FacebookIcon, SiX as TwitterIcon, SiYoutube as YoutubeIcon } from "react-icons/si";
 
 // Theme Context
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
@@ -1011,8 +1014,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             {connectedAccounts.map((account) => (
               <div key={account.id} className="flex items-center justify-between p-2 rounded-lg glass-3d-light">
                 <div className="flex items-center gap-2">
-                  {account.platform === 'facebook' && <Facebook className="w-4 h-4 text-blue-500" />}
-                  {account.platform === 'instagram' && <Instagram className="w-4 h-4 text-pink-500" />}
+                  {account.platform === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-500" />}
+                  {account.platform === 'instagram' && <InstagramIcon className="w-4 h-4 text-pink-500" />}
                   <div>
                     <div className={cn("font-medium text-xs", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
                       {account.name.split(' ')[0]}
@@ -1422,8 +1425,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             ].map((post, index) => (
               <div key={index} className="p-2 rounded glass-3d-light">
                 <div className="flex items-center gap-2 mb-1">
-                  {post.platform === 'instagram' && <Instagram className="w-3 h-3 text-pink-400" />}
-                  {post.platform === 'facebook' && <Facebook className="w-3 h-3 text-blue-400" />}
+                  {post.platform === 'instagram' && <InstagramIcon className="w-3 h-3 text-pink-400" />}
+                  {post.platform === 'facebook' && <FacebookIcon className="w-3 h-3 text-blue-400" />}
                   {post.platform === 'twitter' && <Twitter className="w-3 h-3 text-gray-400" />}
                   <span className="text-xs text-gray-400">{post.time}</span>
                 </div>
