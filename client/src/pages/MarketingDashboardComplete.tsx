@@ -772,6 +772,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishMode, setPublishMode] = useState<'now' | 'schedule' | 'draft'>('now');
   const [uploadedMedia, setUploadedMedia] = useState<any[]>([]);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedMediaType, setSelectedMediaType] = useState<'feed' | 'story' | 'reel'>('feed');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string>('');
   
   // Estados de conexões sociais
   const [connectedAccounts, setConnectedAccounts] = useState([
@@ -795,17 +799,84 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     'Tutorial: Como aproveitar ao máximo nosso serviço'
   ];
 
+  // Especificações de dimensões por plataforma e tipo
+  const mediaSpecs = {
+    instagram: {
+      feed: [
+        { ratio: '1:1', width: 1080, height: 1080, label: 'Quadrado (Padrão)' },
+        { ratio: '4:5', width: 1080, height: 1350, label: 'Retrato' },
+        { ratio: '1.91:1', width: 1080, height: 566, label: 'Paisagem' }
+      ],
+      story: [
+        { ratio: '9:16', width: 1080, height: 1920, label: 'Story Vertical' }
+      ],
+      reel: [
+        { ratio: '9:16', width: 1080, height: 1920, label: 'Reel Vertical' }
+      ]
+    },
+    facebook: {
+      feed: [
+        { ratio: '1.91:1', width: 1200, height: 630, label: 'Recomendado' },
+        { ratio: '1:1', width: 1080, height: 1080, label: 'Quadrado' }
+      ],
+      story: [
+        { ratio: '9:16', width: 1080, height: 1920, label: 'Story Vertical' }
+      ]
+    }
+  };
+
   // Funções de ação
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      // Simular publicação
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Publicando:', { content, accounts: selectedAccounts, scheduleDate });
+      const postData = {
+        content,
+        mediaUrls: uploadedMedia.map(media => media.url || ''),
+        accounts: selectedAccounts,
+        publishMode,
+        scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
+        postType: uploadedMedia.length > 0 ? 'media' : 'text'
+      };
+
+      const response = await fetch('/api/social-media/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-organization-id': 'current-org-id' // TODO: Get from context
+        },
+        body: JSON.stringify(postData)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        console.log('Post criado com sucesso:', result.post);
+        if (publishMode === 'now') {
+          // Publicar imediatamente
+          await handlePublishPost(result.post.id);
+        }
+        // Limpar formulário
+        setContent('');
+        setUploadedMedia([]);
+      }
     } catch (error) {
       console.error('Erro ao publicar:', error);
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handlePublishPost = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/social-media/posts/${postId}/publish`, {
+        method: 'POST',
+        headers: {
+          'x-organization-id': 'current-org-id' // TODO: Get from context
+        }
+      });
+      const result = await response.json();
+      console.log('Post publicado:', result);
+    } catch (error) {
+      console.error('Erro ao publicar post:', error);
     }
   };
 
@@ -823,6 +894,71 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const handleGenerateHashtags = () => {
     const hashtags = "\n\n#marketing #digitalmarketing #business #growth #success";
     setContent(content + hashtags);
+  };
+
+  // Funções de upload de mídia
+  const handleMediaUpload = (type: 'image' | 'video') => {
+    setSelectedMediaType('feed'); // Padrão para feed
+    setShowMediaModal(true);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setMediaFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setMediaPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const validateImageDimensions = (file: File, specs: any): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const { width, height } = img;
+        const isValid = specs.some((spec: any) => 
+          Math.abs(width / height - spec.width / spec.height) < 0.1
+        );
+        URL.revokeObjectURL(url);
+        resolve(isValid);
+      };
+      img.src = url;
+    });
+  };
+
+  const handleMediaConfirm = async () => {
+    if (!mediaFile) return;
+
+    // Validar dimensões
+    const platform = selectedPlatform as 'instagram' | 'facebook';
+    const specs = mediaSpecs[platform]?.[selectedMediaType];
+    
+    if (specs && mediaFile.type.startsWith('image/')) {
+      const isValid = await validateImageDimensions(mediaFile, specs);
+      if (!isValid) {
+        alert(`Dimensões inválidas para ${selectedMediaType}. Use: ${specs.map((s: any) => s.label).join(' ou ')}`);
+        return;
+      }
+    }
+
+    // Simular upload
+    const newMedia = {
+      id: Date.now(),
+      file: mediaFile,
+      type: selectedMediaType,
+      platform: selectedPlatform,
+      url: mediaPreview,
+      specs: specs?.[0]
+    };
+
+    setUploadedMedia([...uploadedMedia, newMedia]);
+    setShowMediaModal(false);
+    setMediaFile(null);
+    setMediaPreview('');
   };
 
   return (
@@ -961,6 +1097,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 {content.length} caracteres
                 {selectedPlatform === 'twitter' && content.length > 280 && ' • Muito longo para Twitter'}
                 {selectedPlatform === 'instagram' && content.length > 2200 && ' • Muito longo para Instagram'}
+                {selectedPlatform === 'facebook' && content.length > 63206 && ' • Muito longo para Facebook'}
+                {selectedPlatform === 'youtube' && content.length > 5000 && ' • Muito longo para YouTube'}
               </span>
               <span className="text-purple-400">
                 {selectedAccounts.length} conta{selectedAccounts.length !== 1 ? 's' : ''} selecionada{selectedAccounts.length !== 1 ? 's' : ''}
@@ -975,15 +1113,32 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 Adicionar Mídia
               </label>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="glass-button-3d">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="glass-button-3d"
+                  onClick={() => handleMediaUpload('image')}
+                  data-testid="button-upload-image"
+                >
                   <Image className="w-4 h-4 mr-1" />
                   Imagem
                 </Button>
-                <Button size="sm" variant="outline" className="glass-button-3d">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="glass-button-3d"
+                  onClick={() => handleMediaUpload('video')}
+                  data-testid="button-upload-video"
+                >
                   <VideoIcon className="w-4 h-4 mr-1" />
                   Vídeo
                 </Button>
-                <Button size="sm" variant="outline" className="glass-button-3d">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="glass-button-3d"
+                  data-testid="button-upload-file"
+                >
                   <Upload className="w-4 h-4 mr-1" />
                   Arquivo
                 </Button>
@@ -1060,6 +1215,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               size="sm" 
               className="glass-button-3d flex-1"
               disabled={!content.trim()}
+              data-testid="button-preview-post"
             >
               <Eye className="w-4 h-4 mr-1" />
               Visualizar
@@ -1070,6 +1226,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               size="sm" 
               className="glass-button-3d flex-1"
               disabled={!content.trim()}
+              data-testid="button-save-draft"
             >
               <Save className="w-4 h-4 mr-1" />
               Salvar Rascunho
@@ -1080,6 +1237,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               disabled={!content.trim() || selectedAccounts.length === 0 || isPublishing}
               className="gradient-purple-blue text-white flex-1"
               size="sm"
+              data-testid="button-publish-now"
             >
               {isPublishing ? (
                 <div className="flex items-center gap-2">
@@ -1227,6 +1385,117 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         </div>
       </div>
 
+      {/* Modal de Upload de Mídia */}
+      {showMediaModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="glass-3d p-6 rounded-xl max-w-md w-full">
+            <h3 className={cn("text-lg font-bold mb-4", theme === 'dark' ? 'text-white' : 'text-gray-900')}>Selecionar Tipo de Mídia</h3>
+            
+            {/* Seleção de Tipo de Mídia */}
+            <div className="mb-4">
+              <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>Tipo de Post:</label>
+              <div className="flex gap-2">
+                {Object.entries({
+                  feed: '📱 Feed',
+                  story: '📖 Story', 
+                  reel: '🎬 Reel'
+                }).map(([type, label]) => {
+                  const platform = selectedPlatform as 'instagram' | 'facebook';
+                  const specs = mediaSpecs[platform];
+                  const available = specs && (type in specs) ? specs[type as keyof typeof specs] : null;
+                  
+                  return (
+                    <button
+                      key={type}
+                      disabled={!available}
+                      onClick={() => setSelectedMediaType(type as any)}
+                      className={cn(
+                        "flex-1 p-2 rounded text-sm font-medium transition-all",
+                        selectedMediaType === type 
+                          ? "gradient-purple-blue text-white" 
+                          : "glass-button-3d",
+                        !available && "opacity-50 cursor-not-allowed"
+                      )}
+                      data-testid={`button-media-type-${type}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Especificações */}
+            <div className="mb-4">
+              <div className={cn("text-xs p-2 rounded glass-3d-light", theme === 'dark' ? 'text-gray-300' : 'text-gray-600')}>                
+                {(() => {
+                  const platform = selectedPlatform as 'instagram' | 'facebook';
+                  const platformSpecs = mediaSpecs[platform];
+                  const specs = platformSpecs && (selectedMediaType in platformSpecs) ? platformSpecs[selectedMediaType as keyof typeof platformSpecs] : null;
+                  if (specs) {
+                    return (
+                      <div>
+                        <div className="font-medium mb-1">Dimensões recomendadas:</div>
+                        {specs.map((spec: any, idx: number) => (
+                          <div key={idx}>• {spec.width}x{spec.height}px ({spec.ratio}) - {spec.label}</div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return <div>Tipo não disponível para {selectedPlatform}</div>;
+                })()}
+              </div>
+            </div>
+
+            {/* Upload de Arquivo */}
+            <div className="mb-4">
+              <input
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="media-upload"
+                data-testid="input-file-upload"
+              />
+              <label 
+                htmlFor="media-upload" 
+                className="block w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer glass-3d-light hover:border-purple-400 transition-colors"
+              >
+                {mediaPreview ? (
+                  <img src={mediaPreview} alt="Preview" className="max-h-32 mx-auto rounded" />
+                ) : (
+                  <div>
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <div className={cn("text-sm", theme === 'dark' ? 'text-gray-300' : 'text-gray-600')}>
+                      Clique para selecionar arquivo
+                    </div>
+                  </div>
+                )}
+              </label>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {setShowMediaModal(false); setMediaFile(null); setMediaPreview('');}}
+                className="flex-1 glass-button-3d"
+                data-testid="button-cancel-upload"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleMediaConfirm}
+                disabled={!mediaFile}
+                className="flex-1 gradient-purple-blue text-white"
+                data-testid="button-confirm-upload"
+              >
+                Adicionar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -440,61 +440,138 @@ export class SocialMediaService {
   }
 
   private async publishToFacebook(post: any, accessToken: string) {
-    const url = `https://graph.facebook.com/me/feed`;
-    const payload = {
-      message: post.content,
-      access_token: accessToken
-    };
+    try {
+      // Determine post type and endpoint
+      const postType = post.postType || 'feed';
+      let url = `https://graph.facebook.com/me/feed`;
+      let payload: any = {
+        message: post.content,
+        access_token: accessToken
+      };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+      // Handle different media types
+      if (post.mediaUrls && post.mediaUrls.length > 0) {
+        if (postType === 'story') {
+          // Facebook Stories API
+          url = `https://graph.facebook.com/me/photos`;
+          payload = {
+            url: post.mediaUrls[0],
+            caption: post.content,
+            published: false, // For stories
+            access_token: accessToken
+          };
+        } else {
+          // Regular feed post with media
+          payload.link = post.mediaUrls[0];
+        }
+      }
 
-    const result = await response.json();
-    
-    if (result.error) {
-      throw new Error(`Facebook publish failed: ${result.error.message}`);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(`Facebook publish failed: ${result.error.message}`);
+      }
+
+      return {
+        platformPostId: result.id,
+        publishedAt: new Date(),
+        platform: 'facebook',
+        postType: postType,
+        mediaCount: post.mediaUrls?.length || 0
+      };
+    } catch (error) {
+      console.error('Facebook posting error:', error);
+      throw error;
     }
-
-    return {
-      platformPostId: result.id,
-      publishedAt: new Date(),
-      platform: 'facebook'
-    };
   }
 
   private async publishToInstagram(post: any, accessToken: string) {
-    // Instagram Basic Display API - simplified version
-    const url = `https://graph.instagram.com/me/media`;
-    const payload = {
-      caption: post.content,
-      access_token: accessToken
-    };
+    try {
+      const postType = post.postType || 'feed';
+      let payload: any = {
+        caption: post.content,
+        access_token: accessToken
+      };
 
-    // Add image_url if media exists
-    if (post.mediaUrls && post.mediaUrls.length > 0) {
-      payload.image_url = post.mediaUrls[0];
+      // Handle different Instagram post types
+      if (postType === 'reel') {
+        // Instagram Reels API
+        if (!post.mediaUrls || !post.mediaUrls[0]) {
+          throw new Error('Reels require video media');
+        }
+        payload.media_type = 'REELS';
+        payload.video_url = post.mediaUrls[0];
+      } else if (postType === 'story') {
+        // Instagram Stories API  
+        if (!post.mediaUrls || !post.mediaUrls[0]) {
+          throw new Error('Stories require media');
+        }
+        payload.media_type = 'STORIES';
+        payload.image_url = post.mediaUrls[0];
+      } else {
+        // Regular feed post
+        if (post.mediaUrls && post.mediaUrls.length > 0) {
+          if (post.mediaUrls[0].includes('.mp4') || post.mediaUrls[0].includes('video')) {
+            payload.media_type = 'VIDEO';
+            payload.video_url = post.mediaUrls[0];
+          } else {
+            payload.media_type = 'IMAGE';
+            payload.image_url = post.mediaUrls[0];
+          }
+        }
+      }
+
+      // Step 1: Create media container
+      const containerUrl = `https://graph.facebook.com/v18.0/me/media`;
+      const containerResponse = await fetch(containerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const containerResult = await containerResponse.json();
+      
+      if (containerResult.error) {
+        throw new Error(`Instagram container failed: ${containerResult.error.message}`);
+      }
+
+      // Step 2: Publish the media
+      const publishUrl = `https://graph.facebook.com/v18.0/me/media_publish`;
+      const publishPayload = {
+        creation_id: containerResult.id,
+        access_token: accessToken
+      };
+
+      const publishResponse = await fetch(publishUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(publishPayload)
+      });
+
+      const publishResult = await publishResponse.json();
+      
+      if (publishResult.error) {
+        throw new Error(`Instagram publish failed: ${publishResult.error.message}`);
+      }
+
+      return {
+        platformPostId: publishResult.id,
+        containerId: containerResult.id,
+        publishedAt: new Date(),
+        platform: 'instagram',
+        postType: postType,
+        mediaCount: post.mediaUrls?.length || 0
+      };
+    } catch (error) {
+      console.error('Instagram posting error:', error);
+      throw error;
     }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await response.json();
-    
-    if (result.error) {
-      throw new Error(`Instagram publish failed: ${result.error.message}`);
-    }
-
-    return {
-      platformPostId: result.id,
-      publishedAt: new Date(),
-      platform: 'instagram'
-    };
   }
 
   // AI-powered content suggestions
