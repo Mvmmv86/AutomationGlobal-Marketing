@@ -1072,12 +1072,15 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     setIsPublishing(true);
     try {
       const postData = {
+        title: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
         content,
         mediaUrls: uploadedMedia.map(media => media.url || ''),
-        accounts: selectedAccounts,
+        mediaItems: mediaItems,
+        selectedAccounts: selectedAccounts,
+        mediaType: mediaItems.length > 0 ? mediaItems[0].mediaType || 'feed' : 'feed',
         publishMode,
         scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
-        postType: uploadedMedia.length > 0 ? 'media' : 'text'
+        status: publishMode === 'draft' ? 'draft' : 'draft'
       };
 
       const response = await fetch('/api/social-media/posts', {
@@ -1091,18 +1094,30 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ POST PUBLICADO COM SUCESSO:', result);
+        console.log('✅ POST SALVO COM SUCESSO:', result);
         
         // Limpar formulário
         setContent('');
         setUploadedMedia([]);
         setMediaItems([]);
         setSelectedAccounts([]);
+        setScheduleDate('');
+        setPublishMode('now');
         
+        // Usar a mensagem que vem do backend
+        const message = result.message || 'Post salvo com sucesso';
         toast({
-          title: "🎉 Post publicado com sucesso!",
-          description: `Post foi publicado${selectedAccounts.length > 0 ? ` em ${selectedAccounts.length} conta(s)` : ''} ${mediaItems.length > 0 ? 'com imagem' : ''}.`,
+          title: publishMode === 'schedule' ? "📅 Post agendado!" : 
+                 publishMode === 'now' ? "🎉 Post publicado!" : "💾 Rascunho salvo!",
+          description: message,
         });
+
+        // Recarregar dados se foi agendado
+        if (publishMode === 'schedule') {
+          console.log('🔄 Recarregando posts agendados...');
+          // Forçar recarregamento dos dados de posts agendados
+          window.location.reload();
+        }
       } else {
         const error = await response.json();
         console.error('❌ Erro ao publicar:', error);
