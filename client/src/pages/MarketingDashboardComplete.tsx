@@ -38,7 +38,9 @@ import {
   RefreshCw,
   X,
   Video,
-  Heart
+  Heart,
+  Share,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SiInstagram as InstagramIcon, SiFacebook as FacebookIcon, SiX as TwitterIcon, SiYoutube as YoutubeIcon } from "react-icons/si";
+import { useToast } from "@/hooks/use-toast";
 
 // Theme Context
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
@@ -778,6 +781,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaType, setSelectedMediaType] = useState<'feed' | 'story' | 'reel'>('feed');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const { toast } = useToast();
   const [mediaPreview, setMediaPreview] = useState<string>('');
   const [mediaItems, setMediaItems] = useState<Array<{
     file: File;
@@ -838,6 +843,12 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
   // Funções de ação
   const handlePublish = async () => {
+    // Primeiro mostra o preview
+    setShowPreviewModal(true);
+  };
+
+  const confirmPublish = async () => {
+    setShowPreviewModal(false);
     setIsPublishing(true);
     try {
       const postData = {
@@ -1544,6 +1555,156 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 data-testid="button-confirm-upload"
               >
                 Adicionar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Preview do Post */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="glass-3d p-6 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className={cn("text-xl font-bold mb-4 text-center", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+              Preview do Post
+            </h3>
+            
+            {/* Simulação do Post */}
+            <div className="space-y-4 mb-6">
+              {selectedAccounts.map((accountId) => {
+                const account = connectedAccounts.find(a => a.id === accountId);
+                if (!account) return null;
+                
+                return (
+                  <div key={accountId} className="glass-3d-light p-4 rounded-lg">
+                    {/* Header da plataforma */}
+                    <div className="flex items-center gap-3 mb-3">
+                      {account.platform === 'instagram' && <InstagramIcon className="w-5 h-5 text-pink-500" />}
+                      {account.platform === 'facebook' && <FacebookIcon className="w-5 h-5 text-blue-500" />}
+                      <div>
+                        <div className={cn("font-medium text-sm", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                          {account.name}
+                        </div>
+                        <div className={cn("text-xs", theme === 'dark' ? 'text-gray-400' : 'text-gray-600')}>
+                          {account.platform === 'instagram' ? 'Instagram' : 'Facebook'} • Agora
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Conteúdo da imagem */}
+                    {uploadedMedia.length > 0 && (
+                      <div className="mb-3">
+                        <div className={cn(
+                          "relative rounded-lg overflow-hidden bg-gray-100",
+                          selectedMediaType === 'story' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
+                          selectedMediaType === 'reel' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
+                          'aspect-square max-w-[400px] mx-auto'
+                        )}>
+                          <img 
+                            src={uploadedMedia[0].preview} 
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          {selectedMediaType === 'story' && (
+                            <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                              Story
+                            </div>
+                          )}
+                          {selectedMediaType === 'reel' && (
+                            <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                              Reel
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Texto do post */}
+                    {content && (
+                      <div className={cn(
+                        "text-sm mb-3 whitespace-pre-wrap",
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                      )}>
+                        {content}
+                      </div>
+                    )}
+
+                    {/* Simulação de interações */}
+                    <div className="flex items-center gap-4 pt-2 border-t border-white/10">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Heart className="w-4 h-4" />
+                        <span>Curtir</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Comentar</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Share className="w-4 h-4" />
+                        <span>Compartilhar</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Resumo da publicação */}
+            <div className="glass-3d-light p-4 rounded-lg mb-6">
+              <h4 className={cn("font-bold text-sm mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                Resumo da Publicação
+              </h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Plataformas:</span>
+                  <span className="text-purple-400">{selectedAccounts.length} conta{selectedAccounts.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Tipo:</span>
+                  <span className="text-blue-400">{uploadedMedia.length > 0 ? `${selectedMediaType.charAt(0).toUpperCase() + selectedMediaType.slice(1)} com imagem` : 'Apenas texto'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Caracteres:</span>
+                  <span className="text-green-400">{content.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Modo:</span>
+                  <span className="text-orange-400">
+                    {publishMode === 'now' ? 'Publicar Agora' : 
+                     publishMode === 'schedule' ? 'Agendado' : 'Rascunho'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Botões de ação */}
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => setShowPreviewModal(false)}
+                variant="outline"
+                className="flex-1 glass-button-3d"
+                data-testid="button-cancel-preview"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Voltar e Editar
+              </Button>
+              <Button 
+                onClick={confirmPublish}
+                disabled={isPublishing}
+                className="flex-1 gradient-purple-blue text-white"
+                data-testid="button-confirm-publish"
+              >
+                {isPublishing ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Publicando...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <Send className="w-4 h-4" />
+                    Confirmar e Publicar
+                  </div>
+                )}
               </Button>
             </div>
           </div>
