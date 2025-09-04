@@ -119,6 +119,8 @@ export class SocialMediaService {
   // Create/save post (both manual and integration modes)
   async createPost(req: Request, res: Response) {
     try {
+      console.log('🔍 DADOS RECEBIDOS NO BACKEND:', JSON.stringify(req.body, null, 2));
+      
       const {
         title,
         content,
