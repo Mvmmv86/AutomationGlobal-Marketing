@@ -56,8 +56,8 @@ export function createApp() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  // Global rate limiting (basic protection)
-  app.use('/api/', apiRateLimit);
+  // Rate limiting desabilitado temporariamente para desenvolvimento
+  // app.use('/api/', apiRateLimit);
 
   // Health check endpoint (no rate limiting)
   app.get('/health', (req, res) => {
