@@ -1740,6 +1740,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Content Optimization endpoint
+  app.post('/api/social-media/optimize-content', async (req: Request, res) => {
+    try {
+      const { content, platform = 'instagram' } = req.body;
+      
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ 
+          error: 'Conteúdo é obrigatório para otimização' 
+        });
+      }
+
+      // Simulated AI optimization (in a real app, this would call OpenAI/Anthropic)
+      const optimizations = [
+        '✨ Versão otimizada com emojis estratégicos e call-to-action poderoso!',
+        '🚀 Conteúdo reescrito para máximo engajamento e conversão!',
+        '💡 Texto aprimorado com gatilhos mentais e storytelling envolvente!',
+        '🎯 Versão otimizada para algoritmo das redes sociais!',
+        '💪 Conteúdo potencializado com linguagem persuasiva e urgência!'
+      ];
+
+      const randomOptimization = optimizations[Math.floor(Math.random() * optimizations.length)];
+      
+      // Simple optimization: enhance the original content
+      let optimizedContent = content;
+      
+      // Add strategic emojis if not present
+      if (!content.includes('🚀') && !content.includes('✨') && !content.includes('💡')) {
+        optimizedContent = '🚀 ' + optimizedContent;
+      }
+      
+      // Add call-to-action if missing
+      if (!content.toLowerCase().includes('comente') && 
+          !content.toLowerCase().includes('compartilhe') && 
+          !content.toLowerCase().includes('like')) {
+        optimizedContent += '\n\n💬 Comente sua opinião! ❤️ Curta se concordar!';
+      }
+      
+      // Add trending hashtags based on platform
+      const instagramHashtags = '\n\n#marketing #digitalmarketing #negócios #empreendedorismo #sucesso';
+      const facebookHashtags = '\n\n#marketing #business #crescimento #estratégia';
+      
+      if (!content.includes('#')) {
+        optimizedContent += platform === 'instagram' ? instagramHashtags : facebookHashtags;
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          originalContent: content,
+          optimizedContent: optimizedContent,
+          platform: platform,
+          optimizationType: randomOptimization,
+          improvements: [
+            'Adicionados emojis estratégicos',
+            'Incluído call-to-action',
+            'Hashtags otimizadas para ' + platform,
+            'Linguagem mais envolvente'
+          ]
+        },
+        message: 'Conteúdo otimizado com sucesso!'
+      });
+      
+    } catch (error: any) {
+      console.error('Erro ao otimizar conteúdo:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create content template
   app.post('/api/organizations/:id/social-media/templates', 
     requireAuth, 

@@ -778,6 +778,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishMode, setPublishMode] = useState<'now' | 'schedule' | 'draft'>('now');
   const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [uploadedMedia, setUploadedMedia] = useState<any[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaType, setSelectedMediaType] = useState<'feed' | 'story' | 'reel'>('feed');
@@ -987,10 +988,54 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     // Aqui seria a integração real com APIs do Facebook/Instagram
   };
 
-  const handleOptimizeWithAI = () => {
-    // Simular otimização com IA
-    const optimized = content + "\n\n✨ Versão otimizada com IA para maior engajamento!";
-    setContent(optimized);
+  const handleOptimizeWithAI = async () => {
+    if (!content.trim()) {
+      toast({
+        title: "Erro",
+        description: "Adicione algum conteúdo antes de otimizar!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsOptimizing(true);
+    
+    try {
+      const response = await fetch('/api/social-media/optimize-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content,
+          platform: selectedPlatform
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setContent(result.data.optimizedContent);
+        
+        toast({
+          title: "🚀 Conteúdo Otimizado!",
+          description: result.data.optimizationType,
+          variant: "default",
+        });
+        
+        console.log('🤖 Otimização IA:', result.data);
+      } else {
+        throw new Error('Erro ao otimizar conteúdo');
+      }
+    } catch (error) {
+      console.error('Erro ao otimizar:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao otimizar conteúdo. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   const handleGenerateHashtags = () => {
@@ -1517,11 +1562,20 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             size="sm" 
             variant="outline" 
             className="w-full glass-button-3d"
-            disabled={!content.trim()}
+            disabled={!content.trim() || isOptimizing}
             onClick={handleOptimizeWithAI}
           >
-            <Brain className="w-3 h-3 mr-1" />
-            Otimizar com IA
+            {isOptimizing ? (
+              <>
+                <div className="w-3 h-3 mr-1 animate-spin rounded-full border-2 border-blue-400 border-t-transparent"></div>
+                Otimizando...
+              </>
+            ) : (
+              <>
+                <Brain className="w-3 h-3 mr-1" />
+                Otimizar com IA
+              </>
+            )}
           </Button>
         </div>
 
