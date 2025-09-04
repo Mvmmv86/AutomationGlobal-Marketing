@@ -12,8 +12,8 @@ import { cacheManager } from "./cache/cache-manager";
 import { queueManager } from "./queue/queue-manager";
 import { socialMediaService } from "./socialMediaService";
 import * as schema from "../shared/schema";
-import { desc, eq } from "drizzle-orm";
-import { socialMediaPosts } from "../shared/schema";
+import { desc, eq, sql } from "drizzle-orm";
+import { socialMediaPosts, contentTemplates } from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -2316,11 +2316,17 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     try {
       console.log('📊 Calculando estatísticas de conteúdo REAIS...');
 
-      // Posts criados (total de posts no banco)
+      // Posts criados (todos os posts: publicados + rascunhos + agendados)
       const totalPosts = await db.select({ count: sql`count(*)` }).from(socialMediaPosts);
       const postsCreated = Number(totalPosts[0]?.count) || 0;
 
-      // Templates ativos (total de templates no banco)
+      // Posts publicados (só os que estão marcados como 'published')
+      const publishedPosts = await db.select({ count: sql`count(*)` })
+        .from(socialMediaPosts)
+        .where(eq(socialMediaPosts.status, 'published'));
+      const postsPublished = Number(publishedPosts[0]?.count) || 0;
+
+      // Templates ativos (total de templates no banco)  
       const totalTemplates = await db.select({ count: sql`count(*)` }).from(contentTemplates);
       const templatesActive = Number(totalTemplates[0]?.count) || 0;
 
@@ -2346,6 +2352,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
 
       const stats = {
         postsCreated,
+        postsPublished, 
         templatesActive,
         postsScheduled,
         averageEngagement: `${averageEngagement}%`

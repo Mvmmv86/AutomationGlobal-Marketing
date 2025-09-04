@@ -119,16 +119,52 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   // Usar dados reais das estatísticas ou valores padrão
   const stats = statsResponse?.data || {
     postsCreated: 0,
+    postsPublished: 0, 
     templatesActive: 0,
     postsScheduled: 0,
     averageEngagement: '0%'
   };
 
+  console.log('📊 Stats detalhadas:', stats);
+
+  // Calcular mudanças baseadas nos dados reais
+  const postsChange = stats.postsCreated > 0 ? '+' + Math.round((stats.postsPublished / stats.postsCreated) * 100) + '%' : '0%';
+  const templatesChange = stats.templatesActive > 0 ? '+' + stats.templatesActive : '0';
+  const scheduledChange = stats.postsScheduled > 0 ? '+' + stats.postsScheduled : '0';
+
   const contentStats = [
-    { label: 'Posts Criados', value: stats.postsCreated, change: '+12%', icon: MessageCircle, color: 'text-blue-400' },
-    { label: 'Templates Ativos', value: stats.templatesActive, change: '+3', icon: Activity, color: 'text-purple-400' },
-    { label: 'Posts Agendados', value: stats.postsScheduled, change: '+18', icon: Calendar, color: 'text-green-400' },
-    { label: 'Engajamento Médio', value: stats.averageEngagement, change: '+1.5%', icon: TrendingUp, color: 'text-orange-400' }
+    { 
+      label: 'Posts Criados', 
+      value: stats.postsCreated, 
+      change: postsChange, 
+      icon: MessageCircle, 
+      color: 'text-blue-400',
+      detail: `${stats.postsPublished} publicados`
+    },
+    { 
+      label: 'Templates Ativos', 
+      value: stats.templatesActive, 
+      change: templatesChange, 
+      icon: Activity, 
+      color: 'text-purple-400',
+      detail: 'prontos para uso'
+    },
+    { 
+      label: 'Posts Agendados', 
+      value: stats.postsScheduled, 
+      change: scheduledChange, 
+      icon: Calendar, 
+      color: 'text-green-400',
+      detail: 'aguardando publicação'
+    },
+    { 
+      label: 'Engajamento Médio', 
+      value: stats.averageEngagement, 
+      change: '+1.5%', 
+      icon: TrendingUp, 
+      color: 'text-orange-400',
+      detail: 'baseado nos posts ativos'
+    }
   ];
 
   // Buscar dados reais dos posts via API
