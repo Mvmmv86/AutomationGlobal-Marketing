@@ -777,6 +777,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [scheduleDate, setScheduleDate] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishMode, setPublishMode] = useState<'now' | 'schedule' | 'draft'>('now');
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [uploadedMedia, setUploadedMedia] = useState<any[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMediaType, setSelectedMediaType] = useState<'feed' | 'story' | 'reel'>('feed');
@@ -996,6 +997,25 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     const hashtags = "\n\n#marketing #digitalmarketing #business #growth #success";
     setContent(content + hashtags);
   };
+
+  // Função para buscar dados de analytics
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch('/api/social-media/analytics');
+      if (response.ok) {
+        const result = await response.json();
+        setAnalyticsData(result.data);
+        console.log('📊 Analytics carregados:', result.data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar analytics:', error);
+    }
+  };
+
+  // Carregar analytics quando componente monta
+  React.useEffect(() => {
+    fetchAnalytics();
+  }, []);
 
   // Funções de upload de mídia
   const handleMediaUpload = (type: 'image' | 'video') => {
@@ -1428,24 +1448,48 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       <div className="space-y-4">
         {/* Performance Recente */}
         <div className="glass-3d p-4">
-          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+          <h4 className={cn("text-sm font-bold mb-3 flex items-center gap-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
             📊 Performance Recente
+            <button 
+              onClick={fetchAnalytics}
+              className="ml-auto text-xs px-2 py-1 rounded glass-button-3d hover:gradient-purple-blue hover:text-white transition-all"
+            >
+              🔄
+            </button>
           </h4>
           
-          <div className="space-y-3">
-            <div className="flex justify-between text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instagram:</span>
-              <span className="text-pink-400 font-medium">1.8K curtidas</span>
+          {analyticsData ? (
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instagram:</span>
+                <span className="text-pink-400 font-medium">
+                  {analyticsData.instagram.likes.toLocaleString()} curtidas
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
+                <span className="text-blue-400 font-medium">
+                  {analyticsData.facebook.likes.toLocaleString()} curtidas
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Engajamento:</span>
+                <span className="text-green-400 font-medium">{analyticsData.overall.totalEngagement}%</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Alcance:</span>
+                <span className="text-cyan-400 font-medium">
+                  {analyticsData.overall.totalReach.toLocaleString()}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
-              <span className="text-blue-400 font-medium">2.4K curtidas</span>
+          ) : (
+            <div className="space-y-2">
+              <div className="h-2 bg-gray-600/20 rounded animate-pulse"></div>
+              <div className="h-2 bg-gray-600/20 rounded animate-pulse"></div>
+              <div className="h-2 bg-gray-600/20 rounded animate-pulse"></div>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Engajamento:</span>
-              <span className="text-green-400 font-medium">8.2%</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Sugestões de IA */}
