@@ -86,7 +86,7 @@ const navigationItems = [
   { id: 'campaigns', label: 'Campanhas', icon: Target },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'audience', label: 'Audiência', icon: Users },
-  { id: 'content', label: 'Conteúdo', icon: Video },
+  { id: 'content', label: 'Conteúdo', icon: VideoIcon },
   { id: 'automation', label: 'Automação', icon: Zap },
   { id: 'reports', label: 'Relatórios', icon: PieChart },
   { id: 'settings', label: 'Configurações', icon: Settings }
@@ -197,7 +197,7 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               "text-lg font-bold flex items-center gap-2",
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             )}>
-              <Video className="w-5 h-5 text-purple-400" />
+              <VideoIcon className="w-5 h-5 text-purple-400" />
               Conteúdo Recente
             </h3>
             
@@ -1225,130 +1225,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             ))}
           </div>
         </div>
-                theme === 'dark' 
-                  ? 'bg-white/10 text-white placeholder-gray-400' 
-                  : 'bg-black/5 text-gray-900 placeholder-gray-500'
-              )}
-            />
-            <div className="flex justify-between items-center mt-2 text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                {content.length} caracteres
-              </span>
-              <span className="text-purple-400">
-                {selectedPlatform === 'instagram' && content.length > 2200 ? 'Muito longo para Instagram' : 'Tamanho ok'}
-              </span>
-            </div>
-          </div>
-
-          {/* Upload de Mídia */}
-          <div className="mb-4">
-            <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-gray-300' : 'text-gray-700')}>
-              Adicionar Mídia:
-            </label>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="glass-button-3d">
-                <Image className="w-4 h-4 mr-1" />
-                Imagem
-              </Button>
-              <Button size="sm" variant="outline" className="glass-button-3d">
-                <VideoIcon className="w-4 h-4 mr-1" />
-                Vídeo
-              </Button>
-            </div>
-          </div>
-
-          {/* Agendamento */}
-          <div className="mb-4">
-            <label className={cn(
-              "block text-sm font-medium mb-2",
-              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-            )}>
-              Agendar publicação (opcional):
-            </label>
-            <Input
-              type="datetime-local"
-              value={scheduleDate}
-              onChange={(e) => setScheduleDate(e.target.value)}
-              className={cn(
-                "glass-3d text-sm border-0",
-                theme === 'dark' 
-                  ? 'bg-white/10 text-white' 
-                  : 'bg-black/5 text-gray-900'
-              )}
-            />
-          </div>
-
-          {/* Botões de Ação */}
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="glass-button-3d"
-              disabled={!content.trim()}
-            >
-              <Save className="w-4 h-4 mr-1" />
-              Salvar Rascunho
-            </Button>
-            
-            <Button 
-              onClick={handlePublish}
-              disabled={!content.trim()}
-              className="gradient-purple-blue text-white"
-              size="sm"
-            >
-              <Send className="w-4 h-4 mr-1" />
-              {scheduleDate ? 'Agendar Post' : 'Publicar Agora'}
-            </Button>
-          </div>
-        </div>
       </div>
 
-      {/* Sidebar */}
-      <div className="space-y-4">
-        {/* Sugestões de IA */}
-        <div className="glass-3d p-4">
-          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-            💡 Sugestões de IA
-          </h4>
-          
-          <div className="space-y-2">
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => setContent(suggestion)}
-                className={cn(
-                  "w-full text-left p-2 rounded-lg text-xs glass-3d-light hover:glass-3d transition-all",
-                  theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'
-                )}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Analytics Rápidas */}
-        <div className="glass-3d p-4">
-          <h4 className={cn("text-sm font-bold mb-3", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-            📊 Performance Recente
-          </h4>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instagram:</span>
-              <span className="text-pink-400">1.8K curtidas</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Facebook:</span>
-              <span className="text-blue-400">2.4K curtidas</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Engajamento:</span>
-              <span className="text-green-400">8.2%</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
