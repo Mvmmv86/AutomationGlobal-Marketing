@@ -1689,27 +1689,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint for saving posts (draft or published) usando Drizzle ORM
   app.post('/api/social-media/posts', async (req: Request, res) => {
     try {
-      const { content, mediaItems, selectedAccounts, mediaType, status, publishMode } = req.body;
+      const { content, mediaItems, selectedAccounts, mediaType, status, publishMode, scheduledAt } = req.body;
       
       console.log('📥 DADOS RECEBIDOS NO BACKEND:', {
         content: content?.substring(0, 50),
         mediaType,
         status,
         publishMode,
+        scheduledAt,
         selectedAccounts,
         body: JSON.stringify(req.body, null, 2)
       });
       
-      // Determinar status final baseado no publishMode
-      const finalStatus = publishMode === 'auto' ? 'published' : (status || 'draft');
+      // Determinar status final baseado no publishMode e scheduledAt
+      let finalStatus = status || 'draft';
+      if (publishMode === 'auto') {
+        finalStatus = 'published';
+      } else if (publishMode === 'schedule' && scheduledAt) {
+        finalStatus = 'scheduled';
+      }
       
       console.log('💾 Salvando post:', { 
         content: content.substring(0, 50), 
         mediaType, 
         status: status,
         publishMode: publishMode,
+        scheduledAt: scheduledAt,
         finalStatus: finalStatus,
-        logica: `publishMode === 'auto' ? ${publishMode === 'auto'} : 'published' : 'draft'`
+        logica: `publishMode === 'schedule' && scheduledAt ? 'scheduled' : publishMode === 'auto' ? 'published' : status`
       });
       
       // Salvar no banco usando Drizzle ORM
@@ -1723,6 +1730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: finalStatus,
         publishMode: publishMode || 'manual',
         publishedAt: finalStatus === 'published' ? new Date() : null,
+        scheduledAt: (finalStatus === 'scheduled' && scheduledAt) ? new Date(scheduledAt) : null,
         analytics: {
           likes: Math.floor(Math.random() * 100),
           comments: Math.floor(Math.random() * 50),
@@ -1733,9 +1741,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('✅ Post salvo com sucesso:', { id: savedPost.id, status: finalStatus });
       
+      // Mensagem baseada no status final
+      let message = 'Rascunho salvo com sucesso';
+      if (finalStatus === 'published') {
+        message = 'Post publicado com sucesso!';
+      } else if (finalStatus === 'scheduled') {
+        message = 'Post agendado!';
+      }
+      
       res.json({ 
         success: true, 
-        message: finalStatus === 'published' ? 'Post publicado com sucesso!' : 'Rascunho salvo com sucesso',
+        message: message,
         id: savedPost.id,
         status: finalStatus
       });
