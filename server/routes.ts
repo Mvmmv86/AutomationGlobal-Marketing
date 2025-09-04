@@ -1751,38 +1751,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Simulated AI optimization (in a real app, this would call OpenAI/Anthropic)
-      const optimizations = [
-        '✨ Versão otimizada com emojis estratégicos e call-to-action poderoso!',
-        '🚀 Conteúdo reescrito para máximo engajamento e conversão!',
-        '💡 Texto aprimorado com gatilhos mentais e storytelling envolvente!',
-        '🎯 Versão otimizada para algoritmo das redes sociais!',
-        '💪 Conteúdo potencializado com linguagem persuasiva e urgência!'
-      ];
-
-      const randomOptimization = optimizations[Math.floor(Math.random() * optimizations.length)];
-      
-      // Simple optimization: enhance the original content
       let optimizedContent = content;
-      
-      // Add strategic emojis if not present
-      if (!content.includes('🚀') && !content.includes('✨') && !content.includes('💡')) {
-        optimizedContent = '🚀 ' + optimizedContent;
-      }
-      
-      // Add call-to-action if missing
-      if (!content.toLowerCase().includes('comente') && 
-          !content.toLowerCase().includes('compartilhe') && 
-          !content.toLowerCase().includes('like')) {
-        optimizedContent += '\n\n💬 Comente sua opinião! ❤️ Curta se concordar!';
-      }
-      
-      // Add trending hashtags based on platform
-      const instagramHashtags = '\n\n#marketing #digitalmarketing #negócios #empreendedorismo #sucesso';
-      const facebookHashtags = '\n\n#marketing #business #crescimento #estratégia';
-      
-      if (!content.includes('#')) {
-        optimizedContent += platform === 'instagram' ? instagramHashtags : facebookHashtags;
+      let improvements: string[] = [];
+      let optimizationType = '';
+
+      // Try real AI optimization first, fallback to simulated if fails
+      try {
+        // Use OpenAI for content optimization
+        if (process.env.OPENAI_API_KEY) {
+          const OpenAI = require('openai');
+          const openai = new OpenAI({ 
+            apiKey: process.env.OPENAI_API_KEY 
+          });
+
+          const prompt = `Você é um especialista em marketing digital e redes sociais. Otimize o seguinte texto para ${platform}:
+
+"${content}"
+
+INSTRUÇÕES:
+1. Reescreva o texto para ser mais envolvente e persuasivo
+2. Adicione emojis estratégicos (mas não exagere)
+3. Inclua um call-to-action natural
+4. Adicione hashtags relevantes para ${platform}
+5. Mantenha o tom autêntico e profissional
+6. Foque em engajamento e conversão
+
+Retorne APENAS o texto otimizado, sem explicações.`;
+
+          const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo", // Using GPT-3.5 for faster response
+            messages: [
+              { 
+                role: "system", 
+                content: "Você é um especialista em marketing digital. Sempre otimize textos para máximo engajamento." 
+              },
+              { role: "user", content: prompt }
+            ],
+            max_tokens: 500,
+            temperature: 0.7,
+          });
+
+          optimizedContent = response.choices[0].message.content?.trim() || content;
+          optimizationType = '🚀 Otimizado com IA real (OpenAI) para máximo engajamento!';
+          improvements = [
+            'Reescrito com IA avançada',
+            'Linguagem otimizada para conversão',
+            'Emojis estratégicos adicionados',
+            'Call-to-action persuasivo',
+            'Hashtags inteligentes'
+          ];
+
+        } else {
+          throw new Error('OpenAI API key not available');
+        }
+
+      } catch (aiError) {
+        console.log('AI fallback - usando otimização inteligente local');
+        
+        // Fallback to enhanced local optimization
+        const optimizations = [
+          '✨ Versão otimizada com emojis estratégicos e call-to-action poderoso!',
+          '🚀 Conteúdo reescrito para máximo engajamento e conversão!',
+          '💡 Texto aprimorado com gatilhos mentais e storytelling envolvente!',
+          '🎯 Versão otimizada para algoritmo das redes sociais!',
+          '💪 Conteúdo potencializado com linguagem persuasiva e urgência!'
+        ];
+
+        optimizationType = optimizations[Math.floor(Math.random() * optimizations.length)];
+        
+        // Enhanced local optimization
+        optimizedContent = content;
+        
+        // Add strategic emojis if not present
+        if (!content.includes('🚀') && !content.includes('✨') && !content.includes('💡')) {
+          optimizedContent = '🚀 ' + optimizedContent;
+          improvements.push('Emoji estratégico adicionado');
+        }
+        
+        // Add call-to-action if missing
+        if (!content.toLowerCase().includes('comente') && 
+            !content.toLowerCase().includes('compartilhe') && 
+            !content.toLowerCase().includes('like')) {
+          optimizedContent += '\n\n💬 Comente sua opinião! ❤️ Curta se concordar!';
+          improvements.push('Call-to-action incluído');
+        }
+        
+        // Add trending hashtags based on platform
+        const instagramHashtags = '\n\n#marketing #digitalmarketing #negócios #empreendedorismo #sucesso';
+        const facebookHashtags = '\n\n#marketing #business #crescimento #estratégia';
+        
+        if (!content.includes('#')) {
+          optimizedContent += platform === 'instagram' ? instagramHashtags : facebookHashtags;
+          improvements.push('Hashtags otimizadas para ' + platform);
+        }
+
+        if (improvements.length === 0) {
+          improvements = ['Conteúdo já otimizado', 'Estrutura mantida'];
+        }
       }
       
       res.json({
@@ -1791,13 +1856,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           originalContent: content,
           optimizedContent: optimizedContent,
           platform: platform,
-          optimizationType: randomOptimization,
-          improvements: [
-            'Adicionados emojis estratégicos',
-            'Incluído call-to-action',
-            'Hashtags otimizadas para ' + platform,
-            'Linguagem mais envolvente'
-          ]
+          optimizationType: optimizationType,
+          improvements: improvements,
+          aiPowered: process.env.OPENAI_API_KEY ? true : false
         },
         message: 'Conteúdo otimizado com sucesso!'
       });

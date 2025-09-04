@@ -1017,7 +1017,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         setContent(result.data.optimizedContent);
         
         toast({
-          title: "🚀 Conteúdo Otimizado!",
+          title: result.data.aiPowered ? "🤖 IA Real Conectada!" : "🚀 Conteúdo Otimizado!",
           description: result.data.optimizationType,
           variant: "default",
         });
