@@ -1592,45 +1592,37 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                     </div>
 
                     {/* Conteúdo da imagem */}
-                    {uploadedMedia.length > 0 && uploadedMedia[0]?.url && (
+                    {mediaItems.length > 0 && mediaItems[0]?.url && (
                       <div className="mb-3">
                         <div className={cn(
                           "relative rounded-lg overflow-hidden bg-gray-100 border border-gray-200",
-                          selectedMediaType === 'story' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
-                          selectedMediaType === 'reel' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
+                          mediaItems[0].mediaType === 'story' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
+                          mediaItems[0].mediaType === 'reel' ? 'aspect-[9/16] max-w-[300px] mx-auto' :
                           'aspect-square max-w-[400px] mx-auto'
                         )}>
                           <img 
-                            src={uploadedMedia[0].url} 
+                            src={mediaItems[0].url} 
                             alt="Preview do Post"
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              console.error('Erro ao carregar imagem:', uploadedMedia[0]);
+                              console.error('Erro ao carregar imagem:', mediaItems[0]);
                               e.currentTarget.style.display = 'none';
                             }}
                             onLoad={() => {
-                              console.log('Imagem carregada com sucesso:', uploadedMedia[0].url);
+                              console.log('Imagem carregada com sucesso:', mediaItems[0].url);
                             }}
                           />
-                          {selectedMediaType === 'story' && (
+                          {mediaItems[0].mediaType === 'story' && (
                             <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
                               Story
                             </div>
                           )}
-                          {selectedMediaType === 'reel' && (
+                          {mediaItems[0].mediaType === 'reel' && (
                             <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
                               Reel
                             </div>
                           )}
                         </div>
-                      </div>
-                    )}
-                    
-                    {/* Debug info - remover depois */}
-                    {uploadedMedia.length > 0 && (
-                      <div className="mb-2 text-xs text-gray-500 font-mono">
-                        Debug: {uploadedMedia.length} mídia(s) carregada(s)
-                        {uploadedMedia[0]?.url && <div>URL: {uploadedMedia[0].url.substring(0, 50)}...</div>}
                       </div>
                     )}
 
@@ -1676,7 +1668,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 </div>
                 <div className="flex justify-between">
                   <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Tipo:</span>
-                  <span className="text-blue-400">{uploadedMedia.length > 0 ? `${selectedMediaType.charAt(0).toUpperCase() + selectedMediaType.slice(1)} com imagem` : 'Apenas texto'}</span>
+                  <span className="text-blue-400">{mediaItems.length > 0 ? `${mediaItems[0].mediaType.charAt(0).toUpperCase() + mediaItems[0].mediaType.slice(1)} com imagem` : 'Apenas texto'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Caracteres:</span>
