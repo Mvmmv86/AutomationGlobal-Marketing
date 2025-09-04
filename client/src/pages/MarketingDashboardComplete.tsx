@@ -2067,12 +2067,27 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 {isPublishing ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Publicando...
+                    {publishMode === 'schedule' ? 'Agendando...' : 
+                     publishMode === 'now' ? 'Publicando...' : 'Salvando...'}
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
-                    <Send className="w-4 h-4" />
-                    Confirmar e Publicar
+                    {publishMode === 'schedule' ? (
+                      <>
+                        <Calendar className="w-4 h-4" />
+                        Confirmar Agendamento
+                      </>
+                    ) : publishMode === 'now' ? (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Confirmar e Publicar
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Salvar Rascunho
+                      </>
+                    )}
                   </div>
                 )}
               </Button>
