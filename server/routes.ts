@@ -13,7 +13,7 @@ import { queueManager } from "./queue/queue-manager";
 import { socialMediaService } from "./socialMediaService";
 import * as schema from "../shared/schema";
 import { desc, eq, sql } from "drizzle-orm";
-import { socialMediaPosts, contentTemplates } from "../shared/schema";
+import { socialMediaPosts } from "../shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -2326,9 +2326,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         .where(eq(socialMediaPosts.status, 'published'));
       const postsPublished = Number(publishedPosts[0]?.count) || 0;
 
-      // Templates ativos (total de templates no banco)  
-      const totalTemplates = await db.select({ count: sql`count(*)` }).from(contentTemplates);
-      const templatesActive = Number(totalTemplates[0]?.count) || 0;
+      // Templates ativos (usar valor fixo por enquanto pois tabela content_templates não existe)  
+      const templatesActive = 0; // Será implementado quando a tabela existir
 
       // Posts agendados (posts com status 'scheduled')
       const scheduledPosts = await db.select({ count: sql`count(*)` })
@@ -2358,7 +2357,14 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         averageEngagement: `${averageEngagement}%`
       };
 
-      console.log('📊 Stats calculadas:', stats);
+      console.log('📊 Stats calculadas:', {
+        ...stats,
+        debug: {
+          totalPostsResult: totalPosts,
+          publishedPostsResult: publishedPosts,
+          scheduledPostsResult: scheduledPosts
+        }
+      });
 
       res.json({ success: true, data: stats });
     } catch (error: any) {
