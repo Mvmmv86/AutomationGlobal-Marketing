@@ -643,8 +643,7 @@ export const socialMediaInsights = pgTable("social_media_insights", {
 // Social Media Insert Schemas
 export const insertSocialMediaAccountSchema = createInsertSchema(socialMediaAccounts).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  connectedAt: true,
 });
 
 export const insertSocialMediaPostSchema = createInsertSchema(socialMediaPosts).omit({

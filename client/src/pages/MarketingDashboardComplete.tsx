@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
   MousePointer, 
@@ -863,11 +863,11 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   }>>([]);
   
   // Estados de conexões sociais
-  const [connectedAccounts, setConnectedAccounts] = useState([
-    { id: 'fb1', platform: 'facebook', name: 'Página Principal', connected: true, accountId: 'page_123' },
-    { id: 'ig1', platform: 'instagram', name: '@empresa', connected: true, accountId: 'ig_456' }
-  ]);
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>(['fb1', 'ig1']);
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: InstagramIcon, color: 'from-pink-500 to-purple-500' },
@@ -998,6 +998,72 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       ]
     }
   };
+
+  // Carregar contas conectadas da API
+  const loadConnectedAccounts = async () => {
+    setIsLoadingAccounts(true);
+    try {
+      const response = await fetch('/api/social-media/accounts', {
+        headers: {
+          'x-organization-id': 'temp-org-id'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConnectedAccounts(data.accounts || []);
+        // Auto-selecionar todas as contas ativas
+        setSelectedAccounts(data.accounts?.filter((acc: any) => acc.isActive).map((acc: any) => acc.id) || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar contas:', error);
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  };
+
+  // Função para conectar nova conta
+  const handleConnectAccount = async (platform: string, accessToken: string, accountData: any) => {
+    try {
+      const response = await fetch('/api/social-media/accounts/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-organization-id': 'temp-org-id',
+          'x-user-id': 'temp-user-id'
+        },
+        body: JSON.stringify({
+          platform,
+          accessToken,
+          accountData
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Conta conectada!",
+          description: `${platform} conectado com sucesso.`,
+        });
+        loadConnectedAccounts(); // Recarregar lista
+        setShowConnectModal(false);
+      } else {
+        throw new Error('Falha ao conectar conta');
+      }
+    } catch (error) {
+      console.error('Erro ao conectar conta:', error);
+      toast({
+        title: "Erro ao conectar",
+        description: "Não foi possível conectar a conta.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Carregar contas ao montar o componente
+  useEffect(() => {
+    loadConnectedAccounts();
+  }, []);
 
   // Funções de ação
   const handlePublish = async () => {
@@ -1154,10 +1220,6 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
-  const handleConnectAccount = (platform: string) => {
-    console.log('Conectar conta:', platform);
-    // Aqui seria a integração real com APIs do Facebook/Instagram
-  };
 
   const handleOptimizeWithAI = async () => {
     if (!content.trim()) {
@@ -1340,11 +1402,23 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             </h3>
             
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="glass-button-3d">
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Sincronizar
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="glass-button-3d"
+                onClick={() => setShowConnectModal(true)}
+                disabled={isLoadingAccounts}
+                data-testid="button-sync-accounts"
+              >
+                <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                {isLoadingAccounts ? 'Carregando...' : 'Sincronizar'}
               </Button>
-              <Button size="sm" className="gradient-purple-blue text-white">
+              <Button 
+                size="sm" 
+                className="gradient-purple-blue text-white"
+                onClick={() => setShowCampaignModal(true)}
+                data-testid="button-new-campaign"
+              >
                 <Plus className="w-4 h-4 mr-1" />
                 Nova Campanha
               </Button>
@@ -1352,46 +1426,122 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
           </div>
           
           {/* Status das Contas */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {connectedAccounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between p-2 rounded-lg glass-3d-light">
-                <div className="flex items-center gap-2">
-                  {account.platform === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-500" />}
-                  {account.platform === 'instagram' && <InstagramIcon className="w-4 h-4 text-pink-500" />}
-                  <div>
-                    <div className={cn("font-medium text-xs", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-                      {account.name.split(' ')[0]}
+          <div className="space-y-3">
+            {/* Contas Conectadas */}
+            {connectedAccounts.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {connectedAccounts.map((account) => (
+                  <div key={account.id} className="flex items-center justify-between p-2 rounded-lg glass-3d-light">
+                    <div className="flex items-center gap-2">
+                      {account.platform === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-500" />}
+                      {account.platform === 'instagram' && <InstagramIcon className="w-4 h-4 text-pink-500" />}
+                      <div>
+                        <div className={cn("font-medium text-xs", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                          {account.accountName || account.name}
+                        </div>
+                        <div className="text-xs text-green-400">
+                          {account.isActive ? 'Online' : 'Offline'}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-green-400">Online</div>
+                    <button
+                      onClick={() => {
+                        if (selectedAccounts.includes(account.id)) {
+                          setSelectedAccounts(prev => prev.filter(id => id !== account.id));
+                        } else {
+                          setSelectedAccounts(prev => [...prev, account.id]);
+                        }
+                      }}
+                      className={cn(
+                        "w-4 h-4 rounded border-2 flex items-center justify-center",
+                        selectedAccounts.includes(account.id) 
+                          ? "bg-purple-500 border-purple-500" 
+                          : "border-gray-500"
+                      )}
+                      data-testid={`checkbox-account-${account.id}`}
+                    >
+                      {selectedAccounts.includes(account.id) && <CheckCircle className="w-3 h-3 text-white" />}
+                    </button>
                   </div>
-                </div>
-                <button
-                  onClick={() => {
-                    if (selectedAccounts.includes(account.id)) {
-                      setSelectedAccounts(prev => prev.filter(id => id !== account.id));
-                    } else {
-                      setSelectedAccounts(prev => [...prev, account.id]);
-                    }
-                  }}
-                  className={cn(
-                    "w-4 h-4 rounded border-2 flex items-center justify-center",
-                    selectedAccounts.includes(account.id) 
-                      ? "bg-purple-500 border-purple-500" 
-                      : "border-gray-500"
-                  )}
-                >
-                  {selectedAccounts.includes(account.id) && <CheckCircle className="w-3 h-3 text-white" />}
-                </button>
+                ))}
               </div>
-            ))}
+            )}
             
-            {/* Adicionar nova conta */}
-            <button 
-              onClick={() => handleConnectAccount('new')}
-              className="flex items-center justify-center p-2 rounded-lg glass-3d-light border-2 border-dashed border-gray-500/30 hover:border-purple-400 transition-colors"
-            >
-              <Plus className="w-4 h-4 text-gray-400" />
-            </button>
+            {/* Interface de Conexão Integrada */}
+            {connectedAccounts.length === 0 && (
+              <div className="p-4 rounded-lg glass-3d-light border-2 border-dashed border-gray-500/30">
+                <div className="text-center mb-4">
+                  <h4 className={cn("text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                    Conecte suas contas de redes sociais
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    Conecte Facebook e Instagram para publicar diretamente
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Facebook */}
+                  <Button
+                    onClick={() => handleConnectAccount('facebook', '', { name: 'Página Facebook', username: '@facebook' })}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                    data-testid="button-connect-facebook"
+                  >
+                    <FacebookIcon className="w-4 h-4" />
+                    Conectar Facebook
+                  </Button>
+                  
+                  {/* Instagram */}
+                  <Button
+                    onClick={() => handleConnectAccount('instagram', '', { name: 'Perfil Instagram', username: '@instagram' })}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex items-center gap-2"
+                    data-testid="button-connect-instagram"
+                  >
+                    <InstagramIcon className="w-4 h-4" />
+                    Conectar Instagram
+                  </Button>
+                </div>
+                
+                <div className="mt-3 text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadConnectedAccounts}
+                    disabled={isLoadingAccounts}
+                    className="glass-button-3d"
+                    data-testid="button-refresh-accounts"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                    {isLoadingAccounts ? 'Carregando...' : 'Atualizar'}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Adicionar mais contas se já existem algumas */}
+            {connectedAccounts.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleConnectAccount('facebook', '', { name: 'Nova Página', username: '@nova' })}
+                  className="glass-button-3d flex items-center gap-1"
+                  data-testid="button-add-facebook"
+                >
+                  <FacebookIcon className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleConnectAccount('instagram', '', { name: 'Novo Perfil', username: '@novo' })}
+                  className="glass-button-3d flex items-center gap-1"
+                  data-testid="button-add-instagram"
+                >
+                  <InstagramIcon className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
