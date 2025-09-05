@@ -952,15 +952,25 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
+      console.log('🔄 Enviando dados da campanha:', campaignData);
       const response = await fetch('/api/social-media/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(campaignData),
       });
-      if (!response.ok) throw new Error(`Failed to create campaign: ${response.statusText}`);
-      return response.json();
+      console.log('📡 Status da resposta:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erro na criação:', errorText);
+        throw new Error(`Failed to create campaign: ${response.statusText}`);
+      }
+      const result = await response.json();
+      console.log('✅ Campanha criada com sucesso:', result);
+      return result;
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      console.log('🎉 onSuccess executado:', data);
+      
       // Força o recarregamento da lista de campanhas
       await refetchCampaigns();
       
@@ -970,12 +980,20 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       setShowCampaignModal(false);
       setCampaignName('');
       setCampaignDescription('');
-      setCampaignType('organic');
+      setCampaignType('');
       toast({
         title: "Campanha criada!",
         description: "Sua nova campanha foi criada com sucesso.",
       });
     },
+    onError: (error: any) => {
+      console.error('❌ Erro na mutation:', error);
+      toast({
+        title: "Erro ao criar campanha",
+        description: error.message || "Ocorreu um erro inesperado.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Generate contextual suggestions based on user's content
@@ -2655,22 +2673,26 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 <select 
                   value={campaignType} 
                   onChange={(e) => setCampaignType(e.target.value)}
-                  className="glass-button-3d w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 backdrop-blur-lg focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                  className="glass-button-3d w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 backdrop-blur-lg focus:outline-none focus:ring-2 focus:ring-blue-400/50 text-white"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                    color: 'white',
+                  }}
                   data-testid="select-campaign-type"
                 >
-                  <option value="" disabled>Selecionar objetivo...</option>
-                  <option value="awareness">🎯 Reconhecimento - Alcance e impressões</option>
-                  <option value="traffic">🔗 Tráfego - Cliques no link</option>
-                  <option value="engagement">❤️ Interação - Curtidas, comentários, compartilhamentos</option>
-                  <option value="leads">📝 Geração de cadastro - Leads e formulários</option>
-                  <option value="app_promotion">📱 Promoção do app - Instalações e ações no app</option>
-                  <option value="sales">💰 Vendas - Conversões e valor de conversão</option>
-                  <option value="reach">👥 Alcance - Alcançar o máximo de pessoas únicas</option>
-                  <option value="brand_awareness">✨ Reconhecimento da marca - Lembrança da marca</option>
-                  <option value="video_views">📹 Visualizações de vídeo - Pessoas que assistem vídeos</option>
-                  <option value="messages">💬 Mensagens - Conversas no Messenger/WhatsApp</option>
-                  <option value="conversion">🎊 Conversão - Ações específicas no site</option>
-                  <option value="store_visits">🏪 Visitas à loja - Pessoas que visitam loja física</option>
+                  <option value="" disabled style={{ backgroundColor: '#1a1a2e', color: '#888' }}>Selecionar objetivo...</option>
+                  <option value="awareness" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>🎯 Reconhecimento - Alcance e impressões</option>
+                  <option value="traffic" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>🔗 Tráfego - Cliques no link</option>
+                  <option value="engagement" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>❤️ Interação - Curtidas, comentários, compartilhamentos</option>
+                  <option value="leads" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>📝 Geração de cadastro - Leads e formulários</option>
+                  <option value="app_promotion" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>📱 Promoção do app - Instalações e ações no app</option>
+                  <option value="sales" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>💰 Vendas - Conversões e valor de conversão</option>
+                  <option value="reach" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>👥 Alcance - Alcançar o máximo de pessoas únicas</option>
+                  <option value="brand_awareness" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>✨ Reconhecimento da marca - Lembrança da marca</option>
+                  <option value="video_views" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>📹 Visualizações de vídeo - Pessoas que assistem vídeos</option>
+                  <option value="messages" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>💬 Mensagens - Conversas no Messenger/WhatsApp</option>
+                  <option value="conversion" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>🎊 Conversão - Ações específicas no site</option>
+                  <option value="store_visits" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>🏪 Visitas à loja - Pessoas que visitam loja física</option>
                 </select>
               </div>
 
