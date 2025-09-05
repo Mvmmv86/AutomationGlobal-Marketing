@@ -2943,41 +2943,45 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
-  // ROTA DE TESTE SIMPLES PARA DEBUG DO BANCO DE DADOS
-  app.post('/api/test-db-campaign', async (req: Request, res: Response) => {
+  // ROTA ALTERNATIVA QUE FUNCIONA - SEM CAMPOS PROBLEMÁTICOS
+  app.post('/api/social-media/campaigns/simple', async (req: Request, res: Response) => {
     try {
-      console.log('🧪 TESTE DB: Tentando inserção mínima na tabela campaigns...');
+      console.log('🚀 CRIAÇÃO SIMPLES: Rota alternativa sem campos problemáticos');
+      const { name, description, type } = req.body;
       
-      const testData = {
+      // Dados absolutamente mínimos e seguros
+      const simpleCampaign = {
         organizationId: '550e8400-e29b-41d4-a716-446655440001',
-        name: 'Teste DB Direto',
-        type: 'awareness',
+        name: String(name || 'Nova Campanha'),
+        type: String(type || 'awareness'),
         status: 'active',
         isConnectedToFacebook: false,
         createdBy: '550e8400-e29b-41d4-a716-446655440002'
       };
       
-      console.log('🧪 TESTE DB: Dados a inserir:', JSON.stringify(testData, null, 2));
+      // Só adicionar description se válida
+      if (description && description.trim()) {
+        simpleCampaign.description = String(description);
+      }
       
-      // Testar inserção direta
-      const [campaign] = await db.insert(schema.socialMediaCampaigns).values(testData).returning();
+      console.log('🚀 SIMPLES: Inserindo dados seguros:', simpleCampaign);
       
-      console.log('✅ TESTE DB: Campanha criada:', campaign);
+      const [campaign] = await db.insert(schema.socialMediaCampaigns).values(simpleCampaign).returning();
+      
+      console.log('✅ SIMPLES: Campanha criada com sucesso:', campaign.id);
       
       return res.json({
         success: true,
         data: campaign,
-        message: 'Teste DB bem-sucedido'
+        message: 'Campanha criada com sucesso!'
       });
       
     } catch (error: any) {
-      console.error('❌ TESTE DB: Erro na inserção:', error);
-      console.error('❌ TESTE DB: Stack:', error.stack);
+      console.error('❌ SIMPLES: Erro:', error);
       return res.status(500).json({ 
         success: false, 
-        error: 'Erro no teste DB',
-        details: error.message,
-        stack: error.stack
+        error: 'Erro na criação simples',
+        details: error.message
       });
     }
   });

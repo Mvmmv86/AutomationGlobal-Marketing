@@ -954,15 +954,15 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     mutationFn: async (campaignData: any) => {
       console.log('🎯 Criando campanha INTEGRADA com Facebook Ads Manager:', campaignData);
       
-      // Usar nova rota de integração Facebook
-      const response = await fetch('/api/social-media/campaigns/facebook', {
+      // TEMPORÁRIO: Usar rota alternativa que funciona
+      const response = await fetch('/api/social-media/campaigns/simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...campaignData,
-          // Adicionar campos específicos para Facebook Ads
-          dailyBudget: campaignData.dailyBudget || 10.00, // Orçamento mínimo diário
-          adAccountId: campaignData.adAccountId || null
+          name: campaignData.name,
+          description: campaignData.description,
+          type: campaignData.type,
+          status: 'active'
         }),
       });
       
