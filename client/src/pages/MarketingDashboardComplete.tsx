@@ -1248,7 +1248,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType : 'feed',
         status: 'draft',
         publishMode: 'manual',
-        campaignId: selectedCampaign || null // Inclui o ID da campanha selecionada
+        campaignId: selectedCampaign === "none" ? null : selectedCampaign // Inclui o ID da campanha selecionada
       };
 
       const response = await fetch('/api/social-media/posts', {
@@ -1319,7 +1319,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         publishMode,
         scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
         status: publishMode === 'draft' ? 'draft' : 'draft',
-        campaignId: selectedCampaign || null // Inclui o ID da campanha selecionada
+        campaignId: selectedCampaign === "none" ? null : selectedCampaign // Inclui o ID da campanha selecionada
       };
 
       const response = await fetch('/api/social-media/posts', {
@@ -1578,7 +1578,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                   <SelectValue placeholder="Selecionar campanha..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">📝 Sem campanha (post avulso)</SelectItem>
+                  <SelectItem value="none">📝 Sem campanha (post avulso)</SelectItem>
                   {campaigns.map((campaign: any) => (
                     <SelectItem key={campaign.id} value={campaign.id}>
                       <div className="flex items-center gap-2">
@@ -1594,7 +1594,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 </SelectContent>
               </Select>
               
-              {selectedCampaign && (
+              {selectedCampaign && selectedCampaign !== "none" && (
                 <Badge variant="secondary" className="gradient-purple-blue text-white">
                   {campaigns.find((c: any) => c.id === selectedCampaign)?.type?.toUpperCase()}
                 </Badge>
@@ -1615,7 +1615,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             </div>
           </div>
           
-          {selectedCampaign && (
+          {selectedCampaign && selectedCampaign !== "none" && (
             <div className="mt-3 pt-3 border-t border-white/10">
               <p className="text-sm text-gray-400">
                 {campaigns.find((c: any) => c.id === selectedCampaign)?.description}
