@@ -2943,6 +2943,45 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
+  // ROTA DE TESTE SIMPLES PARA DEBUG DO BANCO DE DADOS
+  app.post('/api/test-db-campaign', async (req: Request, res: Response) => {
+    try {
+      console.log('🧪 TESTE DB: Tentando inserção mínima na tabela campaigns...');
+      
+      const testData = {
+        organizationId: '550e8400-e29b-41d4-a716-446655440001',
+        name: 'Teste DB Direto',
+        type: 'awareness',
+        status: 'active',
+        isConnectedToFacebook: false,
+        createdBy: '550e8400-e29b-41d4-a716-446655440002'
+      };
+      
+      console.log('🧪 TESTE DB: Dados a inserir:', JSON.stringify(testData, null, 2));
+      
+      // Testar inserção direta
+      const [campaign] = await db.insert(schema.socialMediaCampaigns).values(testData).returning();
+      
+      console.log('✅ TESTE DB: Campanha criada:', campaign);
+      
+      return res.json({
+        success: true,
+        data: campaign,
+        message: 'Teste DB bem-sucedido'
+      });
+      
+    } catch (error: any) {
+      console.error('❌ TESTE DB: Erro na inserção:', error);
+      console.error('❌ TESTE DB: Stack:', error.stack);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Erro no teste DB',
+        details: error.message,
+        stack: error.stack
+      });
+    }
+  });
+
   // Modificar rota de criação de campanha para usar integração Facebook
   app.post('/api/social-media/campaigns/facebook', async (req: Request, res) => {
     try {

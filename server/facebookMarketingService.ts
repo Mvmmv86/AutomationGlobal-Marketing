@@ -63,20 +63,28 @@ export class FacebookMarketingService {
         console.log('⚠️ Facebook não conectado - criando campanha local');
         console.log('📋 Dados recebidos:', { organizationId, name, description, type, userId });
         
-        // Dados mínimos essenciais apenas - sem campos opcionais que podem dar erro
-        const campaignData = {
-          organizationId: '550e8400-e29b-41d4-a716-446655440001',
-          name: name || 'Nova Campanha',
-          type: type || 'awareness',
-          status: 'active',
-          isConnectedToFacebook: false,
-          createdBy: '550e8400-e29b-41d4-a716-446655440002',
-        };
+        // Criar objeto com valores completamente seguros (sem undefined)
+        const campaignData: any = {};
         
-        // Só adicionar description se existir e não for vazia
-        if (description && description.trim()) {
-          campaignData.description = description;
+        // Campos obrigatórios com valores padrão seguros
+        campaignData.organizationId = String(organizationId || '550e8400-e29b-41d4-a716-446655440001');
+        campaignData.name = String(name || 'Nova Campanha Local');
+        campaignData.type = String(type || 'awareness');
+        campaignData.status = 'active';
+        campaignData.isConnectedToFacebook = false;
+        campaignData.createdBy = String(userId || '550e8400-e29b-41d4-a716-446655440002');
+        
+        // Campos opcionais apenas se tiverem valor real
+        if (description && String(description).trim()) {
+          campaignData.description = String(description);
         }
+        
+        // Limpar qualquer valor undefined que possa existir
+        Object.keys(campaignData).forEach(key => {
+          if (campaignData[key] === undefined) {
+            delete campaignData[key];
+          }
+        });
         
         console.log('📊 Inserindo campanha com dados:', JSON.stringify(campaignData, null, 2));
         
@@ -114,30 +122,46 @@ export class FacebookMarketingService {
         accessToken
       );
 
-      // 6. Salvar campanha na plataforma com ID do Facebook
-      const campaignValues: any = {
-        organizationId: organizationId || '550e8400-e29b-41d4-a716-446655440001',
-        name: name || 'Campanha Facebook',
-        description: description || null,
-        type: type || 'awareness',
-        status: 'active',
-        facebookCampaignId: facebookResponse.id,
-        facebookAdAccountId: adAccountId || facebookAccount.accountData?.ad_accounts?.[0]?.id,
-        facebookStatus: facebookResponse.status,
-        facebookObjective: facebookObjective,
-        isConnectedToFacebook: true,
-        lastSyncAt: new Date(),
-        facebookMetadata: facebookResponse || {},
-        createdBy: userId || '550e8400-e29b-41d4-a716-446655440002',
-      };
+      // 6. Salvar campanha na plataforma com ID do Facebook - dados seguros
+      const campaignValues: any = {};
       
-      // Só adicionar budgets se tiverem valores válidos
-      if (dailyBudget && !isNaN(parseFloat(dailyBudget))) {
-        campaignValues.dailyBudget = dailyBudget.toString();
+      // Campos obrigatórios com conversão segura
+      campaignValues.organizationId = String(organizationId || '550e8400-e29b-41d4-a716-446655440001');
+      campaignValues.name = String(name || 'Campanha Facebook');
+      campaignValues.type = String(type || 'awareness');
+      campaignValues.status = 'active';
+      campaignValues.isConnectedToFacebook = true;
+      campaignValues.createdBy = String(userId || '550e8400-e29b-41d4-a716-446655440002');
+      
+      // Campos Facebook obrigatórios
+      campaignValues.facebookCampaignId = String(facebookResponse.id);
+      campaignValues.facebookAdAccountId = String(adAccountId || facebookAccount.accountData?.ad_accounts?.[0]?.id || '');
+      campaignValues.facebookStatus = String(facebookResponse.status || 'ACTIVE');
+      campaignValues.facebookObjective = String(facebookObjective);
+      campaignValues.lastSyncAt = new Date();
+      campaignValues.facebookMetadata = facebookResponse || {};
+      
+      // Campos opcionais apenas se válidos
+      if (description && String(description).trim()) {
+        campaignValues.description = String(description);
       }
-      if (totalBudget && !isNaN(parseFloat(totalBudget))) {
-        campaignValues.totalBudget = totalBudget.toString();
+      
+      if (dailyBudget && !isNaN(parseFloat(String(dailyBudget)))) {
+        campaignValues.dailyBudget = String(dailyBudget);
       }
+      
+      if (totalBudget && !isNaN(parseFloat(String(totalBudget)))) {
+        campaignValues.totalBudget = String(totalBudget);
+      }
+      
+      // Limpar qualquer undefined residual
+      Object.keys(campaignValues).forEach(key => {
+        if (campaignValues[key] === undefined) {
+          delete campaignValues[key];
+        }
+      });
+      
+      console.log('📊 Facebook Campaign Data:', JSON.stringify(campaignValues, null, 2));
 
       const [campaign] = await db.insert(socialMediaCampaigns).values(campaignValues).returning();
 
