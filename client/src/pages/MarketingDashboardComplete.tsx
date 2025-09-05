@@ -1579,7 +1579,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">📝 Sem campanha (post avulso)</SelectItem>
-                  {campaigns.map((campaign: any) => (
+                  {(Array.isArray(campaigns) ? campaigns : []).map((campaign: any) => (
                     <SelectItem key={campaign.id} value={campaign.id}>
                       <div className="flex items-center gap-2">
                         {campaign.type === 'organic' && '🌱'}
@@ -1596,7 +1596,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               
               {selectedCampaign && selectedCampaign !== "none" && (
                 <Badge variant="secondary" className="gradient-purple-blue text-white">
-                  {campaigns.find((c: any) => c.id === selectedCampaign)?.type?.toUpperCase()}
+                  {(Array.isArray(campaigns) ? campaigns : []).find((c: any) => c.id === selectedCampaign)?.type?.toUpperCase()}
                 </Badge>
               )}
             </div>
@@ -1618,7 +1618,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
           {selectedCampaign && selectedCampaign !== "none" && (
             <div className="mt-3 pt-3 border-t border-white/10">
               <p className="text-sm text-gray-400">
-                {campaigns.find((c: any) => c.id === selectedCampaign)?.description}
+                {(Array.isArray(campaigns) ? campaigns : []).find((c: any) => c.id === selectedCampaign)?.description}
               </p>
             </div>
           )}
