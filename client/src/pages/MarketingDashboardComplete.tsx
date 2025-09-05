@@ -913,6 +913,9 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   
+  // Query client para invalidação de cache
+  const queryClient = useQueryClient();
+
   // Estados para campanhas
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState('');
@@ -951,8 +954,13 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       if (!response.ok) throw new Error(`Failed to create campaign: ${response.statusText}`);
       return response.json();
     },
-    onSuccess: () => {
-      refetchCampaigns();
+    onSuccess: async () => {
+      // Força o recarregamento da lista de campanhas
+      await refetchCampaigns();
+      
+      // Invalida o cache do react-query para garantir atualização
+      queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] });
+      
       setShowCampaignModal(false);
       setCampaignName('');
       setCampaignDescription('');
