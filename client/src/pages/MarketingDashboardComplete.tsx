@@ -920,7 +920,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState('');
   const [campaignDescription, setCampaignDescription] = useState('');
-  const [campaignType, setCampaignType] = useState<string>('awareness');
+  const [campaignType, setCampaignType] = useState<string>('');
   
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: InstagramIcon, color: 'from-pink-500 to-purple-500' },
@@ -2652,25 +2652,26 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
                   Objetivo da Campanha
                 </label>
-                <Select value={campaignType} onValueChange={(value: string) => setCampaignType(value)}>
-                  <SelectTrigger className="glass-button-3d">
-                    <SelectValue placeholder="Selecionar objetivo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="awareness">🎯 Reconhecimento - Alcance e impressões</SelectItem>
-                    <SelectItem value="traffic">🔗 Tráfego - Cliques no link</SelectItem>
-                    <SelectItem value="engagement">❤️ Interação - Curtidas, comentários, compartilhamentos</SelectItem>
-                    <SelectItem value="leads">📝 Geração de cadastro - Leads e formulários</SelectItem>
-                    <SelectItem value="app_promotion">📱 Promoção do app - Instalações e ações no app</SelectItem>
-                    <SelectItem value="sales">💰 Vendas - Conversões e valor de conversão</SelectItem>
-                    <SelectItem value="reach">👥 Alcance - Alcançar o máximo de pessoas únicas</SelectItem>
-                    <SelectItem value="brand_awareness">✨ Reconhecimento da marca - Lembrança da marca</SelectItem>
-                    <SelectItem value="video_views">📹 Visualizações de vídeo - Pessoas que assistem vídeos</SelectItem>
-                    <SelectItem value="messages">💬 Mensagens - Conversas no Messenger/WhatsApp</SelectItem>
-                    <SelectItem value="conversion">🎊 Conversão - Ações específicas no site</SelectItem>
-                    <SelectItem value="store_visits">🏪 Visitas à loja - Pessoas que visitam loja física</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select 
+                  value={campaignType} 
+                  onChange={(e) => setCampaignType(e.target.value)}
+                  className="glass-button-3d w-full px-3 py-2 text-sm rounded-lg border border-white/10 bg-white/5 backdrop-blur-lg focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                  data-testid="select-campaign-type"
+                >
+                  <option value="" disabled>Selecionar objetivo...</option>
+                  <option value="awareness">🎯 Reconhecimento - Alcance e impressões</option>
+                  <option value="traffic">🔗 Tráfego - Cliques no link</option>
+                  <option value="engagement">❤️ Interação - Curtidas, comentários, compartilhamentos</option>
+                  <option value="leads">📝 Geração de cadastro - Leads e formulários</option>
+                  <option value="app_promotion">📱 Promoção do app - Instalações e ações no app</option>
+                  <option value="sales">💰 Vendas - Conversões e valor de conversão</option>
+                  <option value="reach">👥 Alcance - Alcançar o máximo de pessoas únicas</option>
+                  <option value="brand_awareness">✨ Reconhecimento da marca - Lembrança da marca</option>
+                  <option value="video_views">📹 Visualizações de vídeo - Pessoas que assistem vídeos</option>
+                  <option value="messages">💬 Mensagens - Conversas no Messenger/WhatsApp</option>
+                  <option value="conversion">🎊 Conversão - Ações específicas no site</option>
+                  <option value="store_visits">🏪 Visitas à loja - Pessoas que visitam loja física</option>
+                </select>
               </div>
 
               <div>
@@ -2708,6 +2709,15 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                     return;
                   }
                   
+                  if (!campaignType) {
+                    toast({
+                      title: "Objetivo obrigatório",
+                      description: "Por favor, selecione um objetivo para a campanha.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
                   createCampaignMutation.mutate({
                     name: campaignName.trim(),
                     description: campaignDescription.trim(),
@@ -2715,7 +2725,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                     status: 'active',
                   });
                 }}
-                disabled={createCampaignMutation.isPending || !campaignName.trim()}
+                disabled={createCampaignMutation.isPending || !campaignName.trim() || !campaignType}
                 className="gradient-purple-blue text-white"
                 data-testid="button-create-campaign-submit"
               >
