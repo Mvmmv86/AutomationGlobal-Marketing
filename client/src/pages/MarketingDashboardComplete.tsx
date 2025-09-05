@@ -941,6 +941,12 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   // Queries para campanhas
   const { data: campaigns = [], refetch: refetchCampaigns } = useQuery({
     queryKey: ['/api/social-media/campaigns'],
+    queryFn: async () => {
+      const response = await fetch('/api/social-media/campaigns');
+      if (!response.ok) throw new Error('Failed to fetch campaigns');
+      const data = await response.json();
+      return data.data || [];
+    },
     retry: false,
   });
 
