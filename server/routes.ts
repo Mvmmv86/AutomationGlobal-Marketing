@@ -2889,6 +2889,60 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // Publicar post diretamente no Facebook/Instagram
   app.post('/api/facebook/posts/publish', facebookService.publishPostToFacebook.bind(facebookService));
 
+  // Conectar conta Facebook OAuth (simplificado para desenvolvimento)
+  app.post('/api/facebook/connect', async (req: Request, res) => {
+    try {
+      const { accessToken, userId = '550e8400-e29b-41d4-a716-446655440002' } = req.body;
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+
+      console.log('🔗 Conectando conta Facebook...');
+
+      // Simular conta Facebook conectada para desenvolvimento
+      const [account] = await db.insert(socialMediaAccounts).values({
+        organizationId,
+        platform: 'facebook',
+        accountId: 'demo_page_123',
+        accountName: 'Página Demo Marketing',
+        accessToken: accessToken || 'demo_token_123',
+        refreshToken: null,
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias
+        isActive: true,
+        accountData: {
+          name: 'Página Demo Marketing',
+          id: 'demo_page_123',
+          access_token: accessToken || 'demo_token_123',
+          ad_accounts: [
+            { id: 'act_demo123', name: 'Conta de Anúncios Demo' }
+          ],
+          instagram_business_account: {
+            id: 'ig_demo123',
+            username: 'demo_marketing'
+          }
+        },
+        createdBy: userId,
+      }).returning();
+
+      console.log('✅ Conta Facebook conectada:', account.accountName);
+
+      res.json({
+        success: true,
+        message: 'Conta Facebook conectada com sucesso!',
+        account: {
+          name: account.accountName,
+          platform: account.platform,
+          connected: true
+        }
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao conectar Facebook:', error);
+      res.status(500).json({
+        error: 'Falha ao conectar conta Facebook',
+        details: error.message
+      });
+    }
+  });
+
   // Modificar rota de criação de campanha para usar integração Facebook
   app.post('/api/social-media/campaigns/facebook', async (req: Request, res) => {
     try {

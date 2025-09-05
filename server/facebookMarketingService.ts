@@ -59,9 +59,26 @@ export class FacebookMarketingService {
         ));
 
       if (!facebookAccount || !facebookAccount.accessToken) {
-        return res.status(400).json({
-          error: "Conta Facebook não conectada",
-          message: "Você precisa conectar uma conta Facebook primeiro para criar campanhas reais."
+        // Se não tem Facebook conectado, criar campanha local apenas
+        console.log('⚠️ Facebook não conectado - criando campanha local');
+        
+        const [campaign] = await db.insert(socialMediaCampaigns).values({
+          organizationId,
+          name,
+          description,
+          type,
+          status: 'active',
+          isConnectedToFacebook: false,
+          createdBy: userId,
+        }).returning();
+
+        return res.json({
+          success: true,
+          data: campaign,
+          facebook: {
+            connected: false,
+            message: "Campanha criada localmente. Conecte sua conta Facebook para sincronizar com o Ads Manager."
+          }
         });
       }
 
