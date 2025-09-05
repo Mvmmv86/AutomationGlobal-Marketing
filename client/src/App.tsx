@@ -26,6 +26,7 @@ import OrganizationsManagementComplete from "@/pages/organizations-management-co
 import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
+import CampaignsDashboard from "@/pages/CampaignsDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -50,6 +51,10 @@ function Router() {
       <Route path="/marketing" component={() => <MarketingDashboardComplete />} />
       <Route path="/marketing-complete/:id" component={MarketingDashboardComplete} />
       <Route path="/marketing-complete" component={() => <MarketingDashboardComplete />} />
+      
+      {/* Campaigns Dashboard - Facebook Ads integration and management */}
+      <Route path="/campaigns" component={CampaignsDashboard} />
+      <Route path="/campaigns-dashboard" component={CampaignsDashboard} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
