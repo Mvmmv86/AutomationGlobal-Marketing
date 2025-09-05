@@ -63,22 +63,20 @@ export class FacebookMarketingService {
         console.log('⚠️ Facebook não conectado - criando campanha local');
         
         const [campaign] = await db.insert(socialMediaCampaigns).values({
-          organizationId,
-          name,
-          description: description || '',
-          type,
+          organizationId: organizationId || '550e8400-e29b-41d4-a716-446655440001',
+          name: name || 'Campanha sem nome',
+          description: description || null,
+          type: type || 'awareness',
           status: 'active',
           isConnectedToFacebook: false,
           createdBy: userId || '550e8400-e29b-41d4-a716-446655440002',
-          // Garantir que todos os campos obrigatórios tenham valores válidos
+          // Garantir que campos decimais sejam explicitamente null (não undefined)
           facebookCampaignId: null,
           facebookAdAccountId: null,
           facebookStatus: null,
           facebookObjective: null,
-          dailyBudget: null,
-          totalBudget: null,
           lastSyncAt: null,
-          facebookMetadata: null,
+          facebookMetadata: {},
         }).returning();
 
         return res.json({
@@ -114,23 +112,31 @@ export class FacebookMarketingService {
       );
 
       // 6. Salvar campanha na plataforma com ID do Facebook
-      const [campaign] = await db.insert(socialMediaCampaigns).values({
-        organizationId,
-        name,
-        description: description || '',
-        type,
+      const campaignValues: any = {
+        organizationId: organizationId || '550e8400-e29b-41d4-a716-446655440001',
+        name: name || 'Campanha Facebook',
+        description: description || null,
+        type: type || 'awareness',
         status: 'active',
         facebookCampaignId: facebookResponse.id,
         facebookAdAccountId: adAccountId || facebookAccount.accountData?.ad_accounts?.[0]?.id,
         facebookStatus: facebookResponse.status,
         facebookObjective: facebookObjective,
-        dailyBudget: dailyBudget?.toString() || null,
-        totalBudget: totalBudget?.toString() || null,
         isConnectedToFacebook: true,
         lastSyncAt: new Date(),
-        facebookMetadata: facebookResponse,
+        facebookMetadata: facebookResponse || {},
         createdBy: userId || '550e8400-e29b-41d4-a716-446655440002',
-      }).returning();
+      };
+      
+      // Só adicionar budgets se tiverem valores válidos
+      if (dailyBudget && !isNaN(parseFloat(dailyBudget))) {
+        campaignValues.dailyBudget = dailyBudget.toString();
+      }
+      if (totalBudget && !isNaN(parseFloat(totalBudget))) {
+        campaignValues.totalBudget = totalBudget.toString();
+      }
+
+      const [campaign] = await db.insert(socialMediaCampaigns).values(campaignValues).returning();
 
       console.log('✅ Campanha criada no Facebook:', facebookResponse.id);
 
