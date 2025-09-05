@@ -56,7 +56,51 @@ import { useToast } from "@/hooks/use-toast";
 // Theme Context
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
 
+// Função para comprimir imagens e reduzir tamanho do payload
+const compressImage = (base64String: string, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    // Se não for base64 de imagem, retorna o original
+    if (!base64String || !base64String.startsWith('data:image/')) {
+      resolve(base64String);
+      return;
+    }
 
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        resolve(base64String);
+        return;
+      }
+
+      // Calcular novas dimensões mantendo proporção
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      const newWidth = img.width * ratio;
+      const newHeight = img.height * ratio;
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+
+      // Desenhar imagem redimensionada
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+      // Converter para base64 com qualidade reduzida
+      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+      console.log(`🖼️ Imagem comprimida: ${(base64String.length / 1024).toFixed(1)}KB → ${(compressedBase64.length / 1024).toFixed(1)}KB`);
+      
+      resolve(compressedBase64);
+    };
+
+    img.onerror = () => {
+      console.log('❌ Erro ao comprimir imagem, usando original');
+      resolve(base64String);
+    };
+
+    img.src = base64String;
+  });
+};
 
 interface MarketingMetrics {
   impressions: number;
@@ -1151,11 +1195,22 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
 
     try {
+      // Comprimir imagens para rascunhos também
+      const compressedMediaItems = await Promise.all(
+        mediaItems.map(async (item) => {
+          if (item.url && item.url.startsWith('data:image/')) {
+            const compressedUrl = await compressImage(item.url, 800, 0.7);
+            return { ...item, url: compressedUrl };
+          }
+          return item;
+        })
+      );
+
       const draftData = {
         content,
-        mediaItems: mediaItems,
+        mediaItems: compressedMediaItems, // Usando imagens comprimidas
         selectedAccounts,
-        mediaType: mediaItems.length > 0 ? mediaItems[0].mediaType : 'feed',
+        mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType : 'feed',
         status: 'draft',
         publishMode: 'manual'
       };
@@ -1206,13 +1261,25 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     setShowPreviewModal(false);
     setIsPublishing(true);
     try {
+      // Comprimir imagens antes de enviar
+      console.log('🔧 Comprimindo imagens antes do envio...');
+      const compressedMediaItems = await Promise.all(
+        mediaItems.map(async (item) => {
+          if (item.url && item.url.startsWith('data:image/')) {
+            const compressedUrl = await compressImage(item.url, 800, 0.7);
+            return { ...item, url: compressedUrl };
+          }
+          return item;
+        })
+      );
+
       const postData = {
         title: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
         content,
         mediaUrls: uploadedMedia.map(media => media.url || ''),
-        mediaItems: mediaItems,
+        mediaItems: compressedMediaItems, // Usando imagens comprimidas
         selectedAccounts: selectedAccounts,
-        mediaType: mediaItems.length > 0 ? mediaItems[0].mediaType || 'feed' : 'feed',
+        mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType || 'feed' : 'feed',
         publishMode,
         scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
         status: publishMode === 'draft' ? 'draft' : 'draft'
@@ -2368,21 +2435,21 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 </h4>
                 <div className="space-y-2">
                   <Button
-                    onClick={() => handleConnectAccount('instagram', '', { name: 'Perfil Principal', username: '@empresa' })}
+                    onClick={() => handleOAuthLogin('facebook')}
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                     data-testid="button-connect-instagram-main"
                   >
                     <InstagramIcon className="w-4 h-4 mr-2" />
-                    Conectar Perfil Principal
+                    🔗 OAuth Instagram Real
                   </Button>
                   <Button
-                    onClick={() => handleConnectAccount('instagram', '', { name: 'Perfil Comercial', username: '@empresacomercial' })}
+                    onClick={() => handleOAuthLogin('facebook')}
                     variant="outline"
                     className="w-full"
                     data-testid="button-connect-instagram-business"
                   >
                     <InstagramIcon className="w-4 h-4 mr-2" />
-                    Conectar Perfil Comercial
+                    🔐 Conta Comercial Real
                   </Button>
                 </div>
               </div>
