@@ -164,7 +164,8 @@ export class SocialMediaService {
         mediaType = 'feed',
         publishMode = 'manual', // 'manual', 'auto', 'scheduled'
         scheduledAt,
-        status = 'draft'
+        status = 'draft',
+        campaignId // Campo que estava faltando!
       } = req.body;
 
       const organizationId = req.headers['x-organization-id'] as string || 'temp-org-id';
@@ -203,6 +204,7 @@ export class SocialMediaService {
         publishMode,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         createdBy: userId,
+        campaignId: campaignId || null, // Campo que estava faltando! Garantir null se undefined
       }).returning();
 
       // If auto-publish or immediate publish mode, publish immediately
