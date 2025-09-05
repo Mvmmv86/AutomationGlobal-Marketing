@@ -61,23 +61,26 @@ export class FacebookMarketingService {
       if (!facebookAccount || !facebookAccount.accessToken) {
         // Se não tem Facebook conectado, criar campanha local apenas
         console.log('⚠️ Facebook não conectado - criando campanha local');
+        console.log('📋 Dados recebidos:', { organizationId, name, description, type, userId });
         
-        const [campaign] = await db.insert(socialMediaCampaigns).values({
-          organizationId: organizationId || '550e8400-e29b-41d4-a716-446655440001',
-          name: name || 'Campanha sem nome',
-          description: description || null,
+        // Dados mínimos essenciais apenas - sem campos opcionais que podem dar erro
+        const campaignData = {
+          organizationId: '550e8400-e29b-41d4-a716-446655440001',
+          name: name || 'Nova Campanha',
           type: type || 'awareness',
           status: 'active',
           isConnectedToFacebook: false,
-          createdBy: userId || '550e8400-e29b-41d4-a716-446655440002',
-          // Garantir que campos decimais sejam explicitamente null (não undefined)
-          facebookCampaignId: null,
-          facebookAdAccountId: null,
-          facebookStatus: null,
-          facebookObjective: null,
-          lastSyncAt: null,
-          facebookMetadata: {},
-        }).returning();
+          createdBy: '550e8400-e29b-41d4-a716-446655440002',
+        };
+        
+        // Só adicionar description se existir e não for vazia
+        if (description && description.trim()) {
+          campaignData.description = description;
+        }
+        
+        console.log('📊 Inserindo campanha com dados:', JSON.stringify(campaignData, null, 2));
+        
+        const [campaign] = await db.insert(socialMediaCampaigns).values(campaignData).returning();
 
         return res.json({
           success: true,
