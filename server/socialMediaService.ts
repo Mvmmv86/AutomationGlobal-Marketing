@@ -208,12 +208,21 @@ export class SocialMediaService {
         try {
           const published = await this.publishPostToSocialMedia(post.id);
           if (published) {
+            // Preparar dados seguros para update - sem undefined
+            const updateData: any = {
+              status: 'published',
+              publishedAt: new Date()
+            };
+            
+            // Só adicionar platformData se existir e não for undefined
+            if (published.platformData && typeof published.platformData === 'object') {
+              updateData.platformData = published.platformData;
+            } else {
+              updateData.platformData = {};
+            }
+            
             await db.update(socialMediaPosts)
-              .set({ 
-                status: 'published',
-                publishedAt: new Date(),
-                platformData: published.platformData 
-              })
+              .set(updateData)
               .where(eq(socialMediaPosts.id, post.id));
           }
         } catch (publishError) {
@@ -303,12 +312,23 @@ export class SocialMediaService {
       const result = await this.publishPostToSocialMedia(postId);
       
       if (result.success) {
+        // Preparar dados seguros para update - sem undefined
+        const updateData: any = {
+          status: 'published',
+          publishedAt: new Date()
+        };
+        
+        // Só adicionar platformData se existir e não for undefined
+        if (result.platformData && typeof result.platformData === 'object') {
+          updateData.platformData = result.platformData;
+        } else {
+          updateData.platformData = {};
+        }
+        
+        console.log('📊 Update post data:', JSON.stringify(updateData, null, 2));
+        
         await db.update(socialMediaPosts)
-          .set({ 
-            status: 'published',
-            publishedAt: new Date(),
-            platformData: result.platformData 
-          })
+          .set(updateData)
           .where(and(
             eq(socialMediaPosts.id, postId),
             eq(socialMediaPosts.organizationId, organizationId)
