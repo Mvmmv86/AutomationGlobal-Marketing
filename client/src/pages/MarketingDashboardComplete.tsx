@@ -1360,7 +1360,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType || 'feed' : 'feed',
         publishMode,
         scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
-        status: publishMode === 'draft' ? 'draft' : 'draft',
+        status: publishMode === 'draft' ? 'draft' : publishMode === 'schedule' ? 'scheduled' : 'published', // Para publishMode === 'now', definir como published para que o backend processe
         campaignId: selectedCampaign === "none" ? null : selectedCampaign // Inclui o ID da campanha selecionada
       };
 

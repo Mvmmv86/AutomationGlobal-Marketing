@@ -176,6 +176,8 @@ export class SocialMediaService {
         finalStatus = 'scheduled';
       } else if (publishMode === 'auto') {
         finalStatus = 'draft'; // Will be updated to 'published' later if successful
+      } else if (publishMode === 'now' || status === 'published') {
+        finalStatus = 'published'; // Publicar imediatamente
       }
 
       console.log('💾 Salvando post:', {
@@ -203,8 +205,8 @@ export class SocialMediaService {
         createdBy: userId,
       }).returning();
 
-      // If auto-publish mode and account has valid token, publish immediately
-      if (publishMode === 'auto' && accountId) {
+      // If auto-publish or immediate publish mode, publish immediately
+      if ((publishMode === 'auto' || publishMode === 'now' || finalStatus === 'published') && (accountId || selectedAccounts?.length > 0)) {
         try {
           const published = await this.publishPostToSocialMedia(post.id);
           if (published) {
