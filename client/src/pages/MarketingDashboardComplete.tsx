@@ -1005,7 +1005,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     try {
       const response = await fetch('/api/social-media/accounts', {
         headers: {
-          'x-organization-id': 'temp-org-id'
+          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001'
         }
       });
 
@@ -1060,8 +1060,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-organization-id': 'temp-org-id',
-          'x-user-id': 'temp-user-id'
+          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001',
+          'x-user-id': '550e8400-e29b-41d4-a716-446655440002'
         },
         body: JSON.stringify({
           platform,
@@ -1098,8 +1098,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-organization-id': 'temp-org-id',
-          'x-user-id': 'temp-user-id'
+          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001',
+          'x-user-id': '550e8400-e29b-41d4-a716-446655440002'
         },
         body: JSON.stringify({
           platform,
@@ -1164,8 +1164,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-organization-id': 'temp-org-id',
-          'x-user-id': 'temp-user-id'
+          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001',
+          'x-user-id': '550e8400-e29b-41d4-a716-446655440002'
         },
         body: JSON.stringify(draftData)
       });
@@ -1222,7 +1222,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-organization-id': 'current-org-id' // TODO: Get from context
+          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001' // TODO: Get from context
         },
         body: JSON.stringify(postData)
       });
@@ -1279,7 +1279,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       const response = await fetch(`/api/social-media/posts/${postId}/publish`, {
         method: 'POST',
         headers: {
-          'x-organization-id': 'current-org-id' // TODO: Get from context
+          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001' // TODO: Get from context
         }
       });
       const result = await response.json();
