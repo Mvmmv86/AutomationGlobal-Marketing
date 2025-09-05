@@ -1686,7 +1686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Endpoint for saving posts (draft or published) usando Drizzle ORM
+  // Endpoint for saving posts (draft or published) usando Drizzle ORM + INTEGRAÇÃO FACEBOOK
   app.post('/api/social-media/posts', async (req: Request, res) => {
     try {
       const { content, mediaItems, selectedAccounts, mediaType, status, publishMode, scheduledAt } = req.body;
@@ -1749,11 +1749,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message = 'Post agendado!';
       }
       
+      // 🎯 INTEGRAÇÃO AUTOMÁTICA COM FACEBOOK - INVISÍVEL PARA O USUÁRIO
+      let facebookStatus = null;
+      if (finalStatus === 'published' && selectedAccounts?.includes('facebook')) {
+        try {
+          console.log('🚀 Publicando automaticamente no Facebook...');
+          
+          const facebookResponse = await fetch('http://localhost:5000/api/facebook/posts/publish', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-organization-id': '550e8400-e29b-41d4-a716-446655440001'
+            },
+            body: JSON.stringify({
+              content,
+              mediaUrls: mediaItems?.map(item => item.url).filter(Boolean) || [],
+              platforms: ['facebook', 'instagram'].filter(p => selectedAccounts?.includes(p)),
+              campaignId: null
+            })
+          });
+
+          if (facebookResponse.ok) {
+            const fbResult = await facebookResponse.json();
+            facebookStatus = '✅ Publicado no Facebook/Instagram';
+            console.log('✅ Post publicado no Facebook:', fbResult.published);
+          }
+        } catch (fbError) {
+          console.warn('⚠️ Falha na publicação Facebook:', fbError.message);
+          facebookStatus = '⚠️ Falha no Facebook (salvo localmente)';
+        }
+      }
+
       res.json({ 
         success: true, 
-        message: message,
+        message: facebookStatus ? `${message} ${facebookStatus}` : message,
         id: savedPost.id,
-        status: finalStatus
+        status: finalStatus,
+        facebook: facebookStatus
       });
     } catch (error: any) {
       console.error('❌ Erro ao salvar post:', error);
@@ -2838,6 +2870,79 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     } catch (error: any) {
       console.error('❌ Erro ao excluir campanha:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ==================== FACEBOOK MARKETING INTEGRATION ==================== 
+  const { FacebookMarketingService } = await import('./facebookMarketingService');
+  const facebookService = new FacebookMarketingService();
+
+  // Criar campanha REAL no Facebook Ads Manager
+  app.post('/api/facebook/campaigns/create', facebookService.createFacebookCampaign.bind(facebookService));
+  
+  // Sincronizar campanhas existentes do Facebook para a plataforma
+  app.post('/api/facebook/campaigns/sync', facebookService.syncFacebookCampaigns.bind(facebookService));
+  
+  // Obter contas de anúncios do Facebook
+  app.get('/api/facebook/ad-accounts', facebookService.getFacebookAdAccounts.bind(facebookService));
+  
+  // Publicar post diretamente no Facebook/Instagram
+  app.post('/api/facebook/posts/publish', facebookService.publishPostToFacebook.bind(facebookService));
+
+  // Modificar rota de criação de campanha para usar integração Facebook
+  app.post('/api/social-media/campaigns/facebook', async (req: Request, res) => {
+    try {
+      console.log('🎯 Criando campanha integrada com Facebook Ads Manager');
+      
+      // Redirecionar para o serviço de integração Facebook
+      return await facebookService.createFacebookCampaign(req, res);
+    } catch (error) {
+      console.error('❌ Erro na integração Facebook:', error);
+      res.status(500).json({
+        error: 'Falha na integração com Facebook',
+        message: 'Verifique se a conta Facebook está conectada corretamente'
+      });
+    }
+  });
+
+  // Status de integração Facebook
+  app.get('/api/facebook/integration-status', async (req: Request, res) => {
+    try {
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+      
+      // Verificar se há conta Facebook conectada
+      const [facebookAccount] = await db
+        .select()
+        .from(schema.socialMediaAccounts)
+        .where(and(
+          eq(schema.socialMediaAccounts.organizationId, organizationId),
+          eq(schema.socialMediaAccounts.platform, 'facebook'),
+          eq(schema.socialMediaAccounts.isActive, true)
+        ));
+
+      const isConnected = !!facebookAccount;
+      
+      res.json({
+        success: true,
+        connected: isConnected,
+        account: isConnected ? {
+          name: facebookAccount.accountName,
+          handle: facebookAccount.accountHandle,
+          connectedAt: facebookAccount.connectedAt
+        } : null,
+        integration: {
+          campaigns: true,
+          posts: true,
+          analytics: true,
+          adAccounts: true
+        },
+        message: isConnected 
+          ? 'Facebook totalmente integrado e funcional'
+          : 'Conecte sua conta Facebook para ativar integração completa'
+      });
+    } catch (error) {
+      console.error('❌ Erro ao verificar status Facebook:', error);
+      res.status(500).json({ error: 'Falha ao verificar integração' });
     }
   });
 

@@ -952,20 +952,30 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
-      console.log('🔄 Enviando dados da campanha:', campaignData);
-      const response = await fetch('/api/social-media/campaigns', {
+      console.log('🎯 Criando campanha INTEGRADA com Facebook Ads Manager:', campaignData);
+      
+      // Usar nova rota de integração Facebook
+      const response = await fetch('/api/social-media/campaigns/facebook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(campaignData),
+        body: JSON.stringify({
+          ...campaignData,
+          // Adicionar campos específicos para Facebook Ads
+          dailyBudget: campaignData.dailyBudget || 10.00, // Orçamento mínimo diário
+          adAccountId: campaignData.adAccountId || null
+        }),
       });
-      console.log('📡 Status da resposta:', response.status);
+      
+      console.log('📡 Status da integração Facebook:', response.status);
+      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Erro na criação:', errorText);
-        throw new Error(`Failed to create campaign: ${response.statusText}`);
+        const errorData = await response.json();
+        console.error('❌ Erro na integração Facebook:', errorData);
+        throw new Error(errorData.message || `Failed to create Facebook campaign: ${response.statusText}`);
       }
+      
       const result = await response.json();
-      console.log('✅ Campanha criada com sucesso:', result);
+      console.log('✅ Campanha criada no Facebook Ads Manager:', result);
       return result;
     },
     onSuccess: async (data) => {
@@ -982,8 +992,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       setCampaignDescription('');
       setCampaignType('');
       toast({
-        title: "Campanha criada!",
-        description: "Sua nova campanha foi criada com sucesso.",
+        title: "🎯 Campanha criada no Facebook Ads!",
+        description: `Campanha "${data.data?.name}" criada no Facebook Ads Manager. ID: ${data.facebook?.campaignId}`,
       });
     },
     onError: (error: any) => {

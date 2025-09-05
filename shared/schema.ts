@@ -420,6 +420,16 @@ export const socialMediaCampaigns = pgTable("social_media_campaigns", {
   description: text("description"),
   type: varchar("type").notNull(),
   status: varchar("status").default('active'),
+  // Facebook Marketing API integration fields
+  facebookCampaignId: varchar("facebook_campaign_id"), // ID da campanha real no Facebook
+  facebookAdAccountId: varchar("facebook_ad_account_id"), // ID da conta de anúncios no Facebook
+  facebookStatus: varchar("facebook_status"), // Status no Facebook: ACTIVE, PAUSED, DELETED
+  facebookObjective: varchar("facebook_objective"), // Objetivo configurado no Facebook
+  dailyBudget: decimal("daily_budget", { precision: 10, scale: 2 }), // Orçamento diário
+  totalBudget: decimal("total_budget", { precision: 10, scale: 2 }), // Orçamento total
+  isConnectedToFacebook: boolean("is_connected_to_facebook").default(false), // Se está sincronizada
+  lastSyncAt: timestamp("last_sync_at"), // Última sincronização com Facebook
+  facebookMetadata: jsonb("facebook_metadata").default({}), // Dados adicionais do Facebook
   createdBy: varchar("created_by").notNull(),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`)
