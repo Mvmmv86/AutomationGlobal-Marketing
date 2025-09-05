@@ -65,11 +65,20 @@ export class FacebookMarketingService {
         const [campaign] = await db.insert(socialMediaCampaigns).values({
           organizationId,
           name,
-          description,
+          description: description || '',
           type,
           status: 'active',
           isConnectedToFacebook: false,
-          createdBy: userId,
+          createdBy: userId || '550e8400-e29b-41d4-a716-446655440002',
+          // Garantir que todos os campos obrigatórios tenham valores válidos
+          facebookCampaignId: null,
+          facebookAdAccountId: null,
+          facebookStatus: null,
+          facebookObjective: null,
+          dailyBudget: null,
+          totalBudget: null,
+          lastSyncAt: null,
+          facebookMetadata: null,
         }).returning();
 
         return res.json({
@@ -108,19 +117,19 @@ export class FacebookMarketingService {
       const [campaign] = await db.insert(socialMediaCampaigns).values({
         organizationId,
         name,
-        description,
+        description: description || '',
         type,
         status: 'active',
         facebookCampaignId: facebookResponse.id,
         facebookAdAccountId: adAccountId || facebookAccount.accountData?.ad_accounts?.[0]?.id,
         facebookStatus: facebookResponse.status,
         facebookObjective: facebookObjective,
-        dailyBudget: dailyBudget?.toString(),
-        totalBudget: totalBudget?.toString(),
+        dailyBudget: dailyBudget?.toString() || null,
+        totalBudget: totalBudget?.toString() || null,
         isConnectedToFacebook: true,
         lastSyncAt: new Date(),
         facebookMetadata: facebookResponse,
-        createdBy: userId,
+        createdBy: userId || '550e8400-e29b-41d4-a716-446655440002',
       }).returning();
 
       console.log('✅ Campanha criada no Facebook:', facebookResponse.id);
