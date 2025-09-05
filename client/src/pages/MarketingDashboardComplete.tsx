@@ -920,7 +920,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [campaignName, setCampaignName] = useState('');
   const [campaignDescription, setCampaignDescription] = useState('');
-  const [campaignType, setCampaignType] = useState<'organic' | 'sponsored' | 'promotional' | 'branding'>('organic');
+  const [campaignType, setCampaignType] = useState<string>('awareness');
   
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: InstagramIcon, color: 'from-pink-500 to-purple-500' },
@@ -2650,17 +2650,25 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
               <div>
                 <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-                  Tipo de Campanha
+                  Objetivo da Campanha
                 </label>
-                <Select value={campaignType} onValueChange={(value: any) => setCampaignType(value)}>
+                <Select value={campaignType} onValueChange={(value: string) => setCampaignType(value)}>
                   <SelectTrigger className="glass-button-3d">
-                    <SelectValue placeholder="Selecionar tipo..." />
+                    <SelectValue placeholder="Selecionar objetivo..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="organic">🌱 Orgânica</SelectItem>
-                    <SelectItem value="sponsored">💰 Patrocinada</SelectItem>
-                    <SelectItem value="promotional">🎯 Promocional</SelectItem>
-                    <SelectItem value="branding">✨ Branding</SelectItem>
+                    <SelectItem value="awareness">🎯 Reconhecimento - Alcance e impressões</SelectItem>
+                    <SelectItem value="traffic">🔗 Tráfego - Cliques no link</SelectItem>
+                    <SelectItem value="engagement">❤️ Interação - Curtidas, comentários, compartilhamentos</SelectItem>
+                    <SelectItem value="leads">📝 Geração de cadastro - Leads e formulários</SelectItem>
+                    <SelectItem value="app_promotion">📱 Promoção do app - Instalações e ações no app</SelectItem>
+                    <SelectItem value="sales">💰 Vendas - Conversões e valor de conversão</SelectItem>
+                    <SelectItem value="reach">👥 Alcance - Alcançar o máximo de pessoas únicas</SelectItem>
+                    <SelectItem value="brand_awareness">✨ Reconhecimento da marca - Lembrança da marca</SelectItem>
+                    <SelectItem value="video_views">📹 Visualizações de vídeo - Pessoas que assistem vídeos</SelectItem>
+                    <SelectItem value="messages">💬 Mensagens - Conversas no Messenger/WhatsApp</SelectItem>
+                    <SelectItem value="conversion">🎊 Conversão - Ações específicas no site</SelectItem>
+                    <SelectItem value="store_visits">🏪 Visitas à loja - Pessoas que visitam loja física</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -361,7 +361,20 @@ export const organizationSessions = pgTable("organization_sessions", {
 
 // Social Media Enums
 export const socialMediaPlatformEnum = pgEnum('social_media_platform', ['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'tiktok']);
-export const campaignTypeEnum = pgEnum('campaign_type', ['promotional', 'educational', 'brand_awareness', 'engagement', 'sales', 'event', 'seasonal', 'other']);
+export const campaignTypeEnum = pgEnum('campaign_type', [
+  'awareness',              // Reconhecimento: Alcance e Impressões
+  'traffic',               // Tráfego: Cliques no link
+  'engagement',            // Interação: Curtidas, comentários, compartilhamentos
+  'leads',                // Geração de cadastro: Leads e formulários
+  'app_promotion',        // Promoção do app: Instalações e ações no app
+  'sales',                // Vendas: Conversões e valor de conversão
+  'reach',                // Alcance: Alcançar o máximo de pessoas únicas
+  'brand_awareness',      // Reconhecimento da marca: Lembrança da marca
+  'video_views',          // Visualizações de vídeo: Pessoas que assistem vídeos
+  'messages',             // Mensagens: Conversas no Messenger/WhatsApp
+  'conversion',           // Conversão: Ações específicas no site
+  'store_visits'          // Visitas à loja: Pessoas que visitam loja física
+]);
 export const postStatusEnum = pgEnum('post_status', ['draft', 'scheduled', 'published', 'failed', 'cancelled']);
 export const postTypeEnum = pgEnum('post_type', ['text', 'image', 'video', 'carousel', 'story', 'reel']);
 
