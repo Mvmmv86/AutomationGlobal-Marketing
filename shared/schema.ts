@@ -361,6 +361,7 @@ export const organizationSessions = pgTable("organization_sessions", {
 
 // Social Media Enums
 export const socialMediaPlatformEnum = pgEnum('social_media_platform', ['facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'tiktok']);
+export const campaignTypeEnum = pgEnum('campaign_type', ['promotional', 'educational', 'brand_awareness', 'engagement', 'sales', 'event', 'seasonal', 'other']);
 export const postStatusEnum = pgEnum('post_status', ['draft', 'scheduled', 'published', 'failed', 'cancelled']);
 export const postTypeEnum = pgEnum('post_type', ['text', 'image', 'video', 'carousel', 'story', 'reel']);
 
@@ -398,9 +399,23 @@ export const socialMediaAccounts = pgTable("social_media_accounts", {
   createdBy: uuid("created_by").references(() => users.id).notNull(),
 });
 
+// Social Media Campaigns Table - Simplified to match database structure
+export const socialMediaCampaigns = pgTable("social_media_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  type: varchar("type").notNull(),
+  status: varchar("status").default('active'),
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`)
+});
+
 export const socialMediaPosts = pgTable("social_media_posts", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  campaignId: varchar("campaign_id"), // Optional - posts can be part of campaigns or standalone
   title: text("title"),
   content: text("content").notNull(),
   mediaUrls: jsonb("media_urls").default([]), // Array of image/video URLs
@@ -668,6 +683,12 @@ export const insertSocialMediaInsightSchema = createInsertSchema(socialMediaInsi
   createdAt: true,
 });
 
+export const insertSocialMediaCampaignSchema = createInsertSchema(socialMediaCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -742,3 +763,6 @@ export type InsertScheduledJob = z.infer<typeof insertScheduledJobSchema>;
 
 export type SocialMediaInsight = typeof socialMediaInsights.$inferSelect;
 export type InsertSocialMediaInsight = z.infer<typeof insertSocialMediaInsightSchema>;
+
+export type SocialMediaCampaign = typeof socialMediaCampaigns.$inferSelect;
+export type InsertSocialMediaCampaign = z.infer<typeof insertSocialMediaCampaignSchema>;

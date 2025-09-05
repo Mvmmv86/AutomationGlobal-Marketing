@@ -2679,6 +2679,168 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   app.get('/api/social-media/best-times', socialMediaService.getBestPostingTimes.bind(socialMediaService));
   app.get('/api/social-media/suggestions', socialMediaService.generateContentSuggestions.bind(socialMediaService));
 
+  // Social Media Campaigns API Routes
+  // GET - List campaigns
+  app.get('/api/social-media/campaigns', async (req: Request, res) => {
+    try {
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      
+      const campaigns = await db
+        .select()
+        .from(schema.socialMediaCampaigns)
+        .where(eq(schema.socialMediaCampaigns.organizationId, organizationId))
+        .orderBy(desc(schema.socialMediaCampaigns.createdAt));
+
+      // Get post count for each campaign
+      const campaignsWithStats = await Promise.all(
+        campaigns.map(async (campaign) => {
+          const postsCount = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(schema.socialMediaPosts)
+            .where(eq(schema.socialMediaPosts.campaignId, campaign.id));
+
+          return {
+            ...campaign,
+            postsCount: Number(postsCount[0]?.count || 0),
+          };
+        })
+      );
+
+      res.json({ success: true, data: campaignsWithStats });
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar campanhas:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST - Create campaign
+  app.post('/api/social-media/campaigns', async (req: Request, res) => {
+    try {
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      const userId = '550e8400-e29b-41d4-a716-446655440002'; // TODO: Get from context
+      
+      const campaignData = {
+        ...req.body,
+        organizationId,
+        createdBy: userId,
+      };
+
+      const [campaign] = await db
+        .insert(schema.socialMediaCampaigns)
+        .values(campaignData)
+        .returning();
+
+      console.log('✅ Campanha criada:', campaign);
+      res.json({ success: true, data: campaign });
+    } catch (error: any) {
+      console.error('❌ Erro ao criar campanha:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET - Get single campaign
+  app.get('/api/social-media/campaigns/:id', async (req: Request, res) => {
+    try {
+      const { id } = req.params;
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      
+      const [campaign] = await db
+        .select()
+        .from(schema.socialMediaCampaigns)
+        .where(eq(schema.socialMediaCampaigns.id, id))
+        .where(eq(schema.socialMediaCampaigns.organizationId, organizationId));
+
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campanha não encontrada' });
+      }
+
+      // Get campaign posts
+      const posts = await db
+        .select()
+        .from(schema.socialMediaPosts)
+        .where(eq(schema.socialMediaPosts.campaignId, id))
+        .orderBy(desc(schema.socialMediaPosts.createdAt));
+
+      res.json({ 
+        success: true, 
+        data: { 
+          ...campaign, 
+          posts,
+          postsCount: posts.length 
+        } 
+      });
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar campanha:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // PUT - Update campaign
+  app.put('/api/social-media/campaigns/:id', async (req: Request, res) => {
+    try {
+      const { id } = req.params;
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      
+      const [campaign] = await db
+        .update(schema.socialMediaCampaigns)
+        .set({
+          ...req.body,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.socialMediaCampaigns.id, id))
+        .where(eq(schema.socialMediaCampaigns.organizationId, organizationId))
+        .returning();
+
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campanha não encontrada' });
+      }
+
+      console.log('✅ Campanha atualizada:', campaign);
+      res.json({ success: true, data: campaign });
+    } catch (error: any) {
+      console.error('❌ Erro ao atualizar campanha:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // DELETE - Delete campaign
+  app.delete('/api/social-media/campaigns/:id', async (req: Request, res) => {
+    try {
+      const { id } = req.params;
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      
+      // Check if campaign has posts
+      const posts = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.socialMediaPosts)
+        .where(eq(schema.socialMediaPosts.campaignId, id));
+
+      const postsCount = Number(posts[0]?.count || 0);
+      
+      if (postsCount > 0) {
+        return res.status(400).json({ 
+          error: `Não é possível excluir campanha com ${postsCount} posts. Remova os posts primeiro.` 
+        });
+      }
+
+      const [campaign] = await db
+        .delete(schema.socialMediaCampaigns)
+        .where(eq(schema.socialMediaCampaigns.id, id))
+        .where(eq(schema.socialMediaCampaigns.organizationId, organizationId))
+        .returning();
+
+      if (!campaign) {
+        return res.status(404).json({ error: 'Campanha não encontrada' });
+      }
+
+      console.log('✅ Campanha excluída:', campaign);
+      res.json({ success: true, message: 'Campanha excluída com sucesso' });
+    } catch (error: any) {
+      console.error('❌ Erro ao excluir campanha:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

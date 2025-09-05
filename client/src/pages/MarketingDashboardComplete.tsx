@@ -913,6 +913,12 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   
+  // Estados para campanhas
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignDescription, setCampaignDescription] = useState('');
+  const [campaignType, setCampaignType] = useState<'organic' | 'sponsored' | 'promotional' | 'branding'>('organic');
+  
   const platforms = [
     { id: 'instagram', name: 'Instagram', icon: InstagramIcon, color: 'from-pink-500 to-purple-500' },
     { id: 'facebook', name: 'Facebook', icon: FacebookIcon, color: 'from-blue-600 to-blue-700' },
@@ -928,6 +934,35 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   ]);
   
   const [lastContentForSuggestions, setLastContentForSuggestions] = useState('');
+
+  // Queries para campanhas
+  const { data: campaigns = [], refetch: refetchCampaigns } = useQuery({
+    queryKey: ['/api/social-media/campaigns'],
+    retry: false,
+  });
+
+  const createCampaignMutation = useMutation({
+    mutationFn: async (campaignData: any) => {
+      const response = await fetch('/api/social-media/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(campaignData),
+      });
+      if (!response.ok) throw new Error(`Failed to create campaign: ${response.statusText}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchCampaigns();
+      setShowCampaignModal(false);
+      setCampaignName('');
+      setCampaignDescription('');
+      setCampaignType('organic');
+      toast({
+        title: "Campanha criada!",
+        description: "Sua nova campanha foi criada com sucesso.",
+      });
+    },
+  });
 
   // Generate contextual suggestions based on user's content
   const generateContextualSuggestions = async (userContent: string) => {
@@ -1212,7 +1247,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         selectedAccounts,
         mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType : 'feed',
         status: 'draft',
-        publishMode: 'manual'
+        publishMode: 'manual',
+        campaignId: selectedCampaign || null // Inclui o ID da campanha selecionada
       };
 
       const response = await fetch('/api/social-media/posts', {
@@ -1282,7 +1318,8 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType || 'feed' : 'feed',
         publishMode,
         scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
-        status: publishMode === 'draft' ? 'draft' : 'draft'
+        status: publishMode === 'draft' ? 'draft' : 'draft',
+        campaignId: selectedCampaign || null // Inclui o ID da campanha selecionada
       };
 
       const response = await fetch('/api/social-media/posts', {
@@ -1524,6 +1561,70 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Context Bar - Campanhas */}
+      <div className="lg:col-span-3 mb-4">
+        <div className="glass-3d p-4 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-cyan-400" />
+                <span className={cn("font-medium", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Campanha Ativa:
+                </span>
+              </div>
+              
+              <Select value={selectedCampaign || ''} onValueChange={setSelectedCampaign}>
+                <SelectTrigger className="w-60 glass-button-3d">
+                  <SelectValue placeholder="Selecionar campanha..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">📝 Sem campanha (post avulso)</SelectItem>
+                  {campaigns.map((campaign: any) => (
+                    <SelectItem key={campaign.id} value={campaign.id}>
+                      <div className="flex items-center gap-2">
+                        {campaign.type === 'organic' && '🌱'}
+                        {campaign.type === 'sponsored' && '💰'}  
+                        {campaign.type === 'promotional' && '🎯'}
+                        {campaign.type === 'branding' && '✨'}
+                        <span className="font-medium">{campaign.name}</span>
+                        <span className="text-xs text-gray-500">({campaign.postsCount} posts)</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {selectedCampaign && (
+                <Badge variant="secondary" className="gradient-purple-blue text-white">
+                  {campaigns.find((c: any) => c.id === selectedCampaign)?.type?.toUpperCase()}
+                </Badge>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="glass-button-3d text-xs"
+                onClick={() => setShowCampaignModal(true)}
+                data-testid="button-create-campaign"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Nova Campanha
+              </Button>
+            </div>
+          </div>
+          
+          {selectedCampaign && (
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="text-sm text-gray-400">
+                {campaigns.find((c: any) => c.id === selectedCampaign)?.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Editor Principal */}
       <div className="lg:col-span-2 space-y-6">
         {/* Social Media Manager Card - Compacto */}
@@ -2969,6 +3070,128 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               >
                 Fechar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Criação de Campanha */}
+      {showCampaignModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowCampaignModal(false)}>
+          <div className="glass-3d p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className={cn(
+                  "text-lg font-bold",
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                )}>
+                  Nova Campanha
+                </h3>
+                <p className={cn(
+                  "text-sm",
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                )}>
+                  Crie uma nova campanha para organizar seus posts
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCampaignModal(false)}
+                className="glass-button-3d p-2 hover:scale-105 transition-transform"
+                data-testid="close-campaign-modal"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Nome da Campanha
+                </label>
+                <Input
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  placeholder="Ex: Black Friday 2025"
+                  className="glass-button-3d"
+                  data-testid="input-campaign-name"
+                />
+              </div>
+
+              <div>
+                <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Tipo de Campanha
+                </label>
+                <Select value={campaignType} onValueChange={(value: any) => setCampaignType(value)}>
+                  <SelectTrigger className="glass-button-3d">
+                    <SelectValue placeholder="Selecionar tipo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="organic">🌱 Orgânica</SelectItem>
+                    <SelectItem value="sponsored">💰 Patrocinada</SelectItem>
+                    <SelectItem value="promotional">🎯 Promocional</SelectItem>
+                    <SelectItem value="branding">✨ Branding</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className={cn("block text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Descrição (Opcional)
+                </label>
+                <Textarea
+                  value={campaignDescription}
+                  onChange={(e) => setCampaignDescription(e.target.value)}
+                  placeholder="Descreva o objetivo e estratégia desta campanha..."
+                  className="glass-button-3d resize-none"
+                  rows={3}
+                  data-testid="textarea-campaign-description"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowCampaignModal(false)}
+                className="glass-button-3d"
+                data-testid="button-cancel-campaign"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!campaignName.trim()) {
+                    toast({
+                      title: "Nome obrigatório",
+                      description: "Por favor, insira um nome para a campanha.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
+                  createCampaignMutation.mutate({
+                    name: campaignName.trim(),
+                    description: campaignDescription.trim(),
+                    type: campaignType,
+                    status: 'active',
+                  });
+                }}
+                disabled={createCampaignMutation.isPending || !campaignName.trim()}
+                className="gradient-purple-blue text-white"
+                data-testid="button-create-campaign-submit"
+              >
+                {createCampaignMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar Campanha
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>
