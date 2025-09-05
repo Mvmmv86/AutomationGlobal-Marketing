@@ -1390,53 +1390,98 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Editor Principal */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Barra de Ações Rápidas */}
-        <div className="glass-3d p-4">
-          <div className="flex items-center justify-between mb-4">
+        {/* Social Media Manager Card - Compacto */}
+        <div className="glass-3d p-3">
+          <div className="flex items-center justify-between mb-3">
             <h3 className={cn(
-              "text-lg font-bold flex items-center gap-2",
+              "text-sm font-bold flex items-center gap-2",
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             )}>
-              <Share2 className="w-5 h-5 text-purple-400" />
+              <Share2 className="w-4 h-4 text-purple-400" />
               Social Media Manager
             </h3>
             
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <Button 
                 size="sm" 
                 variant="outline" 
-                className="glass-button-3d"
-                onClick={() => setShowConnectModal(true)}
+                className="glass-button-3d text-xs px-2 py-1"
+                onClick={loadConnectedAccounts}
                 disabled={isLoadingAccounts}
                 data-testid="button-sync-accounts"
               >
-                <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
-                {isLoadingAccounts ? 'Carregando...' : 'Sincronizar'}
+                <RefreshCw className={`w-3 h-3 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                Sincronizar
               </Button>
               <Button 
                 size="sm" 
-                className="gradient-purple-blue text-white"
+                className="gradient-purple-blue text-white text-xs px-2 py-1"
                 onClick={() => setShowCampaignModal(true)}
                 data-testid="button-new-campaign"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-3 h-3 mr-1" />
                 Nova Campanha
               </Button>
             </div>
           </div>
           
-          {/* Status das Contas */}
-          <div className="space-y-3">
-            {/* Contas Conectadas */}
-            {connectedAccounts.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Interface Compacta de Conexão */}
+          {connectedAccounts.length === 0 ? (
+            <div className="p-3 rounded-lg glass-3d-light border-2 border-dashed border-gray-500/30">
+              <div className="text-center mb-3">
+                <h4 className={cn("text-xs font-medium mb-1", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Conecte suas contas de redes sociais
+                </h4>
+                <p className="text-xs text-gray-500">
+                  Conecte Facebook e Instagram para publicar diretamente
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={() => setShowConnectModal(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-2"
+                  data-testid="button-connect-facebook"
+                >
+                  <FacebookIcon className="w-3 h-3 mr-1" />
+                  Conectar Facebook
+                </Button>
+                
+                <Button
+                  onClick={() => setShowConnectModal(true)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs py-2"
+                  data-testid="button-connect-instagram"
+                >
+                  <InstagramIcon className="w-3 h-3 mr-1" />
+                  Conectar Instagram
+                </Button>
+              </div>
+              
+              <div className="mt-2 text-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadConnectedAccounts}
+                  disabled={isLoadingAccounts}
+                  className="glass-button-3d text-xs px-2 py-1"
+                  data-testid="button-refresh-accounts"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* Lista compacta de contas conectadas */}
+              <div className="max-h-24 overflow-y-auto space-y-1">
                 {connectedAccounts.map((account) => (
-                  <div key={account.id} className="flex items-center justify-between p-2 rounded-lg glass-3d-light">
+                  <div key={account.id} className="flex items-center justify-between p-2 rounded glass-3d-light">
                     <div className="flex items-center gap-2">
-                      {account.platform === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-500" />}
-                      {account.platform === 'instagram' && <InstagramIcon className="w-4 h-4 text-pink-500" />}
-                      <div>
-                        <div className={cn("font-medium text-xs", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                      {account.platform === 'facebook' && <FacebookIcon className="w-3 h-3 text-blue-500" />}
+                      {account.platform === 'instagram' && <InstagramIcon className="w-3 h-3 text-pink-500" />}
+                      <div className="flex-1 min-w-0">
+                        <div className={cn("font-medium text-xs truncate", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
                           {account.accountName || account.name}
                         </div>
                         <div className="text-xs text-green-400">
@@ -1444,105 +1489,43 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        if (selectedAccounts.includes(account.id)) {
-                          setSelectedAccounts(prev => prev.filter(id => id !== account.id));
-                        } else {
-                          setSelectedAccounts(prev => [...prev, account.id]);
-                        }
-                      }}
-                      className={cn(
-                        "w-4 h-4 rounded border-2 flex items-center justify-center",
-                        selectedAccounts.includes(account.id) 
-                          ? "bg-purple-500 border-purple-500" 
-                          : "border-gray-500"
-                      )}
-                      data-testid={`checkbox-account-${account.id}`}
-                    >
-                      {selectedAccounts.includes(account.id) && <CheckCircle className="w-3 h-3 text-white" />}
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          if (selectedAccounts.includes(account.id)) {
+                            setSelectedAccounts(prev => prev.filter(id => id !== account.id));
+                          } else {
+                            setSelectedAccounts(prev => [...prev, account.id]);
+                          }
+                        }}
+                        className={cn(
+                          "w-3 h-3 rounded border flex items-center justify-center",
+                          selectedAccounts.includes(account.id) 
+                            ? "bg-purple-500 border-purple-500" 
+                            : "border-gray-500"
+                        )}
+                        data-testid={`checkbox-account-${account.id}`}
+                      >
+                        {selectedAccounts.includes(account.id) && <CheckCircle className="w-2 h-2 text-white" />}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
-            
-            {/* Interface de Conexão Integrada */}
-            {connectedAccounts.length === 0 && (
-              <div className="p-4 rounded-lg glass-3d-light border-2 border-dashed border-gray-500/30">
-                <div className="text-center mb-4">
-                  <h4 className={cn("text-sm font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-                    Conecte suas contas de redes sociais
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    Conecte Facebook e Instagram para publicar diretamente
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Facebook */}
-                  <Button
-                    onClick={() => handleConnectAccount('facebook', '', { name: 'Página Facebook', username: '@facebook' })}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-                    data-testid="button-connect-facebook"
-                  >
-                    <FacebookIcon className="w-4 h-4" />
-                    Conectar Facebook
-                  </Button>
-                  
-                  {/* Instagram */}
-                  <Button
-                    onClick={() => handleConnectAccount('instagram', '', { name: 'Perfil Instagram', username: '@instagram' })}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white flex items-center gap-2"
-                    data-testid="button-connect-instagram"
-                  >
-                    <InstagramIcon className="w-4 h-4" />
-                    Conectar Instagram
-                  </Button>
-                </div>
-                
-                <div className="mt-3 text-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadConnectedAccounts}
-                    disabled={isLoadingAccounts}
-                    className="glass-button-3d"
-                    data-testid="button-refresh-accounts"
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
-                    {isLoadingAccounts ? 'Carregando...' : 'Atualizar'}
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Adicionar mais contas se já existem algumas */}
-            {connectedAccounts.length > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleConnectAccount('facebook', '', { name: 'Nova Página', username: '@nova' })}
-                  className="glass-button-3d flex items-center gap-1"
-                  data-testid="button-add-facebook"
-                >
-                  <FacebookIcon className="w-4 h-4" />
-                  <Plus className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleConnectAccount('instagram', '', { name: 'Novo Perfil', username: '@novo' })}
-                  className="glass-button-3d flex items-center gap-1"
-                  data-testid="button-add-instagram"
-                >
-                  <InstagramIcon className="w-4 h-4" />
-                  <Plus className="w-3 h-3" />
-                </Button>
-              </div>
-            )}
-          </div>
+              
+              {/* Botão para adicionar mais contas */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConnectModal(true)}
+                className="w-full glass-button-3d text-xs py-2"
+                data-testid="button-add-accounts"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Adicionar Conta
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Editor de Conteúdo Expandido */}
@@ -2256,6 +2239,215 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                   </div>
                 )}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Conexão de Contas */}
+      {showConnectModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-3d p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={cn("text-lg font-bold", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                Conectar Contas de Redes Sociais
+              </h3>
+              <button
+                onClick={() => setShowConnectModal(false)}
+                className="text-gray-400 hover:text-white p-1"
+                data-testid="button-close-connect-modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 mb-4">
+                Conecte múltiplas contas do Facebook e Instagram para gerenciar suas publicações de forma centralizada.
+              </p>
+
+              {/* Facebook */}
+              <div className="space-y-3">
+                <h4 className={cn("text-sm font-medium", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Facebook
+                </h4>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => handleConnectAccount('facebook', '', { name: 'Página Principal', username: '@empresa' })}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    data-testid="button-connect-facebook-main"
+                  >
+                    <FacebookIcon className="w-4 h-4 mr-2" />
+                    Conectar Página Principal
+                  </Button>
+                  <Button
+                    onClick={() => handleConnectAccount('facebook', '', { name: 'Página Secundária', username: '@empresa2' })}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-connect-facebook-secondary"
+                  >
+                    <FacebookIcon className="w-4 h-4 mr-2" />
+                    Conectar Outra Página
+                  </Button>
+                </div>
+              </div>
+
+              {/* Instagram */}
+              <div className="space-y-3">
+                <h4 className={cn("text-sm font-medium", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Instagram
+                </h4>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => handleConnectAccount('instagram', '', { name: 'Perfil Principal', username: '@empresa' })}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                    data-testid="button-connect-instagram-main"
+                  >
+                    <InstagramIcon className="w-4 h-4 mr-2" />
+                    Conectar Perfil Principal
+                  </Button>
+                  <Button
+                    onClick={() => handleConnectAccount('instagram', '', { name: 'Perfil Comercial', username: '@empresacomercial' })}
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-connect-instagram-business"
+                  >
+                    <InstagramIcon className="w-4 h-4 mr-2" />
+                    Conectar Perfil Comercial
+                  </Button>
+                </div>
+              </div>
+
+              {/* Instruções */}
+              <div className="mt-6 p-3 rounded glass-3d-light">
+                <h5 className={cn("text-xs font-medium mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Como funciona?
+                </h5>
+                <ul className="text-xs text-gray-500 space-y-1">
+                  <li>• Clique em "Conectar" para autorizar o acesso</li>
+                  <li>• Você será redirecionado para autenticação</li>
+                  <li>• Após conectar, poderá escolher quais contas usar</li>
+                  <li>• Gerencie múltiplas contas facilmente</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConnectModal(false)}
+                  className="flex-1"
+                  data-testid="button-cancel-connect"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={loadConnectedAccounts}
+                  disabled={isLoadingAccounts}
+                  className="flex-1 gradient-purple-blue text-white"
+                  data-testid="button-refresh-modal"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-1 ${isLoadingAccounts ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Nova Campanha */}
+      {showCampaignModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-3d p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={cn("text-lg font-bold", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                Nova Campanha
+              </h3>
+              <button
+                onClick={() => setShowCampaignModal(false)}
+                className="text-gray-400 hover:text-white p-1"
+                data-testid="button-close-campaign-modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className={cn("text-sm font-medium block mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Nome da Campanha
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Campanha de Verão 2025"
+                  className="w-full p-3 rounded glass-3d-light text-sm"
+                  data-testid="input-campaign-name"
+                />
+              </div>
+
+              <div>
+                <label className={cn("text-sm font-medium block mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Tipo de Campanha
+                </label>
+                <select className="w-full p-3 rounded glass-3d-light text-sm" data-testid="select-campaign-type">
+                  <option value="promocional">Promocional</option>
+                  <option value="branding">Branding</option>
+                  <option value="engagement">Engagement</option>
+                  <option value="conversao">Conversão</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={cn("text-sm font-medium block mb-2", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                  Contas Selecionadas
+                </label>
+                <div className="space-y-2">
+                  {connectedAccounts.map((account) => (
+                    <div key={account.id} className="flex items-center gap-2 p-2 rounded glass-3d-light">
+                      <input
+                        type="checkbox"
+                        checked={selectedAccounts.includes(account.id)}
+                        onChange={() => {
+                          if (selectedAccounts.includes(account.id)) {
+                            setSelectedAccounts(prev => prev.filter(id => id !== account.id));
+                          } else {
+                            setSelectedAccounts(prev => [...prev, account.id]);
+                          }
+                        }}
+                        className="rounded"
+                        data-testid={`checkbox-campaign-account-${account.id}`}
+                      />
+                      {account.platform === 'facebook' && <FacebookIcon className="w-4 h-4 text-blue-500" />}
+                      {account.platform === 'instagram' && <InstagramIcon className="w-4 h-4 text-pink-500" />}
+                      <span className="text-sm">{account.accountName || account.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCampaignModal(false)}
+                  className="flex-1"
+                  data-testid="button-cancel-campaign"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowCampaignModal(false);
+                    toast({
+                      title: "Campanha criada!",
+                      description: "Nova campanha configurada com sucesso.",
+                    });
+                  }}
+                  className="flex-1 gradient-purple-blue text-white"
+                  data-testid="button-create-campaign"
+                >
+                  Criar Campanha
+                </Button>
+              </div>
             </div>
           </div>
         </div>
