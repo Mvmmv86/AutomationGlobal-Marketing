@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'wouter';
 import { 
   Play, 
   Pause, 
@@ -47,12 +48,16 @@ export default function CampaignsDashboard() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
   // Buscar campanhas REAIS do banco
-  const { data: campaignsData, isLoading: loadingCampaigns, refetch: refetchCampaigns } = useQuery({
+  const { data: campaignsResponse, isLoading: loadingCampaigns, refetch: refetchCampaigns } = useQuery<{
+    success: boolean;
+    data: Campaign[];
+    total: number;
+  }>({
     queryKey: ['/api/social-media/campaigns'],
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
-  const campaigns: Campaign[] = campaignsData?.data || [];
+  const campaigns: Campaign[] = campaignsResponse?.data || [];
 
   // Calcular estatísticas REAIS
   const stats: CampaignStats = {
@@ -139,6 +144,15 @@ export default function CampaignsDashboard() {
             </p>
           </div>
           <div className="flex gap-3">
+            <Link href="/marketing">
+              <Button 
+                variant="outline" 
+                className="glass-button-3d"
+                data-testid="button-back-marketing"
+              >
+                ← Voltar ao Marketing
+              </Button>
+            </Link>
             <Button
               onClick={() => refetchCampaigns()}
               disabled={loadingCampaigns}
