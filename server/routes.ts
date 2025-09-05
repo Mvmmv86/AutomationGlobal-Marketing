@@ -2547,6 +2547,22 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   );
 
   // Facebook OAuth callback
+  // Iniciar OAuth do Facebook
+  app.get('/api/auth/facebook/login', (req, res) => {
+    const appId = process.env.FACEBOOK_APP_ID;
+    const redirectUri = `${req.protocol}://${req.headers.host}/api/auth/facebook/callback`;
+    
+    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+      `client_id=${appId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `scope=pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish&` +
+      `response_type=code&` +
+      `state=${Date.now()}`;
+    
+    res.redirect(authUrl);
+  });
+
+  // Callback OAuth do Facebook
   app.get('/api/auth/facebook/callback', async (req, res) => {
     try {
       const { code, state } = req.query as { code: string, state: string };
@@ -2557,10 +2573,28 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       
       const accessToken = await socialMediaService.exchangeCodeForToken('facebook', code);
       
-      // Redirect back to app with token
-      res.redirect(`/marketing?facebook_token=${accessToken}&state=${state}`);
+      // Redirecionar de volta com sucesso
+      res.send(`
+        <script>
+          window.opener.postMessage({
+            type: 'FACEBOOK_OAUTH_SUCCESS',
+            accessToken: '${accessToken}',
+            state: '${state}'
+          }, '*');
+          window.close();
+        </script>
+      `);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('Facebook OAuth error:', error);
+      res.send(`
+        <script>
+          window.opener.postMessage({
+            type: 'FACEBOOK_OAUTH_ERROR',
+            error: '${error.message}'
+          }, '*');
+          window.close();
+        </script>
+      `);
     }
   });
 

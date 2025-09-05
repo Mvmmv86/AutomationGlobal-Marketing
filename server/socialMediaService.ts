@@ -38,6 +38,40 @@ export class SocialMediaService {
     }
   }
 
+  // Trocar código OAuth por token de acesso
+  async exchangeCodeForToken(platform: string, code: string): Promise<string> {
+    if (platform === 'facebook') {
+      const appId = process.env.FACEBOOK_APP_ID;
+      const appSecret = process.env.FACEBOOK_APP_SECRET;
+      
+      if (!appId || !appSecret) {
+        throw new Error('Facebook credentials not configured');
+      }
+
+      try {
+        const response = await fetch(
+          `https://graph.facebook.com/v18.0/oauth/access_token?` +
+          `client_id=${appId}&` +
+          `client_secret=${appSecret}&` +
+          `code=${code}`
+        );
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(`Facebook OAuth error: ${data.error.message}`);
+        }
+        
+        return data.access_token;
+      } catch (error) {
+        console.error('Facebook token exchange failed:', error);
+        throw error;
+      }
+    }
+    
+    throw new Error(`Platform ${platform} not supported`);
+  }
+
   // Connect social media account (Facebook/Instagram)
   async connectAccount(req: Request, res: Response) {
     try {

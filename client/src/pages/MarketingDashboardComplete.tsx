@@ -1022,7 +1022,76 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
-  // Função para conectar nova conta
+  // OAuth Real do Facebook
+  const handleOAuthLogin = (platform: string) => {
+    if (platform === 'facebook') {
+      // Abrir janela OAuth do Facebook
+      const authWindow = window.open(
+        '/api/auth/facebook/login',
+        'FacebookAuth',
+        'width=600,height=600,scrollbars=yes,resizable=yes'
+      );
+
+      // Escutar callback OAuth
+      const messageListener = (event: MessageEvent) => {
+        if (event.data.type === 'FACEBOOK_OAUTH_SUCCESS') {
+          const { accessToken } = event.data;
+          // Conectar conta com token real
+          handleConnectAccountWithToken('facebook', accessToken);
+          window.removeEventListener('message', messageListener);
+        } else if (event.data.type === 'FACEBOOK_OAUTH_ERROR') {
+          console.error('OAuth Error:', event.data.error);
+          toast({
+            title: "Erro OAuth",
+            description: "Falha na autenticação do Facebook.",
+            variant: "destructive",
+          });
+          window.removeEventListener('message', messageListener);
+        }
+      };
+
+      window.addEventListener('message', messageListener);
+    }
+  };
+
+  const handleConnectAccountWithToken = async (platform: string, accessToken: string) => {
+    try {
+      const response = await fetch('/api/social-media/accounts/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-organization-id': 'temp-org-id',
+          'x-user-id': 'temp-user-id'
+        },
+        body: JSON.stringify({
+          platform,
+          accessToken,
+          accountData: {} // Será preenchido pela validação do token
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "🎉 Conta conectada!",
+          description: `${platform.toUpperCase()} conectado com sucesso.`,
+        });
+        loadConnectedAccounts(); // Recarregar lista
+        setShowConnectModal(false);
+      } else {
+        throw new Error('Falha ao conectar conta');
+      }
+    } catch (error) {
+      console.error('Erro ao conectar conta:', error);
+      toast({
+        title: "Erro ao conectar",
+        description: "Não foi possível conectar a conta.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fallback para conexão manual (Instagram)
   const handleConnectAccount = async (platform: string, accessToken: string, accountData: any) => {
     try {
       const response = await fetch('/api/social-media/accounts/connect', {
@@ -1439,12 +1508,12 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
               
               <div className="grid grid-cols-2 gap-2">
                 <Button
-                  onClick={() => setShowConnectModal(true)}
+                  onClick={() => handleOAuthLogin('facebook')}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-2"
                   data-testid="button-connect-facebook"
                 >
                   <FacebookIcon className="w-3 h-3 mr-1" />
-                  Conectar Facebook
+                  🔗 OAuth Facebook
                 </Button>
                 
                 <Button
@@ -2273,21 +2342,21 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
                 </h4>
                 <div className="space-y-2">
                   <Button
-                    onClick={() => handleConnectAccount('facebook', '', { name: 'Página Principal', username: '@empresa' })}
+                    onClick={() => handleOAuthLogin('facebook')}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     data-testid="button-connect-facebook-main"
                   >
                     <FacebookIcon className="w-4 h-4 mr-2" />
-                    Conectar Página Principal
+                    🔗 Conectar com OAuth Real
                   </Button>
                   <Button
-                    onClick={() => handleConnectAccount('facebook', '', { name: 'Página Secundária', username: '@empresa2' })}
+                    onClick={() => handleOAuthLogin('facebook')}
                     variant="outline"
                     className="w-full"
                     data-testid="button-connect-facebook-secondary"
                   >
                     <FacebookIcon className="w-4 h-4 mr-2" />
-                    Conectar Outra Página
+                    🔐 Outra Conta Facebook
                   </Button>
                 </div>
               </div>
