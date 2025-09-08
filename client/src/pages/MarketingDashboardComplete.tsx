@@ -162,7 +162,7 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   console.log('📊 Stats recebidas:', statsResponse);
 
   // Usar dados reais das estatísticas ou valores padrão
-  const stats = statsResponse?.data || {
+  const stats = (statsResponse as any)?.data || {
     postsCreated: 0,
     postsPublished: 0, 
     templatesActive: 0,
@@ -319,7 +319,7 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
             </h3>
             
             <div className="space-y-3">
-              {recentContent.map((content) => (
+              {recentContent.map((content: any) => (
                 <div key={content.id} className="glass-3d p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">

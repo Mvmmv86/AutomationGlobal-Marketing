@@ -1812,6 +1812,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let aiPowered = false;
 
       // Try real AI optimization first - Using Anthropic Claude
+      let anthropicFailed = false;
+      
       try {
         console.log('🔍 Tentando IA real - Anthropic disponível:', !!process.env.ANTHROPIC_API_KEY);
         
@@ -1874,7 +1876,18 @@ RETORNE APENAS O TEXTO OTIMIZADO. Seja criativo e transforme completamente a men
 
           console.log('✅ Anthropic Claude funcionou! Texto reescrito:', optimizedContent);
 
-        } else if (process.env.OPENAI_API_KEY) {
+        } else {
+          anthropicFailed = true;
+        }
+      } catch (anthropicError) {
+        console.log('⚠️ Anthropic falhou:', anthropicError.message);
+        anthropicFailed = true;
+      }
+
+      // Try OpenAI if Anthropic failed
+      if (anthropicFailed && process.env.OPENAI_API_KEY) {
+        try {
+          console.log('🔄 Tentando fallback OpenAI...');
           // Fallback to OpenAI
           const { default: OpenAI } = await import('openai');
           const openai = new OpenAI({ 
@@ -1918,14 +1931,15 @@ Retorne APENAS o texto otimizado:`;
           ];
 
           console.log('✅ OpenAI funcionou! Texto reescrito!');
-
-        } else {
-          throw new Error('Nenhuma IA disponível');
+        } catch (openaiError) {
+          console.log('⚠️ OpenAI também falhou:', openaiError.message);
+          console.log('⚠️ Usando otimização local como último recurso');
         }
-
-      } catch (aiError) {
-        console.log('⚠️ IA real falhou:', aiError.message);
-        console.log('⚠️ IA fallback - usando otimização local');
+      }
+      
+      // If both AIs failed, use local optimization
+      if (!aiPowered) {
+        console.log('⚠️ Ambas IAs falharam - usando otimização local');
         
         // Enhanced local optimization
         optimizedContent = content;
