@@ -166,7 +166,11 @@ export default function CampaignsDashboard() {
             </Button>
             <Button 
               className="glass-button-3d gradient-purple-blue"
-              onClick={() => setShowNewCampaignWizard(true)}
+              onClick={() => {
+                console.log('🎯 Botão Nova Campanha clicado!');
+                setShowNewCampaignWizard(true);
+                console.log('🎯 Estado showNewCampaignWizard definido como true');
+              }}
               data-testid="button-new-campaign"
             >
               <Target className="w-4 h-4 mr-2" />
@@ -396,9 +400,13 @@ export default function CampaignsDashboard() {
       </div>
 
       {/* New Campaign Wizard */}
+      {console.log('🎯 showNewCampaignWizard estado atual:', showNewCampaignWizard)}
       <NewCampaignWizard
         isOpen={showNewCampaignWizard}
-        onClose={() => setShowNewCampaignWizard(false)}
+        onClose={() => {
+          console.log('🎯 Modal fechando...');
+          setShowNewCampaignWizard(false);
+        }}
       />
     </div>
   );
