@@ -111,10 +111,25 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   // Mutation para criar campanha e post
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
+      // Mapear objetivo para tipo do enum
+      const getTypeFromObjective = (objective: string) => {
+        const mapping: Record<string, string> = {
+          'traffic': 'traffic',
+          'engagement': 'engagement', 
+          'leads': 'leads',
+          'sales': 'sales',
+          'awareness': 'awareness',
+          'brand_awareness': 'brand_awareness',
+          'reach': 'reach',
+          'conversion': 'conversion'
+        };
+        return mapping[objective] || 'traffic'; // Default para traffic
+      };
+
       // Primeiro criar a campanha
       const campaignResponse = await apiRequest('POST', '/api/social-media/campaigns', {
         name: data.name,
-        type: 'social_media', // Tipo padrão para campanhas de mídia social
+        type: getTypeFromObjective(data.objective),
         objective: data.objective,
         description: data.description,
         accountId: data.selectedAccount
