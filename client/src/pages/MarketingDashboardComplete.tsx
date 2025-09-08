@@ -138,11 +138,12 @@ interface AIInsight {
 const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
   { id: 'campaigns', label: 'Campanhas', icon: Target },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'audience', label: 'Audiência', icon: Users },
   { id: 'content', label: 'Conteúdo', icon: VideoIcon },
   { id: 'automation', label: 'Automação', icon: Zap },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'audience', label: 'Audiência', icon: Users },
   { id: 'reports', label: 'Relatórios', icon: PieChart },
+  { id: 'billing', label: 'Cobranças', icon: DollarSign },
   { id: 'settings', label: 'Configurações', icon: Settings }
 ];
 
