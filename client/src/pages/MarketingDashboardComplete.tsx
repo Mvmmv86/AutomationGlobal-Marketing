@@ -3294,7 +3294,11 @@ function MarketingDashboardHome({
 
   const { data: salesFunnel, isLoading: funnelLoading } = useQuery({
     queryKey: ['/api/marketing/sales-funnel', selectedSector],
-    queryFn: () => apiRequest(`/api/marketing/sales-funnel?sector=${selectedSector}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/marketing/sales-funnel?sector=${selectedSector}`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    },
     refetchInterval: 30000,
   });
 
@@ -3710,7 +3714,7 @@ function MarketingDashboardHome({
                             transform: 'perspective(800px) rotateX(8deg)',
                             boxShadow: `0 4px 16px ${stage.color}80, 0 2px 8px rgba(0,0,0,0.3)`,
                             height: `${heights[index] || 9}rem`,
-                            borderRadius: index === 0 ? '8px 8px 0 0' : index === salesFunnel.data.stages.length - 1 ? '0 0 6px 6px' : '0'
+                            borderRadius: index === 0 ? '8px 8px 0 0' : index === (salesFunnel?.data?.stages?.length || 0) - 1 ? '0 0 6px 6px' : '0'
                           }}
                         >
                           <div className="text-center">
@@ -3757,11 +3761,11 @@ function MarketingDashboardHome({
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-gray-400">CTR:</span>
-                            <span className="text-blue-400 font-medium">{salesFunnel.data.platformBenchmarks.facebookCTR}%</span>
+                            <span className="text-blue-400 font-medium">{salesFunnel?.data?.platformBenchmarks?.facebookCTR}%</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">CVR:</span>
-                            <span className="text-green-400 font-medium">{salesFunnel.data.platformBenchmarks.facebookCVR}%</span>
+                            <span className="text-green-400 font-medium">{salesFunnel?.data?.platformBenchmarks?.facebookCVR}%</span>
                           </div>
                         </div>
                       </div>
@@ -3777,11 +3781,11 @@ function MarketingDashboardHome({
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-gray-400">CVR:</span>
-                            <span className="text-green-400 font-medium">{salesFunnel.data.platformBenchmarks.googleAdsCVR}%</span>
+                            <span className="text-green-400 font-medium">{salesFunnel?.data?.platformBenchmarks?.googleAdsCVR}%</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">CPA:</span>
-                            <span className="text-orange-400 font-medium">${salesFunnel.data.platformBenchmarks.avgCPA}</span>
+                            <span className="text-orange-400 font-medium">${salesFunnel?.data?.platformBenchmarks?.avgCPA}</span>
                           </div>
                         </div>
                       </div>
