@@ -800,99 +800,7 @@ function MarketingDashboardCompleteInner() {
           </div>
         </div>
 
-        {/* Métricas Globais */}
-        <div className="mb-8">
-          <h2 className={cn(
-            "text-xl font-bold mb-4 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            Métricas Globais (Tempo Real)
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <MetricCard
-              title="Total Impressões"
-              value={metricsData.impressions}
-              change={metricsData.impressionsChange}
-              icon={TrendingUp}
-              color="bg-gradient-to-r from-green-500 to-emerald-500"
-              theme={theme}
-            />
-            
-            <MetricCard
-              title="Cliques"
-              value={metricsData.clicks}
-              change={metricsData.clicksChange}
-              icon={MousePointer}
-              color="bg-gradient-to-r from-blue-500 to-cyan-500"
-              theme={theme}
-            />
-            
-            <MetricCard
-              title="Conversões"
-              value={metricsData.conversions}
-              change={metricsData.conversionsChange}
-              icon={Target}
-              color="bg-gradient-to-r from-purple-500 to-pink-500"
-              theme={theme}
-            />
-            
-            <MetricCard
-              title="ROI Geral"
-              value={metricsData.roi}
-              change={metricsData.roiChange}
-              icon={DollarSign}
-              color="bg-gradient-to-r from-yellow-500 to-orange-500"
-              format="percentage"
-              theme={theme}
-            />
-            
-            <MetricCard
-              title="Custo por Aquisição"
-              value={metricsData.cpa}
-              change={metricsData.cpaChange}
-              icon={DollarSign}
-              color="bg-gradient-to-r from-indigo-500 to-purple-500"
-              format="currency"
-              theme={theme}
-            />
-          </div>
-        </div>
-
-        {/* Performance por Canal */}
-        <div className="mb-8">
-          <h2 className={cn(
-            "text-xl font-bold mb-4 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <Target className="w-5 h-5 text-purple-400" />
-            Performance por Canal
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {channelsData.map((channel, index) => (
-              <ChannelCard key={index} channel={channel} theme={theme} />
-            ))}
-          </div>
-        </div>
-
-        {/* IA Insights */}
-        <div>
-          <h2 className={cn(
-            "text-xl font-bold mb-4 flex items-center gap-2",
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          )}>
-            <Brain className="w-5 h-5 text-cyan-400" />
-            IA Insights (Tempo Real)
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {aiInsights.map((insight) => (
-              <AIInsightCard key={insight.id} insight={insight} theme={theme} />
-            ))}
-          </div>
-        </div>
+        <MarketingDashboardHome theme={theme} selectedPeriod={selectedPeriod} />
       </div>
     </div>
   );
@@ -3344,6 +3252,510 @@ function TemplateManager({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// MARKETING DASHBOARD HOME CONSOLIDADO - Todas as funcionalidades aqui
+// =====================================================================
+
+function MarketingDashboardHome({ 
+  theme = 'dark', 
+  selectedPeriod = '30d' 
+}: { 
+  theme?: 'dark' | 'light';
+  selectedPeriod?: string;
+}) {
+  const [showNewCampaignWizard, setShowNewCampaignWizard] = useState(false);
+
+  // ===== MARKETING METRICS =====
+  const { data: globalMetrics, isLoading: metricsLoading } = useQuery({
+    queryKey: [`/api/marketing/global-metrics/${selectedPeriod.replace('d', '')}`],
+    refetchInterval: 30000,
+  });
+
+  const { data: channelPerformance, isLoading: channelsLoading } = useQuery({
+    queryKey: ['/api/marketing/channel-performance'],
+    refetchInterval: 30000,
+  });
+
+  const { data: aiInsights, isLoading: insightsLoading } = useQuery({
+    queryKey: ['/api/marketing/ai-insights'],
+    refetchInterval: 10000, // Atualizar a cada 10s para tempo real
+  });
+
+  const { data: salesFunnel, isLoading: funnelLoading } = useQuery({
+    queryKey: ['/api/marketing/sales-funnel'],
+    refetchInterval: 30000,
+  });
+
+  // Dados processados
+  const metrics = globalMetrics?.data || {
+    totalImpressions: 0,
+    impressionsGrowth: 0,
+    totalClicks: 0, 
+    clicksGrowth: 0,
+    totalConversions: 0,
+    conversionsGrowth: 0,
+    totalROI: 0,
+    roiGrowth: 0,
+    costPerAcquisition: 0,
+    capaGrowth: 0
+  };
+
+  const channels = channelPerformance?.data || [];
+  const insights = aiInsights?.data || [];
+  const funnel = salesFunnel?.data || {
+    awareness: 0,
+    interest: 0,
+    consideration: 0,
+    intent: 0,
+    evaluation: 0,
+    purchase: 0
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* ===== MÉTRICAS GLOBAIS ===== */}
+      <div>
+        <h2 className={cn(
+          "text-2xl font-bold mb-6 flex items-center gap-3",
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        )}>
+          <TrendingUp className="w-6 h-6 text-cyan-400" />
+          Métricas Globais
+        </h2>
+        
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* Impressões */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <BarChart3 className="w-4 h-4 text-blue-400" />
+              </div>
+              <span className={cn(
+                "text-xs font-medium",
+                metrics.impressionsGrowth > 0 ? 'text-green-400' : 'text-red-400'
+              )}>
+                {metrics.impressionsGrowth > 0 ? '+' : ''}{metrics.impressionsGrowth}%
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {metricsLoading ? '...' : (metrics.totalImpressions / 1000000).toFixed(1) + 'M'}
+              </div>
+              <div className="text-xs text-gray-400">Impressões</div>
+            </div>
+          </div>
+
+          {/* Cliques */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <MousePointer className="w-4 h-4 text-purple-400" />
+              </div>
+              <span className={cn(
+                "text-xs font-medium",
+                metrics.clicksGrowth > 0 ? 'text-green-400' : 'text-red-400'
+              )}>
+                {metrics.clicksGrowth > 0 ? '+' : ''}{metrics.clicksGrowth}%
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {metricsLoading ? '...' : (metrics.totalClicks / 1000).toFixed(0) + 'K'}
+              </div>
+              <div className="text-xs text-gray-400">Cliques</div>
+            </div>
+          </div>
+
+          {/* Conversões */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-green-500/20">
+                <Target className="w-4 h-4 text-green-400" />
+              </div>
+              <span className={cn(
+                "text-xs font-medium",
+                metrics.conversionsGrowth > 0 ? 'text-green-400' : 'text-red-400'
+              )}>
+                {metrics.conversionsGrowth > 0 ? '+' : ''}{metrics.conversionsGrowth}%
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {metricsLoading ? '...' : metrics.totalConversions.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-400">Conversões</div>
+            </div>
+          </div>
+
+          {/* ROI */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-orange-500/20">
+                <DollarSign className="w-4 h-4 text-orange-400" />
+              </div>
+              <span className={cn(
+                "text-xs font-medium",
+                metrics.roiGrowth > 0 ? 'text-green-400' : 'text-red-400'
+              )}>
+                {metrics.roiGrowth > 0 ? '+' : ''}{metrics.roiGrowth}%
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {metricsLoading ? '...' : metrics.totalROI + '%'}
+              </div>
+              <div className="text-xs text-gray-400">ROI</div>
+            </div>
+          </div>
+
+          {/* CPA */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-cyan-500/20">
+                <Target className="w-4 h-4 text-cyan-400" />
+              </div>
+              <span className={cn(
+                "text-xs font-medium",
+                metrics.capaGrowth < 0 ? 'text-green-400' : 'text-red-400'
+              )}>
+                {metrics.capaGrowth}%
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {metricsLoading ? '...' : '$' + metrics.costPerAcquisition}
+              </div>
+              <div className="text-xs text-gray-400">CPA</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== SEGUNDA LINHA: PERFORMANCE POR CANAL + AI INSIGHTS ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Performance por Canal */}
+        <div>
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <Users className="w-5 h-5 text-purple-400" />
+            Performance por Canal
+          </h2>
+          
+          <div className="space-y-4">
+            {channelsLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+              </div>
+            ) : (
+              channels.map((channel: any, index: number) => (
+                <div key={index} className="glass-3d p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {channel.platform === 'instagram' && <InstagramIcon className="w-5 h-5 text-pink-500" />}
+                      {channel.platform === 'facebook' && <FacebookIcon className="w-5 h-5 text-blue-500" />}
+                      {channel.platform === 'youtube' && <YoutubeIcon className="w-5 h-5 text-red-500" />}
+                      {channel.platform === 'twitter' && <TwitterIcon className="w-5 h-5 text-gray-500" />}
+                      <div>
+                        <div className={cn("font-medium capitalize", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                          {channel.platform}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {channel.followers?.toLocaleString()} seguidores
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-cyan-400">
+                        {channel.trafficPercentage}%
+                      </div>
+                      <div className={cn(
+                        "text-xs",
+                        channel.isConnected ? 'text-green-400' : 'text-red-400'
+                      )}>
+                        {channel.isConnected ? 'Conectado' : 'Desconectado'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Engajamento:</span>
+                      <span className="text-white">{channel.engagement}%</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Crescimento:</span>
+                      <span className={channel.growth > 0 ? 'text-green-400' : 'text-red-400'}>
+                        {channel.growth > 0 ? '+' : ''}{channel.growth}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* AI Insights */}
+        <div>
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <Brain className="w-5 h-5 text-cyan-400" />
+            IA Insights (Tempo Real)
+          </h2>
+          
+          <div className="space-y-3">
+            {insightsLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+              </div>
+            ) : (
+              insights.map((insight: any) => (
+                <div key={insight.id} className="glass-3d p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className={cn("font-medium text-sm", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                      {insight.title}
+                    </div>
+                    <div className={cn(
+                      "text-xs px-2 py-1 rounded-md",
+                      insight.priority === 'high' ? 'bg-red-500/20 text-red-400' :
+                      insight.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-green-500/20 text-green-400'
+                    )}>
+                      {insight.confidence}%
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-gray-400 mb-2">
+                    {insight.description}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">{insight.time}</span>
+                    {insight.actionable && (
+                      <button className="glass-button-3d px-2 py-1 text-xs">
+                        Aplicar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ===== TERCEIRA LINHA: FUNIL DE VENDAS + BOTÕES DE AÇÃO ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Funil de Vendas */}
+        <div className="lg:col-span-2">
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <PieChart className="w-5 h-5 text-orange-400" />
+            Funil de Vendas Interativo
+          </h2>
+          
+          <div className="glass-3d p-6">
+            {funnelLoading ? (
+              <div className="space-y-4">
+                <div className="h-8 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-6 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-3 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-2 bg-gray-600/20 rounded animate-pulse"></div>
+                <div className="h-2 bg-gray-600/20 rounded animate-pulse"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Awareness */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-medium">Conscientização</span>
+                    <span className="text-cyan-400">{funnel.awareness?.toLocaleString()}</span>
+                  </div>
+                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400" style={{ width: '100%' }}></div>
+                  </div>
+                </div>
+
+                {/* Interest */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-medium">Interesse</span>
+                    <span className="text-purple-400">{funnel.interest?.toLocaleString()}</span>
+                  </div>
+                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400" style={{ width: '75%' }}></div>
+                  </div>
+                </div>
+
+                {/* Consideration */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-medium">Consideração</span>
+                    <span className="text-blue-400">{funnel.consideration?.toLocaleString()}</span>
+                  </div>
+                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400" style={{ width: '60%' }}></div>
+                  </div>
+                </div>
+
+                {/* Intent */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-medium">Intenção</span>
+                    <span className="text-orange-400">{funnel.intent?.toLocaleString()}</span>
+                  </div>
+                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400" style={{ width: '40%' }}></div>
+                  </div>
+                </div>
+
+                {/* Evaluation */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-medium">Avaliação</span>
+                    <span className="text-yellow-400">{funnel.evaluation?.toLocaleString()}</span>
+                  </div>
+                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400" style={{ width: '25%' }}></div>
+                  </div>
+                </div>
+
+                {/* Purchase */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-white font-medium">Compra</span>
+                    <span className="text-green-400">{funnel.purchase?.toLocaleString()}</span>
+                  </div>
+                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-green-500 to-green-400" style={{ width: '15%' }}></div>
+                  </div>
+                </div>
+
+                {/* Taxa de Conversão */}
+                <div className="pt-4 border-t border-gray-600">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Taxa de Conversão Total:</span>
+                    <span className="text-green-400 font-bold">{funnel.totalConversionRate || 0}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Botões de Ação Consolidados */}
+        <div>
+          <h2 className={cn(
+            "text-xl font-bold mb-4 flex items-center gap-2",
+            theme === 'dark' ? 'text-white' : 'text-gray-900'
+          )}>
+            <Zap className="w-5 h-5 text-yellow-400" />
+            Ações Rápidas
+          </h2>
+          
+          <div className="space-y-4">
+            {/* Criar Nova Campanha */}
+            <button
+              onClick={() => setShowNewCampaignWizard(true)}
+              className="w-full glass-3d p-6 text-left hover:scale-105 transition-transform"
+            >
+              <div className="flex items-center gap-4 mb-3">
+                <div className="p-3 rounded-lg gradient-purple-blue">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-white font-bold">Nova Campanha</div>
+                  <div className="text-xs text-gray-400">Criar campanha completa</div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-400">
+                Configure audiência, orçamento e creative assets
+              </div>
+            </button>
+
+            {/* Criar Post */}
+            <button 
+              onClick={() => {
+                // Navegar para o Content Editor
+                const event = new CustomEvent('navigateToContentEditor');
+                window.dispatchEvent(event);
+              }}
+              className="w-full glass-3d p-6 text-left hover:scale-105 transition-transform"
+            >
+              <div className="flex items-center gap-4 mb-3">
+                <div className="p-3 rounded-lg gradient-purple-blue">
+                  <MessageCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-white font-bold">Novo Post</div>
+                  <div className="text-xs text-gray-400">Editor com IA integrada</div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-400">
+                Crie conteúdo otimizado para todas as plataformas
+              </div>
+            </button>
+
+            {/* Analíticos Avançados */}
+            <button className="w-full glass-3d p-6 text-left hover:scale-105 transition-transform">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="p-3 rounded-lg gradient-purple-blue">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-white font-bold">Relatórios</div>
+                  <div className="text-xs text-gray-400">Analytics detalhado</div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-400">
+                Insights profundos sobre performance
+              </div>
+            </button>
+
+            {/* Status Rápido */}
+            <div className="glass-3d p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-bold text-white">Status do Sistema</span>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Campanhas Ativas:</span>
+                  <span className="text-green-400">12</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Posts Agendados:</span>
+                  <span className="text-cyan-400">8</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Budget Restante:</span>
+                  <span className="text-purple-400">$2.1K</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* New Campaign Wizard Modal */}
+      {showNewCampaignWizard && (
+        <NewCampaignWizard onClose={() => setShowNewCampaignWizard(false)} />
+      )}
     </div>
   );
 }
