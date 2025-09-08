@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
+import NewCampaignWizard from '@/components/NewCampaignWizard';
 import { 
   Play, 
   Pause, 
@@ -46,6 +47,7 @@ export default function CampaignsDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [showNewCampaignWizard, setShowNewCampaignWizard] = useState(false);
 
   // Buscar campanhas REAIS do banco
   const { data: campaignsResponse, isLoading: loadingCampaigns, refetch: refetchCampaigns } = useQuery<{
@@ -162,7 +164,11 @@ export default function CampaignsDashboard() {
               <RefreshCw className={`w-4 h-4 mr-2 ${loadingCampaigns ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
-            <Button className="glass-button-3d gradient-purple-blue">
+            <Button 
+              className="glass-button-3d gradient-purple-blue"
+              onClick={() => setShowNewCampaignWizard(true)}
+              data-testid="button-new-campaign"
+            >
               <Target className="w-4 h-4 mr-2" />
               Nova Campanha
             </Button>
@@ -388,6 +394,12 @@ export default function CampaignsDashboard() {
           </div>
         )}
       </div>
+
+      {/* New Campaign Wizard */}
+      <NewCampaignWizard
+        isOpen={showNewCampaignWizard}
+        onClose={() => setShowNewCampaignWizard(false)}
+      />
     </div>
   );
 }
