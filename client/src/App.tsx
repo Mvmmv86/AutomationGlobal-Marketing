@@ -27,6 +27,7 @@ import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import CampaignsDashboard from "@/pages/CampaignsDashboard";
+import ContentAutomationSetup from "@/pages/ContentAutomationSetup";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -55,6 +56,9 @@ function Router() {
       {/* Campaigns Dashboard - Facebook Ads integration and management */}
       <Route path="/campaigns" component={CampaignsDashboard} />
       <Route path="/campaigns-dashboard" component={CampaignsDashboard} />
+      
+      {/* Content Automation - AI-powered content creation and publishing */}
+      <Route path="/marketing/automation/content/setup" component={ContentAutomationSetup} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
