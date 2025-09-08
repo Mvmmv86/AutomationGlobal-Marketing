@@ -3447,7 +3447,7 @@ function MarketingDashboardHome({
             Performance por Canal
           </h2>
           
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {channelsLoading ? (
               <div className="space-y-2">
                 <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
@@ -3455,50 +3455,88 @@ function MarketingDashboardHome({
                 <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
               </div>
             ) : (
-              channels.map((channel: any, index: number) => (
-                <div key={index} className="glass-3d p-4">
+              <>
+                {channels.map((channel: any, index: number) => (
+                  <div key={index} className="glass-3d p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        {channel.platform === 'instagram' && <InstagramIcon className="w-5 h-5 text-pink-500" />}
+                        {channel.platform === 'facebook' && <FacebookIcon className="w-5 h-5 text-blue-500" />}
+                        {channel.platform === 'youtube' && <YoutubeIcon className="w-5 h-5 text-red-500" />}
+                        {channel.platform === 'twitter' && <TwitterIcon className="w-5 h-5 text-gray-500" />}
+                        <div>
+                          <div className={cn("font-medium capitalize", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                            {channel.platform}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {channel.followers?.toLocaleString()} seguidores
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-cyan-400">
+                          {channel.trafficPercentage}%
+                        </div>
+                        <div className={cn(
+                          "text-xs",
+                          channel.isConnected ? 'text-green-400' : 'text-red-400'
+                        )}>
+                          {channel.isConnected ? 'Conectado' : 'Desconectado'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Engajamento:</span>
+                        <span className="text-white">{channel.engagement}%</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Crescimento:</span>
+                        <span className={channel.growth > 0 ? 'text-green-400' : 'text-red-400'}>
+                          {channel.growth > 0 ? '+' : ''}{channel.growth}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Status do Sistema Card - Movido para cá */}
+                <div className="glass-3d p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      {channel.platform === 'instagram' && <InstagramIcon className="w-5 h-5 text-pink-500" />}
-                      {channel.platform === 'facebook' && <FacebookIcon className="w-5 h-5 text-blue-500" />}
-                      {channel.platform === 'youtube' && <YoutubeIcon className="w-5 h-5 text-red-500" />}
-                      {channel.platform === 'twitter' && <TwitterIcon className="w-5 h-5 text-gray-500" />}
+                      <Activity className="w-5 h-5 text-green-400" />
                       <div>
-                        <div className={cn("font-medium capitalize", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
-                          {channel.platform}
+                        <div className={cn("font-medium", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                          Status do Sistema
                         </div>
                         <div className="text-xs text-gray-400">
-                          {channel.followers?.toLocaleString()} seguidores
+                          Visão geral operacional
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-cyan-400">
-                        {channel.trafficPercentage}%
+                      <div className="text-sm font-bold text-green-400">
+                        100%
                       </div>
-                      <div className={cn(
-                        "text-xs",
-                        channel.isConnected ? 'text-green-400' : 'text-red-400'
-                      )}>
-                        {channel.isConnected ? 'Conectado' : 'Desconectado'}
+                      <div className="text-xs text-green-400">
+                        Online
                       </div>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-400">Engajamento:</span>
-                      <span className="text-white">{channel.engagement}%</span>
+                      <span className="text-gray-400">Campanhas Ativas:</span>
+                      <span className="text-white">12</span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-400">Crescimento:</span>
-                      <span className={channel.growth > 0 ? 'text-green-400' : 'text-red-400'}>
-                        {channel.growth > 0 ? '+' : ''}{channel.growth}%
-                      </span>
+                      <span className="text-gray-400">Posts Agendados:</span>
+                      <span className="text-green-400">8</span>
                     </div>
                   </div>
                 </div>
-              ))
+              </>
             )}
           </div>
         </div>
@@ -3772,24 +3810,24 @@ function MarketingDashboardHome({
               </div>
             </button>
 
-            {/* Status Rápido */}
+            {/* Budget Restante */}
             <div className="glass-3d p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Activity className="w-4 h-4 text-green-400" />
-                <span className="text-sm font-bold text-white">Status do Sistema</span>
+                <DollarSign className="w-4 h-4 text-purple-400" />
+                <span className="text-sm font-bold text-white">Budget Restante</span>
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Campanhas Ativas:</span>
-                  <span className="text-green-400">12</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Posts Agendados:</span>
-                  <span className="text-cyan-400">8</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Budget Restante:</span>
+                  <span className="text-gray-400">Total Disponível:</span>
                   <span className="text-purple-400">$2.1K</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Gasto Hoje:</span>
+                  <span className="text-orange-400">$127</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Meta Mensal:</span>
+                  <span className="text-cyan-400">$5K</span>
                 </div>
               </div>
             </div>
