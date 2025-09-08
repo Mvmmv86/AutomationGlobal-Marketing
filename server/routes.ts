@@ -3043,6 +3043,78 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
+  // ==================== DEMO DATA FOR TESTING ====================
+  
+  // POST - Criar dados demo para teste
+  app.post('/api/demo/create-connected-accounts', async (req: Request, res) => {
+    try {
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+      const userId = '550e8400-e29b-41d4-a716-446655440002';
+
+      console.log('🎭 Criando contas demo para teste...');
+
+      const demoAccounts = [
+        {
+          platform: 'facebook' as any,
+          accountId: 'demo_fb_page_123',
+          accountName: 'Marketing Pro - Facebook',
+          accountHandle: 'marketing_pro_fb'
+        },
+        {
+          platform: 'instagram' as any,
+          accountId: 'demo_ig_business_456',
+          accountName: 'Marketing Pro - Instagram',
+          accountHandle: 'marketing_pro_ig'
+        }
+      ];
+
+      const createdAccounts = [];
+      
+      for (const accountData of demoAccounts) {
+        // Verificar se já existe
+        const [existing] = await db
+          .select()
+          .from(schema.socialMediaAccounts)
+          .where(and(
+            eq(schema.socialMediaAccounts.organizationId, organizationId),
+            eq(schema.socialMediaAccounts.accountId, accountData.accountId)
+          ));
+
+        if (!existing) {
+          const [account] = await db.insert(schema.socialMediaAccounts).values({
+            organizationId,
+            platform: accountData.platform,
+            accountId: accountData.accountId,
+            accountName: accountData.accountName,
+            accountHandle: accountData.accountHandle,
+            accessToken: `demo_token_${Date.now()}`,
+            expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias
+            isActive: true,
+            accountData: {
+              name: accountData.accountName,
+              username: accountData.accountHandle,
+              platform: accountData.platform,
+              demo: true
+            },
+            createdBy: userId,
+          }).returning();
+          
+          createdAccounts.push(account);
+        }
+      }
+
+      console.log(`✅ ${createdAccounts.length} contas demo criadas`);
+      res.json({ 
+        success: true, 
+        created: createdAccounts.length,
+        accounts: createdAccounts 
+      });
+    } catch (error: any) {
+      console.error('❌ Erro ao criar contas demo:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ==================== CONNECTED ACCOUNTS ENDPOINTS ====================
   
   // GET - Buscar contas conectadas (Para NewCampaignWizard)
