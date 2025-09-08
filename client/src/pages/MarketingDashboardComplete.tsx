@@ -3536,6 +3536,42 @@ function MarketingDashboardHome({
                     </div>
                   </div>
                 </div>
+
+                {/* Budget Restante Card - Movido para cá */}
+                <div className="glass-3d p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-5 h-5 text-purple-400" />
+                      <div>
+                        <div className={cn("font-medium", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                          Budget Restante
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Controle financeiro
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-purple-400">
+                        $2.1K
+                      </div>
+                      <div className="text-xs text-green-400">
+                        Disponível
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Gasto Hoje:</span>
+                      <span className="text-white">$127</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">Meta Mensal:</span>
+                      <span className="text-cyan-400">$5K</span>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -3810,24 +3846,24 @@ function MarketingDashboardHome({
               </div>
             </button>
 
-            {/* Budget Restante */}
+            {/* Status Operacional */}
             <div className="glass-3d p-4">
               <div className="flex items-center gap-2 mb-3">
-                <DollarSign className="w-4 h-4 text-purple-400" />
-                <span className="text-sm font-bold text-white">Budget Restante</span>
+                <Activity className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-bold text-white">Status Operacional</span>
               </div>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Total Disponível:</span>
-                  <span className="text-purple-400">$2.1K</span>
+                  <span className="text-gray-400">APIs Conectadas:</span>
+                  <span className="text-green-400">5/5</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Gasto Hoje:</span>
-                  <span className="text-orange-400">$127</span>
+                  <span className="text-gray-400">Sincronização:</span>
+                  <span className="text-cyan-400">Ativa</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Meta Mensal:</span>
-                  <span className="text-cyan-400">$5K</span>
+                  <span className="text-gray-400">Uptime:</span>
+                  <span className="text-purple-400">99.9%</span>
                 </div>
               </div>
             </div>
