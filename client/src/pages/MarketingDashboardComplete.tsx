@@ -3702,7 +3702,7 @@ function MarketingDashboardHome({
                       'polygon(18% 0%, 82% 0%, 75% 100%, 25% 100%)',
                       'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)'
                     ];
-                    const heights = [14, 13, 12, 11, 9]; // Alturas decrescentes
+                    const heights = [7, 6.5, 6, 5.5, 4.5]; // Alturas menores
                     
                     return (
                       <div key={index} className="relative" style={{ width: `${widthPercentages[index] || 50}%`, maxWidth: '400px' }}>
