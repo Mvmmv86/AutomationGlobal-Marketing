@@ -114,6 +114,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
       // Primeiro criar a campanha
       const campaignResponse = await apiRequest('POST', '/api/social-media/campaigns', {
         name: data.name,
+        type: 'social_media', // Tipo padrão para campanhas de mídia social
         objective: data.objective,
         description: data.description,
         accountId: data.selectedAccount
