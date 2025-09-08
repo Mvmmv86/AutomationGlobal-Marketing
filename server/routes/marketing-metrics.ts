@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { loggingService } from '../services/logging-service';
+import { db } from '../storage';
+import { socialMediaAccounts, type SocialMediaAccount } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -12,40 +15,72 @@ const router = Router();
 router.get('/global-metrics/:days?', async (req, res) => {
   try {
     const days = parseInt(req.params.days || '30');
-    loggingService.info('Marketing global metrics requested', { days }, req);
+    const organizationId = req.headers['x-organization-id'] as string;
+    loggingService.info('Marketing global metrics requested', { days, organizationId }, req);
 
-    // Calcular métricas baseadas no período
-    const baseImpresions = 2500000;
-    const baseClicks = 125000;
-    const baseConversions = 3450;
-    const baseROI = 340;
-    const baseCPA = 12.5;
+    // Verificar se existem contas de mídia social conectadas
+    const connectedAccounts = await db
+      .select()
+      .from(socialMediaAccounts)
+      .where(and(
+        eq(socialMediaAccounts.organizationId, organizationId),
+        eq(socialMediaAccounts.isActive, true)
+      ));
 
-    // Simular variação por período (quanto menor o período, menos dados)
-    const periodMultiplier = days === 7 ? 0.3 : days === 30 ? 1 : 2.5; // 90 dias
+    const hasConnectedAccounts = connectedAccounts.length > 0;
 
-    const globalMetrics = {
-      totalImpressions: Math.round(baseImpresions * periodMultiplier),
-      impressionsGrowth: Math.round(Math.random() * 20 + 5), // 5-25%
-      totalClicks: Math.round(baseClicks * periodMultiplier),
-      clicksGrowth: Math.round(Math.random() * 15 + 3), // 3-18%
-      totalConversions: Math.round(baseConversions * periodMultiplier),
-      conversionsGrowth: Math.round(Math.random() * 18 + 8), // 8-26%
-      totalROI: Math.round(baseROI * (1 + (Math.random() * 0.4))), // Variação do ROI
-      roiGrowth: Math.round(Math.random() * 30 + 10), // 10-40%
-      costPerAcquisition: Number((baseCPA * (1 - Math.random() * 0.2)).toFixed(1)), // Redução no CPA
-      capaGrowth: -Math.round(Math.random() * 10 + 2), // Negativo = melhoria
-    };
+    let globalMetrics;
+
+    if (!hasConnectedAccounts) {
+      // Se não há contas conectadas, retornar zeros
+      globalMetrics = {
+        totalImpressions: 0,
+        impressionsGrowth: 0,
+        totalClicks: 0,
+        clicksGrowth: 0,
+        totalConversions: 0,
+        conversionsGrowth: 0,
+        totalROI: 0,
+        roiGrowth: 0,
+        costPerAcquisition: 0,
+        capaGrowth: 0,
+      };
+    } else {
+      // Se há contas conectadas, usar dados simulados ou reais
+      const baseImpresions = 2500000;
+      const baseClicks = 125000;
+      const baseConversions = 3450;
+      const baseROI = 340;
+      const baseCPA = 12.5;
+
+      // Simular variação por período (quanto menor o período, menos dados)
+      const periodMultiplier = days === 7 ? 0.3 : days === 30 ? 1 : 2.5; // 90 dias
+
+      globalMetrics = {
+        totalImpressions: Math.round(baseImpresions * periodMultiplier),
+        impressionsGrowth: Math.round(Math.random() * 20 + 5), // 5-25%
+        totalClicks: Math.round(baseClicks * periodMultiplier),
+        clicksGrowth: Math.round(Math.random() * 15 + 3), // 3-18%
+        totalConversions: Math.round(baseConversions * periodMultiplier),
+        conversionsGrowth: Math.round(Math.random() * 18 + 8), // 8-26%
+        totalROI: Math.round(baseROI * (1 + (Math.random() * 0.4))), // Variação do ROI
+        roiGrowth: Math.round(Math.random() * 30 + 10), // 10-40%
+        costPerAcquisition: Number((baseCPA * (1 - Math.random() * 0.2)).toFixed(1)), // Redução no CPA
+        capaGrowth: -Math.round(Math.random() * 10 + 2), // Negativo = melhoria
+      };
+    }
 
     res.json({
       success: true,
       message: 'Global marketing metrics retrieved successfully',
       data: globalMetrics,
       period: `${days} days`,
+      connectedAccounts: connectedAccounts.length,
+      hasData: hasConnectedAccounts,
       timestamp: new Date().toISOString()
     });
 
-    loggingService.info('Marketing global metrics sent', { metrics: globalMetrics, days }, req);
+    loggingService.info('Marketing global metrics sent', { metrics: globalMetrics, days, connectedAccounts: connectedAccounts.length }, req);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -63,17 +98,28 @@ router.get('/global-metrics/:days?', async (req, res) => {
 // GET /api/marketing/channel-performance - Performance por canal
 router.get('/channel-performance', async (req, res) => {
   try {
-    loggingService.info('Channel performance requested', {}, req);
+    const organizationId = req.headers['x-organization-id'] as string;
+    loggingService.info('Channel performance requested', { organizationId }, req);
 
-    // Dados realistas de performance por canal
-    const channelPerformance = [
+    // Buscar contas conectadas reais
+    const connectedAccounts = await db
+      .select()
+      .from(socialMediaAccounts)
+      .where(and(
+        eq(socialMediaAccounts.organizationId, organizationId),
+        eq(socialMediaAccounts.isActive, true)
+      ));
+
+    const connectedPlatforms = connectedAccounts.map((account: SocialMediaAccount) => account.platform.toLowerCase());
+
+    // Definir performance base para cada plataforma
+    const allPlatforms = [
       {
         platform: 'instagram',
         trafficPercentage: 45,
         engagement: 78,
         followers: 50000,
         postsCount: 124,
-        isConnected: true, // Simular conexão
         growth: 12,
         impressions: 890000,
         clicks: 45600,
@@ -85,7 +131,6 @@ router.get('/channel-performance', async (req, res) => {
         engagement: 65,
         followers: 75000,
         postsCount: 89,
-        isConnected: true,
         growth: 8,
         impressions: 650000,
         clicks: 32500,
@@ -97,7 +142,6 @@ router.get('/channel-performance', async (req, res) => {
         engagement: 82,
         followers: 25000,
         postsCount: 45,
-        isConnected: false,
         growth: 25,
         impressions: 380000,
         clicks: 22800,
@@ -109,7 +153,6 @@ router.get('/channel-performance', async (req, res) => {
         engagement: 45,
         followers: 30000,
         postsCount: 156,
-        isConnected: false,
         growth: 5,
         impressions: 180000,
         clicks: 9800,
@@ -117,14 +160,31 @@ router.get('/channel-performance', async (req, res) => {
       }
     ];
 
+    // Ajustar dados baseado nas contas conectadas
+    const channelPerformance = allPlatforms.map(platform => ({
+      ...platform,
+      isConnected: connectedPlatforms.includes(platform.platform),
+      // Se não conectado, zerar métricas de performance
+      trafficPercentage: connectedPlatforms.includes(platform.platform) ? platform.trafficPercentage : 0,
+      engagement: connectedPlatforms.includes(platform.platform) ? platform.engagement : 0,
+      followers: connectedPlatforms.includes(platform.platform) ? platform.followers : 0,
+      postsCount: connectedPlatforms.includes(platform.platform) ? platform.postsCount : 0,
+      growth: connectedPlatforms.includes(platform.platform) ? platform.growth : 0,
+      impressions: connectedPlatforms.includes(platform.platform) ? platform.impressions : 0,
+      clicks: connectedPlatforms.includes(platform.platform) ? platform.clicks : 0,
+      conversions: connectedPlatforms.includes(platform.platform) ? platform.conversions : 0
+    }));
+
     res.json({
       success: true,
       message: 'Channel performance data retrieved successfully',
       data: channelPerformance,
+      connectedAccounts: connectedAccounts.length,
+      connectedPlatforms: connectedPlatforms,
       timestamp: new Date().toISOString()
     });
 
-    loggingService.info('Channel performance sent', { count: channelPerformance.length }, req);
+    loggingService.info('Channel performance sent', { count: channelPerformance.length, connectedAccounts: connectedAccounts.length }, req);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
