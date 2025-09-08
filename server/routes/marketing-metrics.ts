@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { loggingService } from '../services/logging-service';
-import { db } from '../storage';
-import { socialMediaAccounts, type SocialMediaAccount } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { storage } from '../storage';
+import { type SocialMediaAccount } from '@shared/schema';
 
 const router = Router();
 
@@ -19,13 +18,7 @@ router.get('/global-metrics/:days?', async (req, res) => {
     loggingService.info('Marketing global metrics requested', { days, organizationId }, req);
 
     // Verificar se existem contas de mídia social conectadas
-    const connectedAccounts = await db
-      .select()
-      .from(socialMediaAccounts)
-      .where(and(
-        eq(socialMediaAccounts.organizationId, organizationId),
-        eq(socialMediaAccounts.isActive, true)
-      ));
+    const connectedAccounts = await storage.getSocialMediaAccountsByOrganization(organizationId);
 
     const hasConnectedAccounts = connectedAccounts.length > 0;
 
@@ -102,13 +95,7 @@ router.get('/channel-performance', async (req, res) => {
     loggingService.info('Channel performance requested', { organizationId }, req);
 
     // Buscar contas conectadas reais
-    const connectedAccounts = await db
-      .select()
-      .from(socialMediaAccounts)
-      .where(and(
-        eq(socialMediaAccounts.organizationId, organizationId),
-        eq(socialMediaAccounts.isActive, true)
-      ));
+    const connectedAccounts = await storage.getSocialMediaAccountsByOrganization(organizationId);
 
     const connectedPlatforms = connectedAccounts.map((account: SocialMediaAccount) => account.platform.toLowerCase());
 

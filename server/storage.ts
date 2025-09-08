@@ -959,6 +959,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Social Media Account methods
+  async getSocialMediaAccountsByOrganization(organizationId: string): Promise<SocialMediaAccount[]> {
+    return await db
+      .select()
+      .from(schema.socialMediaAccounts)
+      .where(and(
+        eq(schema.socialMediaAccounts.organizationId, organizationId),
+        eq(schema.socialMediaAccounts.isActive, true)
+      ));
+  }
+
   // Utility methods
   private getPeriodStart(period: 'today' | 'week' | 'month'): Date {
     const now = new Date();
