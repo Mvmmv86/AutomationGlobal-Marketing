@@ -29,7 +29,11 @@ import {
   MousePointer,
   ShoppingBag,
   Heart,
-  Plus
+  Plus,
+  MessageCircle,
+  Send,
+  ThumbsUp,
+  Share
 } from 'lucide-react';
 
 interface ConnectedAccount {
@@ -84,7 +88,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   const queryClient = useQueryClient();
 
   // Buscar contas conectadas
-  const { data: connectedAccounts = [], isLoading: accountsLoading } = useQuery({
+  const { data: connectedAccounts = [], isLoading: accountsLoading } = useQuery<ConnectedAccount[]>({
     queryKey: ['/api/social-media/connected-accounts'],
     enabled: isOpen
   });
@@ -108,20 +112,16 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
       // Primeiro criar a campanha
-      const campaignResponse = await apiRequest('/api/social-media/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          objective: data.objective,
-          description: data.description,
-          accountId: data.selectedAccount
-        })
+      const campaignResponse = await apiRequest('/api/social-media/campaigns', 'POST', {
+        name: data.name,
+        objective: data.objective,
+        description: data.description,
+        accountId: data.selectedAccount
       });
 
       // Depois criar o post
       const postPayload: any = {
-        campaignId: campaignResponse.id,
+        campaignId: campaignResponse.id || 'temp-campaign-id',
         platform: getAccountPlatform(data.selectedAccount),
         accountId: data.selectedAccount,
         content: data.postContent,
@@ -135,11 +135,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
         postPayload.mediaUrl = base64;
       }
 
-      const postResponse = await apiRequest('/api/social-media/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postPayload)
-      });
+      const postResponse = await apiRequest('/api/social-media/posts', 'POST', postPayload);
 
       return { campaign: campaignResponse, post: postResponse };
     },
@@ -234,7 +230,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   };
 
   const getAccountPlatform = (accountId: string): string => {
-    const account = connectedAccounts.find((acc: ConnectedAccount) => acc.id === accountId);
+    const account = connectedAccounts?.find((acc: ConnectedAccount) => acc.id === accountId);
     return account?.platform || 'instagram';
   };
 
@@ -352,7 +348,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
             ) : (
               <div className="space-y-3">
                 <label className="text-white text-sm font-medium mb-2 block">Contas Disponíveis</label>
-                {connectedAccounts.map((account: ConnectedAccount) => (
+                {connectedAccounts?.map((account: ConnectedAccount) => (
                   <Card
                     key={account.id}
                     className={`glass-3d border-0 cursor-pointer transition-all duration-300 hover:scale-[1.02] ${
@@ -475,7 +471,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
         );
 
       case 4:
-        const selectedAccount = connectedAccounts.find((acc: ConnectedAccount) => acc.id === campaignData.selectedAccount);
+        const selectedAccount = connectedAccounts?.find((acc: ConnectedAccount) => acc.id === campaignData.selectedAccount);
         const selectedObjective = CAMPAIGN_OBJECTIVES.find(obj => obj.value === campaignData.objective);
 
         return (
@@ -486,83 +482,160 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
             </div>
 
             <div className="space-y-4">
-              <Card className="glass-3d border-0">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-blue-400" />
-                    Detalhes da Campanha
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-gray-400 text-sm">Nome:</p>
-                    <p className="text-white font-medium">{campaignData.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-sm">Objetivo:</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {selectedObjective && (
-                        <>
-                          <selectedObjective.icon className="w-4 h-4 text-blue-400" />
-                          <p className="text-white">{selectedObjective.label}</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {campaignData.description && (
-                    <div>
-                      <p className="text-gray-400 text-sm">Descrição:</p>
-                      <p className="text-white">{campaignData.description}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {selectedAccount && (
+              {/* Cards menores e mais compactos */}
+              <div className="space-y-3">
                 <Card className="glass-3d border-0">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      {selectedAccount.platform === 'facebook' ? (
-                        <Facebook className="w-5 h-5 text-blue-500" />
-                      ) : (
-                        <Instagram className="w-5 h-5 text-pink-500" />
-                      )}
-                      Conta Selecionada
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-white font-medium">{selectedAccount.name}</p>
-                    <p className="text-gray-400 text-sm">@{selectedAccount.username}</p>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Target className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium text-sm truncate">{campaignData.name}</p>
+                        <p className="text-gray-400 text-xs truncate">
+                          {selectedObjective?.label}
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
-              )}
 
-              <Card className="glass-3d border-0">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-green-400" />
-                    Preview do Post
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {campaignData.mediaPreview && (
-                    <img 
-                      src={campaignData.mediaPreview} 
-                      alt="Preview"
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                  )}
-                  {campaignData.mediaType === 'video' && campaignData.mediaFile && (
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <Video className="w-4 h-4" />
-                      <span className="text-sm">{campaignData.mediaFile.name}</span>
+                {selectedAccount && (
+                  <Card className="glass-3d border-0">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        {selectedAccount.platform === 'facebook' ? (
+                          <Facebook className="w-4 h-4 text-blue-500" />
+                        ) : (
+                          <Instagram className="w-4 h-4 text-pink-500" />
+                        )}
+                        <div>
+                          <p className="text-white font-medium text-sm">{selectedAccount.name}</p>
+                          <p className="text-gray-400 text-xs">@{selectedAccount.username}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Preview realista do post */}
+                <div className="glass-3d border-0 rounded-lg overflow-hidden">
+                  {selectedAccount?.platform === 'instagram' ? (
+                    // Instagram-style preview
+                    <div className="bg-white">
+                      {/* Header do Instagram */}
+                      <div className="flex items-center gap-3 p-3 border-b border-gray-100">
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                          <Instagram className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-black text-sm font-semibold">{selectedAccount.username}</p>
+                          <p className="text-gray-500 text-xs">Patrocinado</p>
+                        </div>
+                      </div>
+                      
+                      {/* Conteúdo da mídia */}
+                      {campaignData.mediaPreview ? (
+                        <div className="aspect-square bg-gray-100">
+                          <img 
+                            src={campaignData.mediaPreview} 
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : campaignData.mediaType === 'video' ? (
+                        <div className="aspect-square bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center">
+                          <div className="text-center">
+                            <Video className="w-12 h-12 text-white mx-auto mb-2" />
+                            <p className="text-white text-xs">Vídeo</p>
+                          </div>
+                        </div>
+                      ) : (
+                        // Post só com texto - preview do texto em formato de imagem
+                        <div className="aspect-square bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-6">
+                          <p className="text-white text-center text-sm font-medium leading-relaxed">
+                            {campaignData.postContent.length > 100 
+                              ? campaignData.postContent.substring(0, 100) + '...'
+                              : campaignData.postContent
+                            }
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Footer do Instagram */}
+                      <div className="p-3">
+                        <div className="flex items-center gap-4 mb-2">
+                          <Heart className="w-6 h-6 text-gray-800" />
+                          <MessageCircle className="w-6 h-6 text-gray-800" />
+                          <Send className="w-6 h-6 text-gray-800" />
+                        </div>
+                        <p className="text-black text-sm">
+                          <span className="font-semibold">{selectedAccount.username}</span>{' '}
+                          {campaignData.postContent.length > 120 
+                            ? campaignData.postContent.substring(0, 120) + '... mais'
+                            : campaignData.postContent
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    // Facebook-style preview
+                    <div className="bg-white">
+                      {/* Header do Facebook */}
+                      <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                          <Facebook className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-black text-sm font-semibold">{selectedAccount?.name}</p>
+                          <p className="text-gray-500 text-xs">Anúncio · Agora</p>
+                        </div>
+                      </div>
+                      
+                      {/* Texto do post */}
+                      <div className="p-4">
+                        <p className="text-black text-sm leading-relaxed mb-3">
+                          {campaignData.postContent}
+                        </p>
+                        
+                        {/* Mídia */}
+                        {campaignData.mediaPreview ? (
+                          <div className="rounded-lg overflow-hidden">
+                            <img 
+                              src={campaignData.mediaPreview} 
+                              alt="Preview"
+                              className="w-full h-48 object-cover"
+                            />
+                          </div>
+                        ) : campaignData.mediaType === 'video' && (
+                          <div className="bg-gray-900 rounded-lg h-48 flex items-center justify-center">
+                            <div className="text-center">
+                              <Video className="w-12 h-12 text-white mx-auto mb-2" />
+                              <p className="text-white text-sm">{campaignData.mediaFile?.name}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Footer de interação */}
+                      <div className="border-t border-gray-100 p-3">
+                        <div className="flex justify-between text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <ThumbsUp className="w-4 h-4" />
+                            <span className="text-xs">Curtir</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="text-xs">Comentar</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Share className="w-4 h-4" />
+                            <span className="text-xs">Compartilhar</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
-                  <p className="text-white bg-black/20 rounded p-3 text-sm leading-relaxed">
-                    {campaignData.postContent}
-                  </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
         );
