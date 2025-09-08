@@ -3043,6 +3043,92 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
+  // ==================== CONNECTED ACCOUNTS ENDPOINTS ====================
+  
+  // GET - Buscar contas conectadas (Para NewCampaignWizard)
+  app.get('/api/social-media/connected-accounts', async (req: Request, res) => {
+    try {
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      
+      console.log('🔍 Buscando contas conectadas...');
+      
+      const accounts = await db
+        .select({
+          id: schema.socialMediaAccounts.id,
+          platform: schema.socialMediaAccounts.platform,
+          name: schema.socialMediaAccounts.accountName,
+          username: schema.socialMediaAccounts.accountHandle,
+          profileImage: sql<string>`null`, // Pode ser adicionado no futuro
+          isConnected: sql<boolean>`true`
+        })
+        .from(schema.socialMediaAccounts)
+        .where(eq(schema.socialMediaAccounts.organizationId, organizationId))
+        .where(eq(schema.socialMediaAccounts.isActive, true));
+
+      console.log(`✅ Encontradas ${accounts.length} contas conectadas`);
+      res.json(accounts);
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar contas conectadas:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // GET - Conectar nova conta via OAuth (Mock para desenvolvimento)
+  app.get('/api/social-media/connect/:platform', async (req: Request, res) => {
+    try {
+      const { platform } = req.params;
+      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+      const userId = '550e8400-e29b-41d4-a716-446655440002';
+
+      console.log(`🔗 Conectando conta ${platform}...`);
+
+      // Simular conta conectada para desenvolvimento
+      const demoAccounts = {
+        facebook: {
+          accountId: `demo_fb_${Date.now()}`,
+          accountName: 'Página Facebook Demo',
+          accountHandle: 'facebook_demo'
+        },
+        instagram: {
+          accountId: `demo_ig_${Date.now()}`,
+          accountName: 'Instagram Business Demo', 
+          accountHandle: 'instagram_demo'
+        }
+      };
+
+      const accountData = demoAccounts[platform as keyof typeof demoAccounts];
+      if (!accountData) {
+        return res.status(400).json({ error: 'Plataforma não suportada' });
+      }
+
+      const [account] = await db.insert(schema.socialMediaAccounts).values({
+        organizationId,
+        platform: platform as any,
+        accountId: accountData.accountId,
+        accountName: accountData.accountName,
+        accountHandle: accountData.accountHandle,
+        accessToken: `demo_token_${Date.now()}`,
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias
+        isActive: true,
+        accountData: {
+          name: accountData.accountName,
+          username: accountData.accountHandle,
+          platform: platform,
+          demo: true
+        },
+        createdBy: userId,
+      }).returning();
+
+      console.log(`✅ Conta ${platform} conectada:`, account);
+      
+      // Redirecionar de volta para a página de campanhas
+      res.redirect('/?connected=' + platform);
+    } catch (error: any) {
+      console.error(`❌ Erro ao conectar conta ${req.params.platform}:`, error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
