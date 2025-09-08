@@ -3568,7 +3568,7 @@ function MarketingDashboardHome({
             Funil de Vendas Interativo
           </h2>
           
-          <div className="glass-3d p-6">
+          <div className="glass-3d p-6 relative">
             {funnelLoading ? (
               <div className="space-y-4">
                 <div className="h-8 bg-gray-600/20 rounded animate-pulse"></div>
@@ -3579,78 +3579,123 @@ function MarketingDashboardHome({
                 <div className="h-2 bg-gray-600/20 rounded animate-pulse"></div>
               </div>
             ) : (
-              <div className="space-y-4">
-                {/* Awareness */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">Conscientização</span>
-                    <span className="text-cyan-400">{funnel.awareness?.toLocaleString()}</span>
+              <div className="relative">
+                {/* Target no fundo */}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-48 h-24 opacity-20">
+                  <div className="w-full h-full rounded-full border-4 border-white/20"></div>
+                  <div className="absolute top-2 left-2 right-2 bottom-2 rounded-full border-2 border-white/20"></div>
+                  <div className="absolute top-4 left-4 right-4 bottom-4 rounded-full border border-white/20"></div>
+                  <div className="absolute top-6 left-6 right-6 bottom-6 rounded-full bg-white/10"></div>
+                </div>
+
+                {/* Funil 3D */}
+                <div className="relative flex flex-col items-center space-y-2 py-4">
+                  {/* Geração de Leads */}
+                  <div className="relative w-full max-w-sm">
+                    <div 
+                      className="h-12 bg-gradient-to-r from-red-500 to-red-400 rounded-t-lg flex items-center justify-center text-white font-bold text-sm shadow-lg transform perspective-1000 rotateX-10"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
+                        boxShadow: '0 4px 15px rgba(220, 38, 38, 0.4)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>Geração de Leads</div>
+                        <div className="text-xs opacity-90">{funnel.awareness?.toLocaleString()}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400" style={{ width: '100%' }}></div>
+
+                  {/* Qualificar Leads */}
+                  <div className="relative w-5/6 max-w-sm">
+                    <div 
+                      className="h-10 bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+                        boxShadow: '0 4px 15px rgba(217, 119, 6, 0.4)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>Qualificar Leads</div>
+                        <div className="text-xs opacity-90">{funnel.interest?.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Avaliar desafios/problemas */}
+                  <div className="relative w-4/5 max-w-sm">
+                    <div 
+                      className="h-10 bg-gradient-to-r from-green-600 to-green-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+                        boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>Avaliar desafios/problemas</div>
+                        <div className="text-xs opacity-90">{funnel.consideration?.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Solucionar Problemas */}
+                  <div className="relative w-3/4 max-w-sm">
+                    <div 
+                      className="h-10 bg-gradient-to-r from-cyan-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                        boxShadow: '0 4px 15px rgba(8, 145, 178, 0.4)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>Solucionar Problemas</div>
+                        <div className="text-xs opacity-90">{funnel.intent?.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Converter */}
+                  <div className="relative w-2/3 max-w-sm">
+                    <div 
+                      className="h-9 bg-gradient-to-r from-blue-700 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+                        boxShadow: '0 4px 15px rgba(29, 78, 216, 0.4)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>Converter</div>
+                        <div className="text-xs opacity-90">{funnel.evaluation?.toLocaleString()}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fechar */}
+                  <div className="relative w-1/2 max-w-sm">
+                    <div 
+                      className="h-8 bg-gradient-to-r from-purple-700 to-purple-600 rounded-b-lg flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
+                        boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)'
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>Fechar</div>
+                        <div className="text-xs opacity-90">{funnel.purchase?.toLocaleString()}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Interest */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">Interesse</span>
-                    <span className="text-purple-400">{funnel.interest?.toLocaleString()}</span>
+                {/* Estatísticas */}
+                <div className="mt-6 pt-4 border-t border-gray-600 grid grid-cols-2 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-gray-400">Taxa de Conversão</div>
+                    <div className="text-green-400 font-bold text-lg">{funnel.totalConversionRate || 2.1}%</div>
                   </div>
-                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-purple-500 to-purple-400" style={{ width: '75%' }}></div>
-                  </div>
-                </div>
-
-                {/* Consideration */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">Consideração</span>
-                    <span className="text-blue-400">{funnel.consideration?.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400" style={{ width: '60%' }}></div>
-                  </div>
-                </div>
-
-                {/* Intent */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">Intenção</span>
-                    <span className="text-orange-400">{funnel.intent?.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400" style={{ width: '40%' }}></div>
-                  </div>
-                </div>
-
-                {/* Evaluation */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">Avaliação</span>
-                    <span className="text-yellow-400">{funnel.evaluation?.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400" style={{ width: '25%' }}></div>
-                  </div>
-                </div>
-
-                {/* Purchase */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">Compra</span>
-                    <span className="text-green-400">{funnel.purchase?.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-green-500 to-green-400" style={{ width: '15%' }}></div>
-                  </div>
-                </div>
-
-                {/* Taxa de Conversão */}
-                <div className="pt-4 border-t border-gray-600">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Taxa de Conversão Total:</span>
-                    <span className="text-green-400 font-bold">{funnel.totalConversionRate || 0}%</span>
+                  <div className="text-center">
+                    <div className="text-gray-400">Tempo Médio</div>
+                    <div className="text-cyan-400 font-bold text-lg">{funnel.averageTimeToConvert || 14} dias</div>
                   </div>
                 </div>
               </div>
@@ -3754,7 +3799,26 @@ function MarketingDashboardHome({
 
       {/* New Campaign Wizard Modal */}
       {showNewCampaignWizard && (
-        <NewCampaignWizard onClose={() => setShowNewCampaignWizard(false)} />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-3d p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white">Nova Campanha</h3>
+              <button 
+                onClick={() => setShowNewCampaignWizard(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-gray-400 mb-4">Assistente para criar nova campanha em desenvolvimento...</p>
+            <button 
+              onClick={() => setShowNewCampaignWizard(false)}
+              className="w-full gradient-purple-blue text-white py-2 rounded-lg"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
