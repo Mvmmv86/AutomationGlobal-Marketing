@@ -112,16 +112,18 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
       // Primeiro criar a campanha
-      const campaignResponse = await apiRequest('/api/social-media/campaigns', 'POST', {
+      const campaignResponse = await apiRequest('POST', '/api/social-media/campaigns', {
         name: data.name,
         objective: data.objective,
         description: data.description,
         accountId: data.selectedAccount
       });
 
+      const campaignData = await campaignResponse.json();
+
       // Depois criar o post
       const postPayload: any = {
-        campaignId: campaignResponse.id || 'temp-campaign-id',
+        campaignId: campaignData.data?.id || 'temp-campaign-id',
         platform: getAccountPlatform(data.selectedAccount),
         accountId: data.selectedAccount,
         content: data.postContent,
@@ -135,9 +137,9 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
         postPayload.mediaUrl = base64;
       }
 
-      const postResponse = await apiRequest('/api/social-media/posts', 'POST', postPayload);
+      const postResponse = await apiRequest('POST', '/api/social-media/posts', postPayload);
 
-      return { campaign: campaignResponse, post: postResponse };
+      return { campaign: campaignData, post: await postResponse.json() };
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] });
