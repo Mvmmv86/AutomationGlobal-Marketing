@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useRef } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -11,137 +12,147 @@ import {
   Target, 
   Users, 
   TrendingUp, 
-  Heart, 
-  MessageCircle, 
-  Share2, 
   ArrowRight,
   ArrowLeft,
   Check,
   Sparkles,
-  Zap,
-  Brain,
+  X as XIcon,
+  Upload,
+  Image as ImageIcon,
+  Video,
+  FileText,
+  Instagram,
+  Facebook,
+  AlertCircle,
+  Link as LinkIcon,
   Eye,
   MousePointer,
   ShoppingBag,
-  Instagram,
-  Facebook,
-  X as XIcon,
-  ChevronRight,
-  Image as ImageIcon,
-  Video,
-  FileText
+  Heart,
+  Plus
 } from 'lucide-react';
 
-interface CampaignType {
+interface ConnectedAccount {
   id: string;
+  platform: 'facebook' | 'instagram';
   name: string;
-  description: string;
-  icon: any;
-  color: string;
-  objectives: string[];
-}
-
-interface PostData {
-  platform: string;
-  content: string;
-  mediaType?: string;
-  mediaUrl?: string;
+  username: string;
+  profileImage?: string;
+  isConnected: boolean;
 }
 
 interface CampaignData {
   name: string;
-  description: string;
-  type: string;
   objective: string;
-  firstPost?: PostData;
+  description: string;
+  selectedAccount: string;
+  postContent: string;
+  mediaFile?: File;
+  mediaPreview?: string;
+  mediaType: 'text' | 'image' | 'video';
 }
-
-const campaignTypes: CampaignType[] = [
-  {
-    id: 'awareness',
-    name: 'Reconhecimento',
-    description: 'Aumente a visibilidade da sua marca',
-    icon: Eye,
-    color: 'from-blue-500 to-cyan-500',
-    objectives: ['Brand Awareness', 'Reach']
-  },
-  {
-    id: 'consideration',
-    name: 'Consideração',
-    description: 'Engaje com pessoas interessadas',
-    icon: Brain,
-    color: 'from-purple-500 to-pink-500',
-    objectives: ['Traffic', 'Engagement', 'App Installs', 'Video Views', 'Lead Generation']
-  },
-  {
-    id: 'conversion',
-    name: 'Conversão',
-    description: 'Incentive ações valiosas',
-    icon: Target,
-    color: 'from-green-500 to-emerald-500',
-    objectives: ['Conversions', 'Catalog Sales', 'Store Traffic']
-  }
-];
-
-const platforms = [
-  { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'text-blue-600' },
-  { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'text-pink-500' },
-];
-
-const contentTypes = [
-  { id: 'text', name: 'Apenas Texto', icon: FileText, description: 'Post com texto simples' },
-  { id: 'image', name: 'Texto + Imagem', icon: ImageIcon, description: 'Post com imagem' },
-  { id: 'video', name: 'Texto + Vídeo', icon: Video, description: 'Post com vídeo' }
-];
 
 interface NewCampaignWizardProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const CAMPAIGN_OBJECTIVES = [
+  { value: 'awareness', label: 'Reconhecimento - Alcance e impressões', icon: Eye },
+  { value: 'traffic', label: 'Tráfego - Direcionamento para site', icon: MousePointer },
+  { value: 'engagement', label: 'Engajamento - Curtidas e comentários', icon: Heart },
+  { value: 'leads', label: 'Geração de leads - Captura de contatos', icon: Target },
+  { value: 'sales', label: 'Conversões - Vendas diretas', icon: ShoppingBag },
+  { value: 'app_install', label: 'Instalações de app', icon: Plus }
+];
+
 export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: '',
+    objective: '',
     description: '',
-    type: '',
-    objective: ''
-  });
-  const [selectedType, setSelectedType] = useState<CampaignType | null>(null);
-  const [postData, setPostData] = useState<PostData>({
-    platform: 'instagram',
-    content: '',
+    selectedAccount: '',
+    postContent: '',
+    mediaFile: undefined,
+    mediaPreview: '',
     mediaType: 'text'
   });
-  
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Mutation para criar campanha
+  // Buscar contas conectadas
+  const { data: connectedAccounts = [], isLoading: accountsLoading } = useQuery({
+    queryKey: ['/api/social-media/connected-accounts'],
+    enabled: isOpen
+  });
+
+  // Mutation para conectar conta
+  const connectAccountMutation = useMutation({
+    mutationFn: async (platform: string) => {
+      // Redirecionar para OAuth do Facebook/Instagram
+      window.location.href = `/api/social-media/connect/${platform}`;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "❌ Erro ao conectar",
+        description: error.message || "Não foi possível conectar a conta",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Mutation para criar campanha e post
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('/api/social-media/campaigns', {
+      // Primeiro criar a campanha
+      const campaignResponse = await apiRequest('/api/social-media/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          name: data.name,
+          objective: data.objective,
+          description: data.description,
+          accountId: data.selectedAccount
+        })
       });
+
+      // Depois criar o post
+      const postPayload: any = {
+        campaignId: campaignResponse.id,
+        platform: getAccountPlatform(data.selectedAccount),
+        accountId: data.selectedAccount,
+        content: data.postContent,
+        mediaType: data.mediaType,
+        status: 'draft'
+      };
+
+      if (data.mediaFile) {
+        // Converter arquivo para base64
+        const base64 = await fileToBase64(data.mediaFile);
+        postPayload.mediaUrl = base64;
+      }
+
+      const postResponse = await apiRequest('/api/social-media/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postPayload)
+      });
+
+      return { campaign: campaignResponse, post: postResponse };
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social-media/posts'] });
+      
       toast({
-        title: "✅ Campanha Criada!",
-        description: `Campanha "${campaignData.name}" criada com sucesso!`
+        title: "🎉 Campanha Criada!",
+        description: `Campanha "${campaignData.name}" e post criados com sucesso!`
       });
       
-      // Se tem post, criar o post também
-      if (postData.content.trim()) {
-        createPostMutation.mutate({
-          campaignId: response.id,
-          ...postData
-        });
-      } else {
-        handleClose();
-      }
+      handleClose();
     },
     onError: (error: any) => {
       toast({
@@ -152,70 +163,93 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
     }
   });
 
-  // Mutation para criar post
-  const createPostMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await apiRequest('/api/social-media/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/social-media/recent-posts'] });
-      toast({
-        title: "🎉 Post Criado!",
-        description: "Primeiro post da campanha criado com sucesso!"
-      });
-      handleClose();
-    }
-  });
-
   const handleClose = () => {
     setCurrentStep(1);
-    setCampaignData({ name: '', description: '', type: '', objective: '' });
-    setSelectedType(null);
-    setPostData({ platform: 'instagram', content: '', mediaType: 'text' });
+    setCampaignData({
+      name: '',
+      objective: '',
+      description: '',
+      selectedAccount: '',
+      postContent: '',
+      mediaFile: undefined,
+      mediaPreview: '',
+      mediaType: 'text'
+    });
     onClose();
   };
 
-  const handleNextStep = () => {
+  const handleNext = () => {
     if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
-  const handlePrevStep = () => {
+  const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
-  const handleTypeSelect = (type: CampaignType) => {
-    setSelectedType(type);
-    setCampaignData(prev => ({
-      ...prev,
-      type: type.id,
-      objective: type.objectives[0].toLowerCase().replace(' ', '_')
-    }));
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        toast({
+          title: "❌ Arquivo inválido",
+          description: "Selecione apenas imagens ou vídeos",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setCampaignData(prev => ({
+        ...prev,
+        mediaFile: file,
+        mediaType: isImage ? 'image' : 'video'
+      }));
+
+      // Preview da imagem
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setCampaignData(prev => ({
+            ...prev,
+            mediaPreview: reader.result as string
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
+    }
   };
 
-  const handleFinish = () => {
-    const finalData = {
-      ...campaignData,
-      firstPost: postData.content.trim() ? postData : undefined
-    };
-    
-    createCampaignMutation.mutate(finalData);
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const getAccountPlatform = (accountId: string): string => {
+    const account = connectedAccounts.find((acc: ConnectedAccount) => acc.id === accountId);
+    return account?.platform || 'instagram';
   };
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1: return selectedType !== null;
-      case 2: return campaignData.name.trim() !== '' && campaignData.description.trim() !== '';
-      case 3: return true; // Post é opcional
-      case 4: return true;
-      default: return false;
+      case 1:
+        return campaignData.name.trim().length > 0 && campaignData.objective.length > 0;
+      case 2:
+        return campaignData.selectedAccount.length > 0;
+      case 3:
+        return campaignData.postContent.trim().length > 0;
+      case 4:
+        return true;
+      default:
+        return false;
     }
   };
 
@@ -225,51 +259,8 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-2">Escolha o Tipo de Campanha</h3>
-              <p className="text-purple-200">Selecione o objetivo principal da sua campanha</p>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4">
-              {campaignTypes.map((type) => (
-                <Card
-                  key={type.id}
-                  className={`glass-3d border-0 cursor-pointer transition-all duration-300 hover:scale-105 ${
-                    selectedType?.id === type.id ? 'ring-2 ring-purple-400' : ''
-                  }`}
-                  onClick={() => handleTypeSelect(type)}
-                  data-testid={`card-campaign-type-${type.id}`}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${type.color} flex items-center justify-center`}>
-                        <type.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-lg font-bold text-white">{type.name}</h4>
-                        <p className="text-purple-200 text-sm">{type.description}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {type.objectives.slice(0, 3).map((obj) => (
-                            <Badge key={obj} variant="secondary" className="text-xs">
-                              {obj}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-purple-400" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-2">Configure sua Campanha</h3>
-              <p className="text-purple-200">Defina os detalhes básicos da campanha</p>
+              <h2 className="text-xl font-bold text-white mb-2">Nova Campanha</h2>
+              <p className="text-gray-400 text-sm">Crie uma nova campanha para organizar seus posts</p>
             </div>
 
             <div className="space-y-4">
@@ -279,42 +270,119 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
                   value={campaignData.name}
                   onChange={(e) => setCampaignData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Ex: Black Friday 2025"
-                  className="glass-3d border-0 text-white placeholder-purple-300"
+                  className="glass-3d border-0 text-white placeholder-gray-500 bg-white/5"
                   data-testid="input-campaign-name"
                 />
               </div>
 
               <div>
-                <label className="text-white text-sm font-medium mb-2 block">Descrição</label>
+                <label className="text-white text-sm font-medium mb-2 block">Objetivo da Campanha</label>
+                <Select
+                  value={campaignData.objective}
+                  onValueChange={(value) => setCampaignData(prev => ({ ...prev, objective: value }))}
+                >
+                  <SelectTrigger className="glass-3d border-0 text-white bg-white/5" data-testid="select-campaign-objective">
+                    <SelectValue placeholder="Selecione o objetivo" />
+                  </SelectTrigger>
+                  <SelectContent className="glass-3d-dark border-0">
+                    {CAMPAIGN_OBJECTIVES.map((obj) => (
+                      <SelectItem key={obj.value} value={obj.value} className="text-white hover:bg-white/10">
+                        <div className="flex items-center gap-2">
+                          <obj.icon className="w-4 h-4" />
+                          {obj.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-white text-sm font-medium mb-2 block">Descrição (Opcional)</label>
                 <Textarea
                   value={campaignData.description}
                   onChange={(e) => setCampaignData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Descreva os objetivos e estratégia da campanha..."
-                  rows={4}
-                  className="glass-3d border-0 text-white placeholder-purple-300 resize-none"
+                  placeholder="Descreva o objetivo e estratégia desta campanha..."
+                  rows={3}
+                  className="glass-3d border-0 text-white placeholder-gray-500 bg-white/5 resize-none"
                   data-testid="textarea-campaign-description"
                 />
               </div>
+            </div>
+          </div>
+        );
 
-              {selectedType && (
-                <div>
-                  <label className="text-white text-sm font-medium mb-2 block">Tipo Selecionado</label>
-                  <Card className="glass-3d border-0">
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-white mb-2">Selecionar Conta</h2>
+              <p className="text-gray-400 text-sm">Escolha a conta onde a campanha será executada</p>
+            </div>
+
+            {accountsLoading ? (
+              <div className="flex justify-center py-8">
+                <Sparkles className="w-6 h-6 text-purple-400 animate-spin" />
+              </div>
+            ) : connectedAccounts.length === 0 ? (
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-300 mb-6">Nenhuma conta conectada</p>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => connectAccountMutation.mutate('facebook')}
+                      className="glass-button-3d w-full flex items-center gap-3"
+                      data-testid="button-connect-facebook"
+                    >
+                      <Facebook className="w-5 h-5" />
+                      Conectar Facebook
+                    </Button>
+                    <Button
+                      onClick={() => connectAccountMutation.mutate('instagram')}
+                      className="glass-button-3d w-full flex items-center gap-3"
+                      data-testid="button-connect-instagram"
+                    >
+                      <Instagram className="w-5 h-5" />
+                      Conectar Instagram
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <label className="text-white text-sm font-medium mb-2 block">Contas Disponíveis</label>
+                {connectedAccounts.map((account: ConnectedAccount) => (
+                  <Card
+                    key={account.id}
+                    className={`glass-3d border-0 cursor-pointer transition-all duration-300 hover:scale-[1.02] ${
+                      campaignData.selectedAccount === account.id ? 'ring-2 ring-blue-400' : ''
+                    }`}
+                    onClick={() => setCampaignData(prev => ({ ...prev, selectedAccount: account.id }))}
+                    data-testid={`card-account-${account.id}`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-r ${selectedType.color} flex items-center justify-center`}>
-                          <selectedType.icon className="w-5 h-5 text-white" />
+                        {account.platform === 'facebook' ? (
+                          <Facebook className="w-6 h-6 text-blue-500" />
+                        ) : (
+                          <Instagram className="w-6 h-6 text-pink-500" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{account.name}</p>
+                          <p className="text-gray-400 text-sm">@{account.username}</p>
                         </div>
-                        <div>
-                          <h5 className="text-white font-medium">{selectedType.name}</h5>
-                          <p className="text-purple-200 text-sm">{selectedType.description}</p>
-                        </div>
+                        {account.isConnected && (
+                          <Badge className="bg-green-500/20 text-green-400 border-0">
+                            Conectada
+                          </Badge>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         );
 
@@ -322,153 +390,179 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-white mb-2">Crie o Primeiro Post</h3>
-              <p className="text-purple-200">Comece sua campanha com um post impactante (opcional)</p>
+              <h2 className="text-xl font-bold text-white mb-2">Criar Post</h2>
+              <p className="text-gray-400 text-sm">Adicione o conteúdo do primeiro post da campanha</p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="text-white text-sm font-medium mb-2 block">Plataforma</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {platforms.map((platform) => (
-                    <Card
-                      key={platform.id}
-                      className={`glass-3d border-0 cursor-pointer transition-all duration-300 hover:scale-105 ${
-                        postData.platform === platform.id ? 'ring-2 ring-purple-400' : ''
-                      }`}
-                      onClick={() => setPostData(prev => ({ ...prev, platform: platform.id }))}
-                      data-testid={`card-platform-${platform.id}`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <platform.icon className={`w-6 h-6 ${platform.color}`} />
-                          <span className="text-white font-medium">{platform.name}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-white text-sm font-medium mb-2 block">Tipo de Conteúdo</label>
-                <div className="grid grid-cols-1 gap-3">
-                  {contentTypes.map((type) => (
-                    <Card
-                      key={type.id}
-                      className={`glass-3d border-0 cursor-pointer transition-all duration-300 hover:scale-105 ${
-                        postData.mediaType === type.id ? 'ring-2 ring-purple-400' : ''
-                      }`}
-                      onClick={() => setPostData(prev => ({ ...prev, mediaType: type.id }))}
-                      data-testid={`card-content-type-${type.id}`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <type.icon className="w-5 h-5 text-purple-400" />
-                          <div>
-                            <span className="text-white font-medium">{type.name}</span>
-                            <p className="text-purple-200 text-sm">{type.description}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-
-              <div>
                 <label className="text-white text-sm font-medium mb-2 block">Conteúdo do Post</label>
                 <Textarea
-                  value={postData.content}
-                  onChange={(e) => setPostData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Escreva o conteúdo do seu primeiro post..."
-                  rows={6}
-                  className="glass-3d border-0 text-white placeholder-purple-300 resize-none"
+                  value={campaignData.postContent}
+                  onChange={(e) => setCampaignData(prev => ({ ...prev, postContent: e.target.value }))}
+                  placeholder="Escreva o texto do seu post aqui..."
+                  rows={4}
+                  className="glass-3d border-0 text-white placeholder-gray-500 bg-white/5 resize-none"
                   data-testid="textarea-post-content"
                 />
-                <p className="text-purple-300 text-xs mt-1">
-                  Deixe em branco se quiser criar o post depois
+                <p className="text-gray-400 text-xs mt-1">
+                  {campaignData.postContent.length}/2200 caracteres
                 </p>
+              </div>
+
+              <div>
+                <label className="text-white text-sm font-medium mb-2 block">Mídia (Opcional)</label>
+                
+                {!campaignData.mediaFile ? (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="glass-3d border-2 border-dashed border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                  >
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                    <p className="text-white font-medium mb-1">Clique para adicionar imagem ou vídeo</p>
+                    <p className="text-gray-400 text-sm">JPG, PNG, MP4 até 10MB</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {campaignData.mediaType === 'image' && campaignData.mediaPreview && (
+                      <div className="glass-3d p-4 rounded-lg">
+                        <img 
+                          src={campaignData.mediaPreview} 
+                          alt="Preview"
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                    
+                    {campaignData.mediaType === 'video' && (
+                      <div className="glass-3d p-4 rounded-lg flex items-center gap-3">
+                        <Video className="w-8 h-8 text-blue-400" />
+                        <div>
+                          <p className="text-white font-medium">{campaignData.mediaFile?.name}</p>
+                          <p className="text-gray-400 text-sm">Vídeo selecionado</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCampaignData(prev => ({
+                          ...prev,
+                          mediaFile: undefined,
+                          mediaPreview: '',
+                          mediaType: 'text'
+                        }));
+                      }}
+                      className="glass-3d border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    >
+                      <XIcon className="w-4 h-4 mr-2" />
+                      Remover Mídia
+                    </Button>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
               </div>
             </div>
           </div>
         );
 
       case 4:
+        const selectedAccount = connectedAccounts.find((acc: ConnectedAccount) => acc.id === campaignData.selectedAccount);
+        const selectedObjective = CAMPAIGN_OBJECTIVES.find(obj => obj.value === campaignData.objective);
+
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
-                <Check className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Revisar e Finalizar</h3>
-              <p className="text-purple-200">Confira os detalhes antes de criar sua campanha</p>
+              <h2 className="text-xl font-bold text-white mb-2">Revisar e Publicar</h2>
+              <p className="text-gray-400 text-sm">Confirme os detalhes antes de criar a campanha</p>
             </div>
 
             <div className="space-y-4">
               <Card className="glass-3d border-0">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-purple-400" />
+                    <Target className="w-5 h-5 text-blue-400" />
                     Detalhes da Campanha
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <span className="text-purple-300 text-sm">Nome:</span>
+                    <p className="text-gray-400 text-sm">Nome:</p>
                     <p className="text-white font-medium">{campaignData.name}</p>
                   </div>
                   <div>
-                    <span className="text-purple-300 text-sm">Descrição:</span>
-                    <p className="text-white">{campaignData.description}</p>
-                  </div>
-                  <div>
-                    <span className="text-purple-300 text-sm">Tipo:</span>
+                    <p className="text-gray-400 text-sm">Objetivo:</p>
                     <div className="flex items-center gap-2 mt-1">
-                      {selectedType && (
+                      {selectedObjective && (
                         <>
-                          <div className={`w-6 h-6 rounded bg-gradient-to-r ${selectedType.color} flex items-center justify-center`}>
-                            <selectedType.icon className="w-3 h-3 text-white" />
-                          </div>
-                          <span className="text-white">{selectedType.name}</span>
+                          <selectedObjective.icon className="w-4 h-4 text-blue-400" />
+                          <p className="text-white">{selectedObjective.label}</p>
                         </>
                       )}
                     </div>
                   </div>
+                  {campaignData.description && (
+                    <div>
+                      <p className="text-gray-400 text-sm">Descrição:</p>
+                      <p className="text-white">{campaignData.description}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {postData.content.trim() && (
+              {selectedAccount && (
                 <Card className="glass-3d border-0">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
-                      <MessageCircle className="w-5 h-5 text-purple-400" />
-                      Primeiro Post
+                      {selectedAccount.platform === 'facebook' ? (
+                        <Facebook className="w-5 h-5 text-blue-500" />
+                      ) : (
+                        <Instagram className="w-5 h-5 text-pink-500" />
+                      )}
+                      Conta Selecionada
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <span className="text-purple-300 text-sm">Plataforma:</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        {platforms.find(p => p.id === postData.platform) && (
-                          <>
-                            {React.createElement(platforms.find(p => p.id === postData.platform)!.icon, {
-                              className: `w-5 h-5 ${platforms.find(p => p.id === postData.platform)!.color}`
-                            })}
-                            <span className="text-white">{platforms.find(p => p.id === postData.platform)!.name}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-purple-300 text-sm">Conteúdo:</span>
-                      <p className="text-white bg-black/20 rounded p-3 mt-1 text-sm">
-                        {postData.content}
-                      </p>
-                    </div>
+                  <CardContent>
+                    <p className="text-white font-medium">{selectedAccount.name}</p>
+                    <p className="text-gray-400 text-sm">@{selectedAccount.username}</p>
                   </CardContent>
                 </Card>
               )}
+
+              <Card className="glass-3d border-0">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-green-400" />
+                    Preview do Post
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {campaignData.mediaPreview && (
+                    <img 
+                      src={campaignData.mediaPreview} 
+                      alt="Preview"
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  )}
+                  {campaignData.mediaType === 'video' && campaignData.mediaFile && (
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <Video className="w-4 h-4" />
+                      <span className="text-sm">{campaignData.mediaFile.name}</span>
+                    </div>
+                  )}
+                  <p className="text-white bg-black/20 rounded p-3 text-sm leading-relaxed">
+                    {campaignData.postContent}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         );
@@ -481,35 +575,38 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="glass-3d border-0 max-w-2xl max-h-[90vh] w-full mx-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="glass-3d-dark border-0 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-white text-xl flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-purple-400" />
-                Nova Campanha
-              </h2>
-              <p className="text-purple-200 text-sm mt-1">
-                Etapa {currentStep} de 4 - {
-                  ['Tipo de Campanha', 'Configuração', 'Primeiro Post', 'Revisão'][currentStep - 1]
-                }
+            <div className="text-center flex-1">
+              <div className="flex items-center gap-2 justify-center">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                <h1 className="text-lg font-bold text-white">
+                  {currentStep === 1 && "Nova Campanha"}
+                  {currentStep === 2 && "Selecionar Conta"}
+                  {currentStep === 3 && "Criar Post"}
+                  {currentStep === 4 && "Revisar e Publicar"}
+                </h1>
+              </div>
+              <p className="text-gray-400 text-sm mt-1">
+                Etapa {currentStep} de 4
               </p>
             </div>
             <Button
-              variant="outline" 
+              variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="glass-3d border-purple-500/30"
+              className="glass-3d border-0 hover:bg-white/10"
             >
-              <XIcon className="w-4 h-4" />
+              <XIcon className="w-4 h-4 text-gray-400" />
             </Button>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-purple-900/30 rounded-full h-2 mb-6">
+          <div className="w-full bg-white/10 rounded-full h-1 mb-6">
             <div 
-              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-1 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 4) * 100}%` }}
             />
           </div>
@@ -521,9 +618,9 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
           <div className="flex justify-between gap-3">
             <Button
               variant="outline"
-              onClick={handlePrevStep}
+              onClick={handlePrevious}
               disabled={currentStep === 1}
-              className="glass-3d border-purple-500/30"
+              className="glass-3d border-gray-600 text-gray-300 hover:bg-white/10"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Anterior
@@ -531,7 +628,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
 
             {currentStep < 4 ? (
               <Button
-                onClick={handleNextStep}
+                onClick={handleNext}
                 disabled={!canProceed()}
                 className="glass-button-3d gradient-purple-blue"
                 data-testid="button-next-step"
@@ -541,10 +638,10 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
               </Button>
             ) : (
               <Button
-                onClick={handleFinish}
-                disabled={createCampaignMutation.isPending}
+                onClick={() => createCampaignMutation.mutate(campaignData)}
+                disabled={createCampaignMutation.isPending || !canProceed()}
                 className="glass-button-3d gradient-purple-blue"
-                data-testid="button-finish-campaign"
+                data-testid="button-create-campaign"
               >
                 {createCampaignMutation.isPending ? (
                   <>
@@ -554,7 +651,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Finalizar
+                    Criar Campanha
                   </>
                 )}
               </Button>
