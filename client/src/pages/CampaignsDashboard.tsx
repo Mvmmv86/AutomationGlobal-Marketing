@@ -133,15 +133,15 @@ export default function CampaignsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen marketing-gradient-bg p-6">
       {/* Header */}
       <div className="glass-3d rounded-20 p-6 mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-2">
               📊 Campanhas Facebook
             </h1>
-            <p className="text-purple-200">
+            <p className="text-gray-300 opacity-75">
               Gerencie suas campanhas conectadas ao Facebook Ads Manager
             </p>
           </div>
@@ -245,7 +245,7 @@ export default function CampaignsDashboard() {
 
       {/* Lista de Campanhas */}
       <div className="glass-3d rounded-20 p-6">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-6 flex items-center">
           <Target className="w-6 h-6 mr-2 text-purple-400" />
           Suas Campanhas
         </h2>
@@ -271,7 +271,7 @@ export default function CampaignsDashboard() {
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white text-lg truncate">
+                    <CardTitle className="text-white text-lg truncate font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
                       🎯 {campaign.name}
                     </CardTitle>
                     <Badge className={`text-xs ${getStatusColor(campaign.status)}`}>
@@ -279,7 +279,7 @@ export default function CampaignsDashboard() {
                     </Badge>
                   </div>
                   {campaign.description && (
-                    <CardDescription className="text-purple-200 text-sm">
+                    <CardDescription className="text-gray-300 text-sm opacity-80">
                       {campaign.description.length > 80 
                         ? `${campaign.description.substring(0, 80)}...` 
                         : campaign.description}
@@ -290,7 +290,7 @@ export default function CampaignsDashboard() {
                 <CardContent className="space-y-4">
                   {/* Dados Reais do Facebook */}
                   <div className="space-y-2">
-                    <h4 className="text-white font-medium text-sm flex items-center">
+                    <h4 className="text-white font-bold text-sm flex items-center bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
                       📊 Dados do Facebook
                     </h4>
                     
@@ -301,12 +301,12 @@ export default function CampaignsDashboard() {
                           <span>Conectado ao Facebook</span>
                         </div>
                         {campaign.facebookCampaignId && (
-                          <div className="text-purple-200">
+                          <div className="text-gray-300 opacity-75">
                             • ID: {campaign.facebookCampaignId.substring(0, 12)}...
                           </div>
                         )}
                         {campaign.facebookStatus && (
-                          <div className="text-purple-200 flex items-center">
+                          <div className="text-gray-300 opacity-75 flex items-center">
                             • Status FB: 
                             <Badge className="ml-2 text-xs bg-blue-500/20 text-blue-400">
                               {campaign.facebookStatus}
@@ -314,7 +314,7 @@ export default function CampaignsDashboard() {
                           </div>
                         )}
                         {campaign.facebookObjective && (
-                          <div className="text-purple-200 flex items-center">
+                          <div className="text-gray-300 opacity-75 flex items-center">
                             • Objetivo: 
                             <span className="ml-1 flex items-center">
                               {getObjectiveIcon(campaign.facebookObjective)}
@@ -331,23 +331,23 @@ export default function CampaignsDashboard() {
                   </div>
 
                   {/* Informações Gerais */}
-                  <div className="space-y-2 pt-3 border-t border-white/10">
+                  <div className="space-y-2 pt-3 border-t border-white/20">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-purple-200">📝 Posts vinculados:</span>
-                      <span className="text-white font-medium" data-testid={`text-posts-count-${campaign.id}`}>
+                      <span className="text-gray-300 opacity-75">📝 Posts vinculados:</span>
+                      <span className="text-white font-bold" data-testid={`text-posts-count-${campaign.id}`}>
                         {campaign.postsCount}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-purple-200">📅 Criada:</span>
-                      <span className="text-white font-medium">
+                      <span className="text-gray-300 opacity-75">📅 Criada:</span>
+                      <span className="text-white font-bold">
                         {new Date(campaign.createdAt).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
                     {campaign.lastSyncAt && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-purple-200">🔄 Última sync:</span>
-                        <span className="text-green-400 font-medium">
+                        <span className="text-gray-300 opacity-75">🔄 Última sync:</span>
+                        <span className="text-green-400 font-bold">
                           {new Date(campaign.lastSyncAt).toLocaleString('pt-BR')}
                         </span>
                       </div>
