@@ -244,74 +244,74 @@ router.get('/sales-funnel', async (req, res) => {
 
     const sector = req.query.sector as string || 'ecommerce';
 
-    // Modelos reais de funil por setor baseados em benchmarks da internet
+    // Modelos reais de funil por setor baseados em benchmarks de 2024
     const sectorFunnels = {
       ecommerce: {
         stages: [
           { name: 'Visitantes do Site', value: 100000, percentage: 100, color: '#ef4444' },
-          { name: 'Visualizaram Produto', value: 25000, percentage: 25, color: '#f59e0b' },
-          { name: 'Adicionaram ao Carrinho', value: 8500, percentage: 8.5, color: '#10b981' },
-          { name: 'Iniciaram Checkout', value: 3400, percentage: 3.4, color: '#14b8a6' },
-          { name: 'Finalizaram Compra', value: 2800, percentage: 2.8, color: '#3b82f6' }
+          { name: 'Visualizaram Produto', value: 35000, percentage: 35, color: '#f59e0b' },
+          { name: 'Adicionaram ao Carrinho', value: 8000, percentage: 8, color: '#10b981' },
+          { name: 'Iniciaram Checkout', value: 4200, percentage: 4.2, color: '#14b8a6' },
+          { name: 'Finalizaram Compra', value: 3300, percentage: 3.3, color: '#3b82f6' }
         ],
-        totalConversionRate: 2.8,
+        totalConversionRate: 3.3,
         averageTimeToConvert: 7,
         platformBenchmarks: {
-          facebookCTR: 1.59,
-          facebookCVR: 2.1,
-          googleAdsCVR: 2.81,
-          avgCPA: 45.27
+          facebookCTR: 1.85,
+          facebookCVR: 3.3,
+          googleAdsCVR: 3.65,
+          avgCPA: 42.5
         }
       },
       financeiro: {
         stages: [
           { name: 'Prospects Gerados', value: 100000, percentage: 100, color: '#ef4444' },
-          { name: 'Leads Qualificados', value: 15000, percentage: 15, color: '#f59e0b' },
-          { name: 'Propostas Enviadas', value: 7500, percentage: 7.5, color: '#10b981' },
-          { name: 'Em Negociação', value: 3750, percentage: 3.75, color: '#14b8a6' },
-          { name: 'Contratos Fechados', value: 2800, percentage: 2.8, color: '#3b82f6' }
+          { name: 'Leads Qualificados', value: 20000, percentage: 20, color: '#f59e0b' },
+          { name: 'Propostas Enviadas', value: 8000, percentage: 8, color: '#10b981' },
+          { name: 'Em Negociação', value: 4000, percentage: 4, color: '#14b8a6' },
+          { name: 'Contratos Fechados', value: 1900, percentage: 1.9, color: '#3b82f6' }
         ],
-        totalConversionRate: 2.8,
+        totalConversionRate: 1.9,
         averageTimeToConvert: 21,
         platformBenchmarks: {
-          facebookCTR: 0.15,
-          facebookCVR: 0.12,
-          googleAdsCVR: 2.78,
-          avgCPA: 144.03
+          facebookCTR: 0.8,
+          facebookCVR: 1.9,
+          googleAdsCVR: 2.1,
+          avgCPA: 185.0
         }
       },
       educacional: {
         stages: [
           { name: 'Interessados no Curso', value: 100000, percentage: 100, color: '#ef4444' },
-          { name: 'Assistiram Aula Demo', value: 35000, percentage: 35, color: '#f59e0b' },
-          { name: 'Baixaram Material', value: 21000, percentage: 21, color: '#10b981' },
-          { name: 'Participaram Webinar', value: 15600, percentage: 15.6, color: '#14b8a6' },
-          { name: 'Se Matricularam', value: 13800, percentage: 13.8, color: '#3b82f6' }
+          { name: 'Assistiram Aula Demo', value: 45000, percentage: 45, color: '#f59e0b' },
+          { name: 'Baixaram Material', value: 25000, percentage: 25, color: '#10b981' },
+          { name: 'Participaram Webinar', value: 15000, percentage: 15, color: '#14b8a6' },
+          { name: 'Se Matricularam', value: 8000, percentage: 8.0, color: '#3b82f6' }
         ],
-        totalConversionRate: 13.8,
+        totalConversionRate: 8.0,
         averageTimeToConvert: 14,
         platformBenchmarks: {
-          facebookCTR: 1.16,
-          facebookCVR: 13.8,
-          googleAdsCVR: 11.08,
-          avgCPA: 34.81
+          facebookCTR: 2.1,
+          facebookCVR: 8.0,
+          googleAdsCVR: 5.3,
+          avgCPA: 35.0
         }
       },
       infoproduto: {
         stages: [
           { name: 'Audiência Engajada', value: 100000, percentage: 100, color: '#ef4444' },
-          { name: 'Leads Capturados', value: 32000, percentage: 32, color: '#f59e0b' },
-          { name: 'Demonstraram Interesse', value: 19200, percentage: 19.2, color: '#10b981' },
-          { name: 'Participaram da Oferta', value: 13440, percentage: 13.4, color: '#14b8a6' },
-          { name: 'Compraram Produto', value: 12000, percentage: 12.0, color: '#3b82f6' }
+          { name: 'Leads Capturados', value: 38000, percentage: 38, color: '#f59e0b' },
+          { name: 'Demonstraram Interesse', value: 22000, percentage: 22, color: '#10b981' },
+          { name: 'Participaram da Oferta', value: 12000, percentage: 12, color: '#14b8a6' },
+          { name: 'Compraram Produto', value: 7000, percentage: 7.0, color: '#3b82f6' }
         ],
-        totalConversionRate: 12.0,
+        totalConversionRate: 7.0,
         averageTimeToConvert: 10,
         platformBenchmarks: {
-          facebookCTR: 1.01,
-          facebookCVR: 12.03,
-          googleAdsCVR: 9.0,
-          avgCPA: 27.94
+          facebookCTR: 2.8,
+          facebookCVR: 7.0,
+          googleAdsCVR: 5.5,
+          avgCPA: 28.0
         }
       }
     };

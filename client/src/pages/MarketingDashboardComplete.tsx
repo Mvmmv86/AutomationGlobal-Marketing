@@ -45,6 +45,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -3721,112 +3722,22 @@ function MarketingDashboardHome({
                     );
                   })}
 
-                  {/* Qualificar Leads */}
-                  <div className="relative w-11/12 max-w-md">
-                    <div 
-                      className="h-13 flex items-center justify-center text-white font-bold text-sm relative"
-                      style={{
-                        background: 'linear-gradient(135deg, #d69e2e, #ecc94b)',
-                        clipPath: 'polygon(12% 0%, 88% 0%, 82% 100%, 18% 100%)',
-                        transform: 'perspective(800px) rotateX(8deg)',
-                        boxShadow: '0 4px 16px rgba(214, 158, 46, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
-                      }}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">Qualificar Leads</div>
-                        <div className="text-xs opacity-90">{funnel.interest?.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Avaliar desafios/problemas */}
-                  <div className="relative w-5/6 max-w-md">
-                    <div 
-                      className="h-12 flex items-center justify-center text-white font-bold text-sm relative"
-                      style={{
-                        background: 'linear-gradient(135deg, #38a169, #48bb78)',
-                        clipPath: 'polygon(15% 0%, 85% 0%, 78% 100%, 22% 100%)',
-                        transform: 'perspective(800px) rotateX(8deg)',
-                        boxShadow: '0 4px 16px rgba(56, 161, 105, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
-                      }}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">Avaliar desafios/problemas</div>
-                        <div className="text-xs opacity-90">{funnel.consideration?.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Solucionar Problemas */}
-                  <div className="relative w-3/4 max-w-md">
-                    <div 
-                      className="h-11 flex items-center justify-center text-white font-bold text-sm relative"
-                      style={{
-                        background: 'linear-gradient(135deg, #319795, #4fd1c7)',
-                        clipPath: 'polygon(18% 0%, 82% 0%, 75% 100%, 25% 100%)',
-                        transform: 'perspective(800px) rotateX(8deg)',
-                        boxShadow: '0 4px 16px rgba(49, 151, 149, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
-                      }}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">Solucionar Problemas</div>
-                        <div className="text-xs opacity-90">{funnel.intent?.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Converter */}
-                  <div className="relative w-2/3 max-w-md">
-                    <div 
-                      className="h-10 flex items-center justify-center text-white font-bold text-sm relative"
-                      style={{
-                        background: 'linear-gradient(135deg, #3182ce, #4299e1)',
-                        clipPath: 'polygon(22% 0%, 78% 0%, 70% 100%, 30% 100%)',
-                        transform: 'perspective(800px) rotateX(8deg)',
-                        boxShadow: '0 4px 16px rgba(49, 130, 206, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
-                      }}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">Converter</div>
-                        <div className="text-xs opacity-90">{funnel.evaluation?.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Fechar */}
-                  <div className="relative w-1/2 max-w-md">
-                    <div 
-                      className="h-9 flex items-center justify-center text-white font-bold text-sm relative"
-                      style={{
-                        background: 'linear-gradient(135deg, #805ad5, #9f7aea)',
-                        clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)',
-                        transform: 'perspective(800px) rotateX(8deg)',
-                        boxShadow: '0 4px 16px rgba(128, 90, 213, 0.5), 0 2px 8px rgba(0,0,0,0.3)',
-                        borderRadius: '0 0 8px 8px'
-                      }}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">Fechar</div>
-                        <div className="text-xs opacity-90">{funnel.purchase?.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Estatísticas */}
                 <div className="mt-6 pt-4 border-t border-gray-600 grid grid-cols-2 gap-4 text-sm">
                   <div className="text-center">
                     <div className="text-gray-400">Taxa de Conversão</div>
-                    <div className="text-green-400 font-bold text-lg">{funnel.totalConversionRate || 2.1}%</div>
+                    <div className="text-green-400 font-bold text-lg">{salesFunnel?.data?.totalConversionRate || 2.1}%</div>
                   </div>
                   <div className="text-center">
                     <div className="text-gray-400">Tempo Médio</div>
-                    <div className="text-cyan-400 font-bold text-lg">{funnel.averageTimeToConvert || 14} dias</div>
+                    <div className="text-cyan-400 font-bold text-lg">{salesFunnel?.data?.averageTimeToConvert || 14} dias</div>
                   </div>
                 </div>
 
                 {/* Benchmarks das Plataformas por Setor */}
-                {funnel.platformBenchmarks && (
+                {salesFunnel?.data?.platformBenchmarks && (
                   <div className="mt-6 pt-4 border-t border-gray-600">
                     <div className="flex items-center gap-2 mb-4">
                       <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -3846,11 +3757,11 @@ function MarketingDashboardHome({
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-gray-400">CTR:</span>
-                            <span className="text-blue-400 font-medium">{funnel.platformBenchmarks.facebookCTR}%</span>
+                            <span className="text-blue-400 font-medium">{salesFunnel.data.platformBenchmarks.facebookCTR}%</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">CVR:</span>
-                            <span className="text-green-400 font-medium">{funnel.platformBenchmarks.facebookCVR}%</span>
+                            <span className="text-green-400 font-medium">{salesFunnel.data.platformBenchmarks.facebookCVR}%</span>
                           </div>
                         </div>
                       </div>
@@ -3866,11 +3777,11 @@ function MarketingDashboardHome({
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className="text-gray-400">CVR:</span>
-                            <span className="text-green-400 font-medium">{funnel.platformBenchmarks.googleAdsCVR}%</span>
+                            <span className="text-green-400 font-medium">{salesFunnel.data.platformBenchmarks.googleAdsCVR}%</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-400">CPA:</span>
-                            <span className="text-orange-400 font-medium">${funnel.platformBenchmarks.avgCPA}</span>
+                            <span className="text-orange-400 font-medium">${salesFunnel.data.platformBenchmarks.avgCPA}</span>
                           </div>
                         </div>
                       </div>
