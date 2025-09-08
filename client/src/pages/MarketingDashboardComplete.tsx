@@ -3289,6 +3289,7 @@ function MarketingDashboardHome({
 
   // Estado para o setor selecionado do funil
   const [selectedSector, setSelectedSector] = useState('ecommerce');
+  const [showSectorModal, setShowSectorModal] = useState(false);
 
   const { data: salesFunnel, isLoading: funnelLoading } = useQuery({
     queryKey: ['/api/marketing/sales-funnel', selectedSector],
@@ -3646,80 +3647,26 @@ function MarketingDashboardHome({
           )}>
             <PieChart className="w-5 h-5 text-orange-400" />
             Funil de Vendas Interativo
-            <div className="ml-auto relative group">
-              {/* Botão Setor com hover */}
-              <button 
-                className="glass-button-3d px-4 py-2 text-sm font-medium flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-400/30 hover:from-orange-500/30 hover:to-orange-600/30 transition-all duration-300"
-              >
-                <Building className="w-4 h-4 text-orange-400" />
-                SETOR
-                <ChevronDown className="w-3 h-3 text-orange-400" />
-              </button>
-
-              {/* Dropdown de setores */}
-              <div className="absolute top-full right-0 mt-2 w-56 glass-3d p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-20">
-                {[
-                  { 
-                    key: 'ecommerce', 
-                    label: 'E-commerce', 
-                    desc: 'Lojas online e varejo digital',
-                    cvr: '2.8%',
-                    icon: '🛒'
-                  },
-                  { 
-                    key: 'financeiro', 
-                    label: 'Financeiro', 
-                    desc: 'Bancos, seguros e fintechs',
-                    cvr: '2.8%',
-                    icon: '💰'
-                  },
-                  { 
-                    key: 'educacional', 
-                    label: 'Educacional', 
-                    desc: 'Cursos e instituições de ensino',
-                    cvr: '13.8%',
-                    icon: '📚'
-                  },
-                  { 
-                    key: 'infoproduto', 
-                    label: 'Infoproduto', 
-                    desc: 'Produtos digitais e mentoria',
-                    cvr: '12.0%',
-                    icon: '💡'
-                  }
-                ].map((sector) => (
-                  <button
-                    key={sector.key}
-                    onClick={() => setSelectedSector(sector.key)}
-                    className={cn(
-                      "w-full text-left p-3 rounded-lg transition-all duration-200 mb-1 last:mb-0 border",
-                      selectedSector === sector.key 
-                        ? "bg-gradient-to-r from-orange-500/20 to-orange-600/20 border-orange-400/40 text-white" 
-                        : "hover:bg-white/5 border-transparent text-gray-300 hover:text-white"
-                    )}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{sector.icon}</span>
-                        <div>
-                          <div className="font-medium text-sm">{sector.label}</div>
-                          <div className="text-xs opacity-70 text-gray-400">{sector.desc}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs font-bold text-orange-400">CVR {sector.cvr}</div>
-                    </div>
-                  </button>
-                ))}
-                <div className="mt-2 p-2 border-t border-white/10">
-                  <div className="text-xs text-gray-400">
-                    📊 Baseado em dados oficiais Meta & Google Ads
-                  </div>
-                </div>
-              </div>
-            </div>
           </h2>
           
           <div className="glass-3d p-6 relative">
+            {/* Botão de Setor dentro do card */}
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={() => setShowSectorModal(true)}
+                className="glass-button-3d px-3 py-2 text-sm font-medium flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-400/30 hover:from-orange-500/30 hover:to-orange-600/30 transition-all duration-300"
+              >
+                <Building className="w-4 h-4 text-orange-400" />
+                <span className="text-gray-300">
+                  {selectedSector === 'ecommerce' && '🛒 E-commerce'}
+                  {selectedSector === 'financeiro' && '💰 Financeiro'}
+                  {selectedSector === 'educacional' && '📚 Educacional'}
+                  {selectedSector === 'infoproduto' && '💡 Infoproduto'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-orange-400" />
+              </button>
+            </div>
+
             {funnelLoading ? (
               <div className="space-y-4">
                 <div className="h-8 bg-gray-600/20 rounded animate-pulse"></div>
@@ -3926,20 +3873,6 @@ function MarketingDashboardHome({
             )}
           </div>
 
-          {/* Setor Atual Badge */}
-          <div className="absolute top-4 right-4">
-            <div className="glass-3d-dark px-3 py-1 rounded-full">
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                <span className="text-gray-300 font-medium">
-                  {selectedSector === 'ecommerce' && '🛒 E-commerce'}
-                  {selectedSector === 'financeiro' && '💰 Financeiro'}
-                  {selectedSector === 'educacional' && '📚 Educacional'}
-                  {selectedSector === 'infoproduto' && '💡 Infoproduto'}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Botões de Ação Consolidados */}
@@ -4056,6 +3989,111 @@ function MarketingDashboardHome({
             >
               Fechar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Seleção de Setores */}
+      {showSectorModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="glass-3d p-6 max-w-lg w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Building className="w-5 h-5 text-orange-400" />
+                Selecionar Setor de Negócio
+              </h3>
+              <button 
+                onClick={() => setShowSectorModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-400 mb-6 text-sm">
+              Escolha o setor para visualizar métricas e benchmarks específicos do seu negócio
+            </p>
+
+            <div className="space-y-3">
+              {[
+                { 
+                  key: 'ecommerce', 
+                  label: 'E-commerce', 
+                  desc: 'Lojas online e varejo digital',
+                  cvr: '2.8%',
+                  icon: '🛒',
+                  time: '7 dias',
+                  stats: 'CVR: 2.8% | Tempo: 7 dias'
+                },
+                { 
+                  key: 'financeiro', 
+                  label: 'Financeiro', 
+                  desc: 'Bancos, seguros e fintechs',
+                  cvr: '2.8%',
+                  icon: '💰',
+                  time: '21 dias',
+                  stats: 'CVR: 2.8% | Tempo: 21 dias'
+                },
+                { 
+                  key: 'educacional', 
+                  label: 'Educacional', 
+                  desc: 'Cursos e instituições de ensino',
+                  cvr: '13.8%',
+                  icon: '📚',
+                  time: '14 dias',
+                  stats: 'CVR: 13.8% | Tempo: 14 dias'
+                },
+                { 
+                  key: 'infoproduto', 
+                  label: 'Infoproduto', 
+                  desc: 'Produtos digitais e mentoria',
+                  cvr: '12.0%',
+                  icon: '💡',
+                  time: '10 dias',
+                  stats: 'CVR: 12.0% | Tempo: 10 dias'
+                }
+              ].map((sector) => (
+                <button
+                  key={sector.key}
+                  onClick={() => {
+                    setSelectedSector(sector.key);
+                    setShowSectorModal(false);
+                  }}
+                  className={cn(
+                    "w-full text-left p-4 rounded-xl transition-all duration-300 border group",
+                    selectedSector === sector.key 
+                      ? "bg-gradient-to-r from-orange-500/20 to-orange-600/20 border-orange-400/40 text-white" 
+                      : "glass-3d-dark border-transparent text-gray-300 hover:border-orange-400/20 hover:bg-orange-500/10"
+                  )}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="text-2xl">{sector.icon}</div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-base mb-1 group-hover:text-white transition-colors">
+                          {sector.label}
+                        </div>
+                        <div className="text-sm text-gray-400 mb-2">{sector.desc}</div>
+                        <div className="text-xs text-orange-400 font-medium">
+                          {sector.stats}
+                        </div>
+                      </div>
+                    </div>
+                    {selectedSector === sector.key && (
+                      <div className="w-5 h-5 rounded-full bg-orange-400 flex items-center justify-center">
+                        <CheckCircle className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <div className="text-xs text-gray-500 text-center">
+                📊 Dados baseados em benchmarks oficiais Meta & Google Ads 2024-2025
+              </div>
+            </div>
           </div>
         </div>
       )}
