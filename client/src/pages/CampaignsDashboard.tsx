@@ -166,11 +166,7 @@ export default function CampaignsDashboard() {
             </Button>
             <Button 
               className="glass-button-3d gradient-purple-blue"
-              onClick={() => {
-                console.log('🎯 Botão Nova Campanha clicado!');
-                setShowNewCampaignWizard(true);
-                console.log('🎯 Estado showNewCampaignWizard definido como true');
-              }}
+              onClick={() => setShowNewCampaignWizard(true)}
               data-testid="button-new-campaign"
             >
               <Target className="w-4 h-4 mr-2" />
@@ -400,30 +396,9 @@ export default function CampaignsDashboard() {
       </div>
 
       {/* New Campaign Wizard */}
-      {console.log('🎯 showNewCampaignWizard estado atual:', showNewCampaignWizard)}
-      
-      {/* Modal simples para teste */}
-      {showNewCampaignWizard && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="glass-3d p-8 max-w-md w-full mx-4">
-            <h2 className="text-white text-xl font-bold mb-4">🎯 MODAL TESTE</h2>
-            <p className="text-purple-200 mb-6">Modal está funcionando! O problema não é no estado.</p>
-            <Button 
-              onClick={() => setShowNewCampaignWizard(false)}
-              className="glass-button-3d gradient-purple-blue w-full"
-            >
-              Fechar
-            </Button>
-          </div>
-        </div>
-      )}
-      
       <NewCampaignWizard
         isOpen={showNewCampaignWizard}
-        onClose={() => {
-          console.log('🎯 Modal fechando...');
-          setShowNewCampaignWizard(false);
-        }}
+        onClose={() => setShowNewCampaignWizard(false)}
       />
     </div>
   );

@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -26,7 +25,7 @@ import {
   ShoppingBag,
   Instagram,
   Facebook,
-  X as XIcon,
+  X,
   ChevronRight,
   Image as ImageIcon,
   Video,
@@ -479,76 +478,90 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="glass-3d border-0 max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-white text-xl flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-purple-400" />
-            Nova Campanha
-          </DialogTitle>
-          <DialogDescription className="text-purple-200">
-            Etapa {currentStep} de 4 - {
-              ['Tipo de Campanha', 'Configuração', 'Primeiro Post', 'Revisão'][currentStep - 1]
-            }
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-purple-900/30 rounded-full h-2 mb-6">
-          <div 
-            className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(currentStep / 4) * 100}%` }}
-          />
-        </div>
-
-        <div className="min-h-[400px]">
-          {renderStep()}
-        </div>
-
-        <DialogFooter className="gap-3">
-          <Button
-            variant="outline"
-            onClick={handlePrevStep}
-            disabled={currentStep === 1}
-            className="glass-3d border-purple-500/30"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Anterior
-          </Button>
-
-          {currentStep < 4 ? (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="glass-3d border-0 max-w-2xl max-h-[90vh] w-full mx-4 overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-white text-xl flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-purple-400" />
+                Nova Campanha
+              </h2>
+              <p className="text-purple-200 text-sm mt-1">
+                Etapa {currentStep} de 4 - {
+                  ['Tipo de Campanha', 'Configuração', 'Primeiro Post', 'Revisão'][currentStep - 1]
+                }
+              </p>
+            </div>
             <Button
-              onClick={handleNextStep}
-              disabled={!canProceed()}
-              className="glass-button-3d gradient-purple-blue"
-              data-testid="button-next-step"
+              variant="outline" 
+              size="sm"
+              onClick={handleClose}
+              className="glass-3d border-purple-500/30"
             >
-              Próximo
-              <ArrowRight className="w-4 h-4 ml-2" />
+              <X className="w-4 h-4" />
             </Button>
-          ) : (
+          </div>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-purple-900/30 rounded-full h-2 mb-6">
+            <div 
+              className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / 4) * 100}%` }}
+            />
+          </div>
+
+          <div className="min-h-[400px] mb-6">
+            {renderStep()}
+          </div>
+
+          <div className="flex justify-between gap-3">
             <Button
-              onClick={handleFinish}
-              disabled={createCampaignMutation.isPending}
-              className="glass-button-3d gradient-purple-blue"
-              data-testid="button-finish-campaign"
+              variant="outline"
+              onClick={handlePrevStep}
+              disabled={currentStep === 1}
+              className="glass-3d border-purple-500/30"
             >
-              {createCampaignMutation.isPending ? (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Finalizar
-                </>
-              )}
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Anterior
             </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+            {currentStep < 4 ? (
+              <Button
+                onClick={handleNextStep}
+                disabled={!canProceed()}
+                className="glass-button-3d gradient-purple-blue"
+                data-testid="button-next-step"
+              >
+                Próximo
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleFinish}
+                disabled={createCampaignMutation.isPending}
+                className="glass-button-3d gradient-purple-blue"
+                data-testid="button-finish-campaign"
+              >
+                {createCampaignMutation.isPending ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Finalizar
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
