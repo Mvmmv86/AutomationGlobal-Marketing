@@ -1020,3 +1020,136 @@ export type InsertAiMarketingInsight = z.infer<typeof insertAiMarketingInsightsS
 
 export type ScheduledPost = typeof scheduledPosts.$inferSelect;
 export type InsertScheduledPost = z.infer<typeof insertScheduledPostSchema>;
+
+// =============================================================================
+// CONTENT AUTOMATION TABLES - SEMANA 1
+// =============================================================================
+
+// Content Automations Table - Main configuration table for content automation
+export const contentAutomations = pgTable("content_automations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  keywordsPrimary: varchar("keywords_primary", { length: 500 }).notNull(),
+  keywordsSecondary: jsonb("keywords_secondary").default([]),
+  niche: varchar("niche", { length: 100 }).notNull(),
+  toneOfVoice: varchar("tone_of_voice", { length: 50 }).notNull(),
+  newsSources: jsonb("news_sources").default([]),
+  blogConfig: jsonb("blog_config").default({}),
+  instagramConfig: jsonb("instagram_config").default({}),
+  frequency: varchar("frequency", { length: 50 }).notNull(),
+  scheduleDays: jsonb("schedule_days").default([]),
+  scheduleTime: varchar("schedule_time", { length: 8 }), // TIME format as varchar for simplicity
+  manualApproval: boolean("manual_approval").default(true),
+  status: varchar("status", { length: 20 }).default('active'), // active, paused, inactive
+  lastExecution: timestamp("last_execution"),
+  nextExecution: timestamp("next_execution"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Content Automation Executions Table - Track each execution of content automation
+export const contentAutomationExecutions = pgTable("content_automation_executions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  automationId: uuid("automation_id").references(() => contentAutomations.id).notNull(),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  executionDate: timestamp("execution_date").defaultNow(),
+  newsFound: integer("news_found").default(0),
+  selectedNews: jsonb("selected_news").default({}),
+  generatedContent: jsonb("generated_content").default({}),
+  generatedImageUrl: varchar("generated_image_url", { length: 500 }),
+  blogPublished: boolean("blog_published").default(false),
+  instagramPublished: boolean("instagram_published").default(false),
+  blogUrl: varchar("blog_url", { length: 500 }),
+  instagramUrl: varchar("instagram_url", { length: 500 }),
+  approvalStatus: varchar("approval_status", { length: 20 }).default('pending'), // pending, approved, rejected
+  performanceMetrics: jsonb("performance_metrics").default({}),
+  executionTime: integer("execution_time"), // seconds
+  status: varchar("status", { length: 20 }).default('pending'), // success, failed, pending
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// News Sources Table - Track news sources and their reliability
+export const newsSources = pgTable("news_sources", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  apiEndpoint: varchar("api_endpoint", { length: 500 }),
+  scrapingConfig: jsonb("scraping_config").default({}),
+  language: varchar("language", { length: 10 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  reliabilityScore: decimal("reliability_score", { precision: 3, scale: 2 }).default('0.00'),
+  lastCheck: timestamp("last_check"),
+  status: varchar("status", { length: 20 }).default('active'), // active, inactive, error
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Generated Content Table - Store all generated content with metadata
+export const generatedContent = pgTable("generated_content", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  executionId: uuid("execution_id").references(() => contentAutomationExecutions.id).notNull(),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  contentType: varchar("content_type", { length: 20 }).notNull(), // blog, instagram
+  title: varchar("title", { length: 500 }).notNull(),
+  content: text("content").notNull(),
+  metaDescription: varchar("meta_description", { length: 500 }),
+  tags: jsonb("tags").default([]),
+  imageUrl: varchar("image_url", { length: 500 }),
+  imagePrompt: text("image_prompt"),
+  seoScore: decimal("seo_score", { precision: 3, scale: 2 }).default('0.00'),
+  readabilityScore: decimal("readability_score", { precision: 3, scale: 2 }).default('0.00'),
+  wordCount: integer("word_count").default(0),
+  estimatedReadingTime: integer("estimated_reading_time").default(0),
+  performancePrediction: jsonb("performance_prediction").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// =============================================================================
+// CONTENT AUTOMATION SCHEMAS
+// =============================================================================
+
+// Content Automations Schema
+export const insertContentAutomationSchema = createInsertSchema(contentAutomations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastExecution: true,
+  nextExecution: true,
+});
+
+// Content Automation Executions Schema  
+export const insertContentAutomationExecutionSchema = createInsertSchema(contentAutomationExecutions).omit({
+  id: true,
+  createdAt: true,
+  executionDate: true,
+});
+
+// News Sources Schema
+export const insertNewsSourceSchema = createInsertSchema(newsSources).omit({
+  id: true,
+  createdAt: true,
+  lastCheck: true,
+});
+
+// Generated Content Schema
+export const insertGeneratedContentSchema = createInsertSchema(generatedContent).omit({
+  id: true,
+  createdAt: true,
+});
+
+// =============================================================================
+// CONTENT AUTOMATION TYPE EXPORTS
+// =============================================================================
+
+export type ContentAutomation = typeof contentAutomations.$inferSelect;
+export type InsertContentAutomation = z.infer<typeof insertContentAutomationSchema>;
+
+export type ContentAutomationExecution = typeof contentAutomationExecutions.$inferSelect;
+export type InsertContentAutomationExecution = z.infer<typeof insertContentAutomationExecutionSchema>;
+
+export type NewsSource = typeof newsSources.$inferSelect;
+export type InsertNewsSource = z.infer<typeof insertNewsSourceSchema>;
+
+export type GeneratedContent = typeof generatedContent.$inferSelect;
+export type InsertGeneratedContent = z.infer<typeof insertGeneratedContentSchema>;
