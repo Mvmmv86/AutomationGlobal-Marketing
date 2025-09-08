@@ -401,6 +401,23 @@ export default function CampaignsDashboard() {
 
       {/* New Campaign Wizard */}
       {console.log('🎯 showNewCampaignWizard estado atual:', showNewCampaignWizard)}
+      
+      {/* Modal simples para teste */}
+      {showNewCampaignWizard && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="glass-3d p-8 max-w-md w-full mx-4">
+            <h2 className="text-white text-xl font-bold mb-4">🎯 MODAL TESTE</h2>
+            <p className="text-purple-200 mb-6">Modal está funcionando! O problema não é no estado.</p>
+            <Button 
+              onClick={() => setShowNewCampaignWizard(false)}
+              className="glass-button-3d gradient-purple-blue w-full"
+            >
+              Fechar
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <NewCampaignWizard
         isOpen={showNewCampaignWizard}
         onClose={() => {
