@@ -3662,18 +3662,33 @@ function MarketingDashboardHome({
                   <div className="absolute top-6 left-6 right-6 bottom-6 rounded-full bg-white/10"></div>
                 </div>
 
-                {/* Funil 3D */}
-                <div className="relative flex flex-col items-center space-y-2 py-4">
+                {/* Funil 3D Ultra Realista */}
+                <div className="relative flex flex-col items-center space-y-1 py-6" style={{ perspective: '1000px' }}>
                   {/* Geração de Leads */}
                   <div className="relative w-full max-w-sm">
                     <div 
-                      className="h-12 bg-gradient-to-r from-red-500 to-red-400 rounded-t-lg flex items-center justify-center text-white font-bold text-sm shadow-lg transform perspective-1000 rotateX-10"
+                      className="h-14 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)',
-                        boxShadow: '0 4px 15px rgba(220, 38, 38, 0.4)'
+                        background: 'linear-gradient(145deg, #dc2626 0%, #b91c1c 25%, #ef4444 50%, #dc2626 75%, #991b1b 100%)',
+                        borderRadius: '16px 16px 8px 8px',
+                        transform: 'perspective(600px) rotateX(15deg) rotateY(-2deg)',
+                        boxShadow: `
+                          0 8px 32px rgba(220, 38, 38, 0.6),
+                          0 4px 16px rgba(220, 38, 38, 0.4),
+                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                        `,
                       }}
                     >
-                      <div className="text-center">
+                      {/* Brilho interno */}
+                      <div 
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)',
+                          borderRadius: '16px 16px 8px 8px'
+                        }}
+                      ></div>
+                      <div className="text-center relative z-10">
                         <div>Geração de Leads</div>
                         <div className="text-xs opacity-90">{funnel.awareness?.toLocaleString()}</div>
                       </div>
@@ -3683,13 +3698,27 @@ function MarketingDashboardHome({
                   {/* Qualificar Leads */}
                   <div className="relative w-5/6 max-w-sm">
                     <div 
-                      className="h-10 bg-gradient-to-r from-amber-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="h-12 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
-                        boxShadow: '0 4px 15px rgba(217, 119, 6, 0.4)'
+                        background: 'linear-gradient(145deg, #d97706 0%, #b45309 25%, #f59e0b 50%, #d97706 75%, #92400e 100%)',
+                        borderRadius: '12px',
+                        transform: 'perspective(600px) rotateX(12deg) rotateY(-1deg)',
+                        boxShadow: `
+                          0 6px 28px rgba(217, 119, 6, 0.6),
+                          0 3px 14px rgba(217, 119, 6, 0.4),
+                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                        `,
                       }}
                     >
-                      <div className="text-center">
+                      <div 
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)',
+                          borderRadius: '12px'
+                        }}
+                      ></div>
+                      <div className="text-center relative z-10">
                         <div>Qualificar Leads</div>
                         <div className="text-xs opacity-90">{funnel.interest?.toLocaleString()}</div>
                       </div>
@@ -3699,13 +3728,27 @@ function MarketingDashboardHome({
                   {/* Avaliar desafios/problemas */}
                   <div className="relative w-4/5 max-w-sm">
                     <div 
-                      className="h-10 bg-gradient-to-r from-green-600 to-green-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="h-11 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
-                        boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)'
+                        background: 'linear-gradient(145deg, #16a34a 0%, #15803d 25%, #22c55e 50%, #16a34a 75%, #14532d 100%)',
+                        borderRadius: '10px',
+                        transform: 'perspective(600px) rotateX(10deg) rotateY(-0.5deg)',
+                        boxShadow: `
+                          0 5px 24px rgba(22, 163, 74, 0.6),
+                          0 2px 12px rgba(22, 163, 74, 0.4),
+                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                        `,
                       }}
                     >
-                      <div className="text-center">
+                      <div 
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)',
+                          borderRadius: '10px'
+                        }}
+                      ></div>
+                      <div className="text-center relative z-10">
                         <div>Avaliar desafios/problemas</div>
                         <div className="text-xs opacity-90">{funnel.consideration?.toLocaleString()}</div>
                       </div>
@@ -3715,13 +3758,27 @@ function MarketingDashboardHome({
                   {/* Solucionar Problemas */}
                   <div className="relative w-3/4 max-w-sm">
                     <div 
-                      className="h-10 bg-gradient-to-r from-cyan-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="h-10 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-                        boxShadow: '0 4px 15px rgba(8, 145, 178, 0.4)'
+                        background: 'linear-gradient(145deg, #0891b2 0%, #0e7490 25%, #06b6d4 50%, #0891b2 75%, #164e63 100%)',
+                        borderRadius: '8px',
+                        transform: 'perspective(600px) rotateX(8deg) rotateY(-0.2deg)',
+                        boxShadow: `
+                          0 4px 20px rgba(8, 145, 178, 0.6),
+                          0 2px 10px rgba(8, 145, 178, 0.4),
+                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                        `,
                       }}
                     >
-                      <div className="text-center">
+                      <div 
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)',
+                          borderRadius: '8px'
+                        }}
+                      ></div>
+                      <div className="text-center relative z-10">
                         <div>Solucionar Problemas</div>
                         <div className="text-xs opacity-90">{funnel.intent?.toLocaleString()}</div>
                       </div>
@@ -3731,13 +3788,27 @@ function MarketingDashboardHome({
                   {/* Converter */}
                   <div className="relative w-2/3 max-w-sm">
                     <div 
-                      className="h-9 bg-gradient-to-r from-blue-700 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="h-9 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
-                        boxShadow: '0 4px 15px rgba(29, 78, 216, 0.4)'
+                        background: 'linear-gradient(145deg, #1d4ed8 0%, #1e40af 25%, #2563eb 50%, #1d4ed8 75%, #1e3a8a 100%)',
+                        borderRadius: '6px',
+                        transform: 'perspective(600px) rotateX(6deg)',
+                        boxShadow: `
+                          0 3px 16px rgba(29, 78, 216, 0.6),
+                          0 1px 8px rgba(29, 78, 216, 0.4),
+                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                        `,
                       }}
                     >
-                      <div className="text-center">
+                      <div 
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)',
+                          borderRadius: '6px'
+                        }}
+                      ></div>
+                      <div className="text-center relative z-10">
                         <div>Converter</div>
                         <div className="text-xs opacity-90">{funnel.evaluation?.toLocaleString()}</div>
                       </div>
@@ -3747,13 +3818,27 @@ function MarketingDashboardHome({
                   {/* Fechar */}
                   <div className="relative w-1/2 max-w-sm">
                     <div 
-                      className="h-8 bg-gradient-to-r from-purple-700 to-purple-600 rounded-b-lg flex items-center justify-center text-white font-bold text-sm shadow-lg"
+                      className="h-8 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)',
-                        boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)'
+                        background: 'linear-gradient(145deg, #7c3aed 0%, #6d28d9 25%, #8b5cf6 50%, #7c3aed 75%, #581c87 100%)',
+                        borderRadius: '8px 8px 16px 16px',
+                        transform: 'perspective(600px) rotateX(4deg) rotateY(1deg)',
+                        boxShadow: `
+                          0 2px 12px rgba(124, 58, 237, 0.6),
+                          0 1px 6px rgba(124, 58, 237, 0.4),
+                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                        `,
                       }}
                     >
-                      <div className="text-center">
+                      <div 
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(255,255,255,0.1) 100%)',
+                          borderRadius: '8px 8px 16px 16px'
+                        }}
+                      ></div>
+                      <div className="text-center relative z-10">
                         <div>Fechar</div>
                         <div className="text-xs opacity-90">{funnel.purchase?.toLocaleString()}</div>
                       </div>
