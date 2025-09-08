@@ -14,6 +14,7 @@ import { socialMediaService } from "./socialMediaService";
 import * as schema from "../shared/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { socialMediaPosts } from "../shared/schema";
+import marketingMetricsRoutes from "./routes/marketing-metrics";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -3214,6 +3215,12 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       res.status(500).json({ error: error.message });
     }
   });
+
+  // ==================== MARKETING ROUTES ==================== 
+  
+  // Register Marketing Metrics routes
+  app.use('/api/marketing', marketingMetricsRoutes);
+  console.log('✅ Marketing metrics routes registered at /api/marketing');
 
   const httpServer = createServer(app);
   return httpServer;
