@@ -3662,141 +3662,113 @@ function MarketingDashboardHome({
                   <div className="absolute top-6 left-6 right-6 bottom-6 rounded-full bg-white/10"></div>
                 </div>
 
-                {/* Funil 3D Formato Real */}
-                <div className="relative flex flex-col items-center space-y-1 py-6" style={{ perspective: '1000px' }}>
+                {/* Funil 3D Exato da Imagem */}
+                <div className="relative flex flex-col items-center space-y-0 py-6" style={{ perspective: '1000px' }}>
                   {/* Geração de Leads */}
-                  <div className="relative w-full max-w-sm">
+                  <div className="relative w-full max-w-xs">
                     <div 
-                      className="h-14 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
+                      className="h-12 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
-                        background: 'linear-gradient(145deg, #dc2626 0%, #b91c1c 25%, #ef4444 50%, #dc2626 75%, #991b1b 100%)',
-                        clipPath: 'polygon(5% 0%, 95% 0%, 90% 100%, 10% 100%)',
-                        transform: 'perspective(600px) rotateX(15deg)',
-                        boxShadow: `
-                          0 8px 32px rgba(220, 38, 38, 0.6),
-                          0 4px 16px rgba(220, 38, 38, 0.4),
-                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                        `,
+                        background: 'linear-gradient(135deg, #c53030, #e53e3e)',
+                        clipPath: 'polygon(10% 0%, 90% 0%, 85% 100%, 15% 100%)',
+                        transform: 'perspective(800px) rotateX(8deg)',
+                        boxShadow: '0 4px 16px rgba(197, 48, 48, 0.5), 0 2px 8px rgba(0,0,0,0.3)',
+                        borderRadius: '8px 8px 0 0'
                       }}
                     >
-                      <div className="text-center relative z-10">
-                        <div>Geração de Leads</div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold">Geração de Leads</div>
                         <div className="text-xs opacity-90">{funnel.awareness?.toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Qualificar Leads */}
-                  <div className="relative w-5/6 max-w-sm">
+                  <div className="relative w-11/12 max-w-xs">
                     <div 
-                      className="h-12 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
+                      className="h-11 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
-                        background: 'linear-gradient(145deg, #d97706 0%, #b45309 25%, #f59e0b 50%, #d97706 75%, #92400e 100%)',
-                        clipPath: 'polygon(8% 0%, 92% 0%, 88% 100%, 12% 100%)',
-                        transform: 'perspective(600px) rotateX(12deg)',
-                        boxShadow: `
-                          0 6px 28px rgba(217, 119, 6, 0.6),
-                          0 3px 14px rgba(217, 119, 6, 0.4),
-                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                        `,
+                        background: 'linear-gradient(135deg, #d69e2e, #ecc94b)',
+                        clipPath: 'polygon(12% 0%, 88% 0%, 82% 100%, 18% 100%)',
+                        transform: 'perspective(800px) rotateX(8deg)',
+                        boxShadow: '0 4px 16px rgba(214, 158, 46, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
                       }}
                     >
-                      <div className="text-center relative z-10">
-                        <div>Qualificar Leads</div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold">Qualificar Leads</div>
                         <div className="text-xs opacity-90">{funnel.interest?.toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Avaliar desafios/problemas */}
-                  <div className="relative w-4/5 max-w-sm">
+                  <div className="relative w-5/6 max-w-xs">
                     <div 
-                      className="h-11 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
+                      className="h-10 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
-                        background: 'linear-gradient(145deg, #16a34a 0%, #15803d 25%, #22c55e 50%, #16a34a 75%, #14532d 100%)',
-                        clipPath: 'polygon(10% 0%, 90% 0%, 85% 100%, 15% 100%)',
-                        transform: 'perspective(600px) rotateX(10deg)',
-                        boxShadow: `
-                          0 5px 24px rgba(22, 163, 74, 0.6),
-                          0 2px 12px rgba(22, 163, 74, 0.4),
-                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                        `,
+                        background: 'linear-gradient(135deg, #38a169, #48bb78)',
+                        clipPath: 'polygon(15% 0%, 85% 0%, 78% 100%, 22% 100%)',
+                        transform: 'perspective(800px) rotateX(8deg)',
+                        boxShadow: '0 4px 16px rgba(56, 161, 105, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
                       }}
                     >
-                      <div className="text-center relative z-10">
-                        <div>Avaliar desafios/problemas</div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold">Avaliar desafios/problemas</div>
                         <div className="text-xs opacity-90">{funnel.consideration?.toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Solucionar Problemas */}
-                  <div className="relative w-3/4 max-w-sm">
+                  <div className="relative w-3/4 max-w-xs">
                     <div 
-                      className="h-10 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
+                      className="h-9 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
-                        background: 'linear-gradient(145deg, #0891b2 0%, #0e7490 25%, #06b6d4 50%, #0891b2 75%, #164e63 100%)',
-                        clipPath: 'polygon(12% 0%, 88% 0%, 82% 100%, 18% 100%)',
-                        transform: 'perspective(600px) rotateX(8deg)',
-                        boxShadow: `
-                          0 4px 20px rgba(8, 145, 178, 0.6),
-                          0 2px 10px rgba(8, 145, 178, 0.4),
-                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                        `,
+                        background: 'linear-gradient(135deg, #319795, #4fd1c7)',
+                        clipPath: 'polygon(18% 0%, 82% 0%, 75% 100%, 25% 100%)',
+                        transform: 'perspective(800px) rotateX(8deg)',
+                        boxShadow: '0 4px 16px rgba(49, 151, 149, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
                       }}
                     >
-                      <div className="text-center relative z-10">
-                        <div>Solucionar Problemas</div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold">Solucionar Problemas</div>
                         <div className="text-xs opacity-90">{funnel.intent?.toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Converter */}
-                  <div className="relative w-2/3 max-w-sm">
+                  <div className="relative w-2/3 max-w-xs">
                     <div 
-                      className="h-9 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
+                      className="h-8 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
-                        background: 'linear-gradient(145deg, #1d4ed8 0%, #1e40af 25%, #2563eb 50%, #1d4ed8 75%, #1e3a8a 100%)',
-                        clipPath: 'polygon(15% 0%, 85% 0%, 78% 100%, 22% 100%)',
-                        transform: 'perspective(600px) rotateX(6deg)',
-                        boxShadow: `
-                          0 3px 16px rgba(29, 78, 216, 0.6),
-                          0 1px 8px rgba(29, 78, 216, 0.4),
-                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                        `,
+                        background: 'linear-gradient(135deg, #3182ce, #4299e1)',
+                        clipPath: 'polygon(22% 0%, 78% 0%, 70% 100%, 30% 100%)',
+                        transform: 'perspective(800px) rotateX(8deg)',
+                        boxShadow: '0 4px 16px rgba(49, 130, 206, 0.5), 0 2px 8px rgba(0,0,0,0.3)'
                       }}
                     >
-                      <div className="text-center relative z-10">
-                        <div>Converter</div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold">Converter</div>
                         <div className="text-xs opacity-90">{funnel.evaluation?.toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Fechar */}
-                  <div className="relative w-1/2 max-w-sm">
+                  <div className="relative w-1/2 max-w-xs">
                     <div 
-                      className="h-8 flex items-center justify-center text-white font-bold text-sm relative overflow-hidden"
+                      className="h-7 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
-                        background: 'linear-gradient(145deg, #7c3aed 0%, #6d28d9 25%, #8b5cf6 50%, #7c3aed 75%, #581c87 100%)',
-                        clipPath: 'polygon(18% 0%, 82% 0%, 70% 100%, 30% 100%)',
-                        transform: 'perspective(600px) rotateX(4deg)',
-                        boxShadow: `
-                          0 2px 12px rgba(124, 58, 237, 0.6),
-                          0 1px 6px rgba(124, 58, 237, 0.4),
-                          inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                          inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                        `,
+                        background: 'linear-gradient(135deg, #805ad5, #9f7aea)',
+                        clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)',
+                        transform: 'perspective(800px) rotateX(8deg)',
+                        boxShadow: '0 4px 16px rgba(128, 90, 213, 0.5), 0 2px 8px rgba(0,0,0,0.3)',
+                        borderRadius: '0 0 8px 8px'
                       }}
                     >
-                      <div className="text-center relative z-10">
-                        <div>Fechar</div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold">Fechar</div>
                         <div className="text-xs opacity-90">{funnel.purchase?.toLocaleString()}</div>
                       </div>
                     </div>
