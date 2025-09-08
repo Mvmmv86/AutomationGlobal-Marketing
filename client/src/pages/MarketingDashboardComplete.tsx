@@ -3650,20 +3650,15 @@ function MarketingDashboardHome({
           </h2>
           
           <div className="glass-3d p-6 relative">
-            {/* Botão de Setor dentro do card */}
+            {/* Botão de Setor compacto dentro do card */}
             <div className="absolute top-4 right-4">
               <button 
                 onClick={() => setShowSectorModal(true)}
-                className="glass-button-3d px-3 py-2 text-sm font-medium flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-400/30 hover:from-orange-500/30 hover:to-orange-600/30 transition-all duration-300"
+                className="glass-button-3d px-2 py-1 text-xs font-medium flex items-center gap-1 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-400/30 hover:from-orange-500/30 hover:to-orange-600/30 transition-all duration-300"
               >
-                <Building className="w-4 h-4 text-orange-400" />
-                <span className="text-gray-300">
-                  {selectedSector === 'ecommerce' && '🛒 E-commerce'}
-                  {selectedSector === 'financeiro' && '💰 Financeiro'}
-                  {selectedSector === 'educacional' && '📚 Educacional'}
-                  {selectedSector === 'infoproduto' && '💡 Infoproduto'}
-                </span>
-                <ChevronDown className="w-3 h-3 text-orange-400" />
+                <Building className="w-3 h-3 text-orange-400" />
+                <span className="text-gray-300">Setor</span>
+                <ChevronDown className="w-2 h-2 text-orange-400" />
               </button>
             </div>
 
