@@ -25,7 +25,7 @@ import {
   ShoppingBag,
   Instagram,
   Facebook,
-  X,
+  X as XIcon,
   ChevronRight,
   Image as ImageIcon,
   Video,
@@ -502,7 +502,7 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
               onClick={handleClose}
               className="glass-3d border-purple-500/30"
             >
-              <X className="w-4 h-4" />
+              <XIcon className="w-4 h-4" />
             </Button>
           </div>
 
