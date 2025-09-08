@@ -36,6 +36,48 @@ import {
   Share
 } from 'lucide-react';
 
+// Função para comprimir imagens (copiada do editor funcional)
+const compressImage = (base64String: string, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!base64String || !base64String.startsWith('data:image/')) {
+      resolve(base64String);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        resolve(base64String);
+        return;
+      }
+
+      const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+      const newWidth = img.width * ratio;
+      const newHeight = img.height * ratio;
+
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+
+      ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+      console.log(`🖼️ Imagem comprimida: ${(base64String.length / 1024).toFixed(1)}KB → ${(compressedBase64.length / 1024).toFixed(1)}KB`);
+      
+      resolve(compressedBase64);
+    };
+
+    img.onerror = () => {
+      console.log('❌ Erro ao comprimir imagem, usando original');
+      resolve(base64String);
+    };
+
+    img.src = base64String;
+  });
+};
+
 interface ConnectedAccount {
   id: string;
   platform: 'facebook' | 'instagram';
@@ -150,7 +192,9 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
       if (data.mediaFile) {
         // Converter arquivo para base64
         const base64 = await fileToBase64(data.mediaFile);
-        postPayload.mediaUrl = base64;
+        // Comprimir imagem para reduzir tamanho (igual ao editor)
+        const compressedBase64 = await compressImage(base64, 800, 0.7);
+        postPayload.mediaUrl = compressedBase64;
       }
 
       const postResponse = await apiRequest('POST', '/api/social-media/posts', postPayload);
