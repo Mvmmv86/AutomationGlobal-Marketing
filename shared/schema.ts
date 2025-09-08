@@ -789,3 +789,234 @@ export type InsertSocialMediaInsight = z.infer<typeof insertSocialMediaInsightSc
 
 export type SocialMediaCampaign = typeof socialMediaCampaigns.$inferSelect;
 export type InsertSocialMediaCampaign = z.infer<typeof insertSocialMediaCampaignSchema>;
+
+// =============================================================================
+// FACEBOOK/INSTAGRAM INTEGRATION TABLES - NEW FUNCTIONALITY
+// =============================================================================
+
+// Connected Social Media Accounts (Facebook/Instagram OAuth)
+export const connectedAccounts = pgTable("connected_accounts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  platform: text("platform").notNull(), // 'facebook' | 'instagram' | 'facebook_page'
+  platformAccountId: text("platform_account_id").notNull(), // Facebook/Instagram Account ID
+  accountName: text("account_name").notNull(), // Display name
+  username: text("username"), // @username
+  profilePicture: text("profile_picture"),
+  accessToken: text("access_token").notNull(), // OAuth access token (encrypted)
+  refreshToken: text("refresh_token"), // For token refresh
+  tokenExpiresAt: timestamp("token_expires_at"),
+  scopes: jsonb("scopes").default([]), // Permissions granted
+  isActive: boolean("is_active").default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+  syncData: jsonb("sync_data").default({}), // Last sync metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Real-time Campaign Metrics (Facebook Ads Manager Integration)
+export const campaignMetrics = pgTable("campaign_metrics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: uuid("campaign_id").references(() => socialMediaCampaigns.id).notNull(),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  conversions: integer("conversions").default(0),
+  spend: decimal("spend", { precision: 10, scale: 2 }).default("0.00"),
+  revenue: decimal("revenue", { precision: 10, scale: 2 }).default("0.00"),
+  roas: decimal("roas", { precision: 5, scale: 2 }).default("0.00"), // Return on Ad Spend
+  cpm: decimal("cpm", { precision: 8, scale: 2 }).default("0.00"), // Cost per mille
+  cpc: decimal("cpc", { precision: 8, scale: 2 }).default("0.00"), // Cost per click
+  ctr: decimal("ctr", { precision: 5, scale: 4 }).default("0.0000"), // Click-through rate
+  cvr: decimal("cvr", { precision: 5, scale: 4 }).default("0.0000"), // Conversion rate
+  engagement: integer("engagement").default(0),
+  reach: integer("reach").default(0),
+  frequency: decimal("frequency", { precision: 5, scale: 2 }).default("0.00"),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+  syncedAt: timestamp("synced_at").defaultNow(),
+});
+
+// Image Bank for Posts
+export const imageBank = pgTable("image_bank", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  url: text("url").notNull(), // Cloud storage URL
+  thumbnailUrl: text("thumbnail_url"), // Optimized thumbnail
+  size: integer("size").notNull(), // File size in bytes
+  mimeType: text("mime_type").notNull(),
+  width: integer("width"),
+  height: integer("height"),
+  category: text("category"), // 'product', 'lifestyle', 'promotional', etc.
+  tags: jsonb("tags").default([]), // ['marketing', 'social', 'product']
+  altText: text("alt_text"), // Accessibility text
+  isPublic: boolean("is_public").default(false),
+  uploadedBy: uuid("uploaded_by").references(() => users.id).notNull(),
+  usageCount: integer("usage_count").default(0), // How many times used
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Sales Funnel Data for Campaign Tracking
+export const salesFunnels = pgTable("sales_funnels", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => socialMediaCampaigns.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  // Funnel Stages with Metrics
+  awareness: integer("awareness").default(0), // Top of funnel
+  interest: integer("interest").default(0), // Interest stage  
+  consideration: integer("consideration").default(0), // Consideration
+  intent: integer("intent").default(0), // Purchase intent
+  evaluation: integer("evaluation").default(0), // Evaluation stage
+  purchase: integer("purchase").default(0), // Bottom of funnel - conversions
+  // Conversion Rates Between Stages
+  awarenessToInterest: decimal("awareness_to_interest", { precision: 5, scale: 4 }).default("0.0000"),
+  interestToConsideration: decimal("interest_to_consideration", { precision: 5, scale: 4 }).default("0.0000"),
+  considerationToIntent: decimal("consideration_to_intent", { precision: 5, scale: 4 }).default("0.0000"),
+  intentToEvaluation: decimal("intent_to_evaluation", { precision: 5, scale: 4 }).default("0.0000"),
+  evaluationToPurchase: decimal("evaluation_to_purchase", { precision: 5, scale: 4 }).default("0.0000"),
+  // Overall Metrics
+  totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default("0.00"),
+  avgOrderValue: decimal("avg_order_value", { precision: 10, scale: 2 }).default("0.00"),
+  customerLifetimeValue: decimal("customer_lifetime_value", { precision: 12, scale: 2 }).default("0.00"),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Real-time Performance by Channel (Instagram, Facebook, etc.)
+export const channelPerformance = pgTable("channel_performance", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  channel: text("channel").notNull(), // 'instagram', 'facebook', 'youtube', 'twitter'
+  trafficPercentage: decimal("traffic_percentage", { precision: 5, scale: 2 }).default("0.00"),
+  engagement: decimal("engagement", { precision: 5, scale: 2 }).default("0.00"), // Percentage
+  followers: integer("followers").default(0),
+  followersGrowth: decimal("followers_growth", { precision: 5, scale: 2 }).default("0.00"),
+  posts: integer("posts").default(0),
+  avgLikes: integer("avg_likes").default(0),
+  avgComments: integer("avg_comments").default(0),
+  avgShares: integer("avg_shares").default(0),
+  topPerformingPost: text("top_performing_post"), // Post ID or URL
+  recordedAt: timestamp("recorded_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AI Insights (Real-time) for Marketing Intelligence
+export const aiMarketingInsights = pgTable("ai_marketing_insights", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  insightType: text("insight_type").notNull(), // 'best_posting_time', 'audience_analysis', 'content_recommendation'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  confidence: decimal("confidence", { precision: 5, scale: 2 }).default("0.00"), // 0-100%
+  impactScore: integer("impact_score").default(0), // 1-10 scale
+  actionable: boolean("actionable").default(true),
+  category: text("category"), // 'timing', 'audience', 'content', 'budget'
+  data: jsonb("data").default({}), // Specific insight data
+  isRead: boolean("is_read").default(false),
+  validUntil: timestamp("valid_until"), // When insight expires
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Post Scheduling and Management
+export const scheduledPosts = pgTable("scheduled_posts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  campaignId: uuid("campaign_id").references(() => socialMediaCampaigns.id),
+  connectedAccountId: uuid("connected_account_id").references(() => connectedAccounts.id).notNull(),
+  content: text("content").notNull(),
+  imageIds: jsonb("image_ids").default([]), // References to imageBank
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  status: text("status").default("scheduled"), // 'scheduled', 'published', 'failed', 'cancelled'
+  platformPostId: text("platform_post_id"), // ID after publishing
+  publishedAt: timestamp("published_at"),
+  metrics: jsonb("metrics").default({}), // Post-specific metrics
+  errorMessage: text("error_message"),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// =============================================================================
+// SCHEMA EXPORTS FOR NEW TABLES
+// =============================================================================
+
+// Connected Accounts Schema
+export const insertConnectedAccountSchema = createInsertSchema(connectedAccounts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Campaign Metrics Schema
+export const insertCampaignMetricsSchema = createInsertSchema(campaignMetrics).omit({
+  id: true,
+  recordedAt: true,
+  syncedAt: true,
+});
+
+// Image Bank Schema
+export const insertImageBankSchema = createInsertSchema(imageBank).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true,
+});
+
+// Sales Funnel Schema
+export const insertSalesFunnelSchema = createInsertSchema(salesFunnels).omit({
+  id: true,
+  recordedAt: true,
+  updatedAt: true,
+});
+
+// Channel Performance Schema  
+export const insertChannelPerformanceSchema = createInsertSchema(channelPerformance).omit({
+  id: true,
+  recordedAt: true,
+  updatedAt: true,
+});
+
+// AI Insights Schema
+export const insertAiMarketingInsightsSchema = createInsertSchema(aiMarketingInsights).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Scheduled Posts Schema
+export const insertScheduledPostSchema = createInsertSchema(scheduledPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  publishedAt: true,
+});
+
+// =============================================================================
+// TYPE EXPORTS FOR NEW TABLES
+// =============================================================================
+
+export type ConnectedAccount = typeof connectedAccounts.$inferSelect;
+export type InsertConnectedAccount = z.infer<typeof insertConnectedAccountSchema>;
+
+export type CampaignMetrics = typeof campaignMetrics.$inferSelect;
+export type InsertCampaignMetrics = z.infer<typeof insertCampaignMetricsSchema>;
+
+export type ImageBank = typeof imageBank.$inferSelect;
+export type InsertImageBank = z.infer<typeof insertImageBankSchema>;
+
+export type SalesFunnel = typeof salesFunnels.$inferSelect;
+export type InsertSalesFunnel = z.infer<typeof insertSalesFunnelSchema>;
+
+export type ChannelPerformance = typeof channelPerformance.$inferSelect;
+export type InsertChannelPerformance = z.infer<typeof insertChannelPerformanceSchema>;
+
+export type AiMarketingInsight = typeof aiMarketingInsights.$inferSelect;
+export type InsertAiMarketingInsight = z.infer<typeof insertAiMarketingInsightsSchema>;
+
+export type ScheduledPost = typeof scheduledPosts.$inferSelect;
+export type InsertScheduledPost = z.infer<typeof insertScheduledPostSchema>;
