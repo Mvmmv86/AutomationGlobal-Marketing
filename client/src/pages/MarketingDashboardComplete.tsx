@@ -957,32 +957,16 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [lastContentForSuggestions, setLastContentForSuggestions] = useState('');
 
   // Queries para campanhas
-  const { data: campaigns = [], refetch: refetchCampaigns, isLoading: campaignsLoading, error: campaignsError } = useQuery({
-    queryKey: ['/api/social-media/campaigns', 'fresh'],
+  const { data: campaigns = [], refetch: refetchCampaigns } = useQuery({
+    queryKey: ['/api/social-media/campaigns'],
     queryFn: async () => {
-      console.log('🎯 Carregando campanhas...');
-      const response = await fetch('/api/social-media/campaigns?t=' + Date.now());
+      const response = await fetch('/api/social-media/campaigns');
       if (!response.ok) throw new Error('Failed to fetch campaigns');
       const data = await response.json();
-      console.log('🎯 Campanhas recebidas:', data);
-      console.log('🎯 Array de campanhas:', data.data);
-      console.log('🎯 Total campanhas:', data.data?.length || 0);
-      console.log('🎯 Retornando:', data.data || []);
       return data.data || [];
     },
     retry: false,
-    staleTime: 0,
-    cacheTime: 0,
   });
-
-  // Debug: log campaigns whenever they change
-  React.useEffect(() => {
-    console.log('🎯 Estado atual das campanhas:', campaigns);
-    console.log('🎯 É array?', Array.isArray(campaigns));
-    console.log('🎯 Length:', campaigns?.length || 0);
-    console.log('🎯 Loading?', campaignsLoading);
-    console.log('🎯 Error?', campaignsError);
-  }, [campaigns, campaignsLoading, campaignsError]);
 
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
