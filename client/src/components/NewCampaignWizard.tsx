@@ -178,10 +178,13 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
       });
 
       const campaignData = await campaignResponse.json();
+      
+      console.log('🎯 Resposta da campanha:', campaignData);
+      console.log('🎯 ID da campanha:', campaignData.data?.id);
 
       // Depois criar o post
       const postPayload: any = {
-        campaignId: campaignData.data?.id || 'temp-campaign-id',
+        campaignId: campaignData.data?.id,
         platform: getAccountPlatform(data.selectedAccount),
         accountId: data.selectedAccount,
         content: data.postContent,
