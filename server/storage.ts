@@ -38,7 +38,15 @@ import type {
   ScheduledJob,
   InsertScheduledJob,
   SocialMediaInsight,
-  InsertSocialMediaInsight
+  InsertSocialMediaInsight,
+  ContentAutomation,
+  InsertContentAutomation,
+  ContentAutomationExecution,
+  InsertContentAutomationExecution,
+  NewsSource,
+  InsertNewsSource,
+  GeneratedContent,
+  InsertGeneratedContent
 } from "@shared/schema";
 
 // Database connection for production
@@ -158,6 +166,22 @@ export interface IStorage {
   getSocialMediaInsights(organizationId: string, accountId?: string, postId?: string): Promise<SocialMediaInsight[]>;
   createSocialMediaInsight(data: InsertSocialMediaInsight): Promise<SocialMediaInsight>;
   updateSocialMediaInsights(accountId: string, insights: any[]): Promise<void>;
+
+  // Content automation methods
+  createContentAutomation(data: InsertContentAutomation): Promise<ContentAutomation>;
+  getContentAutomations(organizationId: string): Promise<ContentAutomation[]>;
+  getContentAutomation(id: string): Promise<ContentAutomation | undefined>;
+  updateContentAutomation(id: string, data: Partial<ContentAutomation>): Promise<ContentAutomation>;
+  deleteContentAutomation(id: string): Promise<void>;
+  createContentAutomationExecution(data: InsertContentAutomationExecution): Promise<ContentAutomationExecution>;
+  getContentAutomationExecutions(automationId: string): Promise<ContentAutomationExecution[]>;
+  getContentAutomationExecution(id: string): Promise<ContentAutomationExecution | undefined>;
+  updateContentAutomationExecution(id: string, data: Partial<ContentAutomationExecution>): Promise<ContentAutomationExecution>;
+  createNewsSource(data: InsertNewsSource): Promise<NewsSource>;
+  getNewsSources(): Promise<NewsSource[]>;
+  updateNewsSource(id: string, data: Partial<NewsSource>): Promise<NewsSource>;
+  createGeneratedContent(data: InsertGeneratedContent): Promise<GeneratedContent>;
+  getGeneratedContent(executionId: string): Promise<GeneratedContent[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -968,6 +992,91 @@ export class DatabaseStorage implements IStorage {
         eq(schema.socialMediaAccounts.organizationId, organizationId),
         eq(schema.socialMediaAccounts.isActive, true)
       ));
+  }
+
+  // Content automation methods implementation
+  async createContentAutomation(data: InsertContentAutomation): Promise<ContentAutomation> {
+    const [automation] = await db.insert(schema.contentAutomations).values(data).returning();
+    return automation;
+  }
+
+  async getContentAutomations(organizationId: string): Promise<ContentAutomation[]> {
+    return await db.select().from(schema.contentAutomations)
+      .where(eq(schema.contentAutomations.organizationId, organizationId))
+      .orderBy(desc(schema.contentAutomations.createdAt));
+  }
+
+  async getContentAutomation(id: string): Promise<ContentAutomation | undefined> {
+    const [automation] = await db.select().from(schema.contentAutomations)
+      .where(eq(schema.contentAutomations.id, id));
+    return automation;
+  }
+
+  async updateContentAutomation(id: string, data: Partial<ContentAutomation>): Promise<ContentAutomation> {
+    const [automation] = await db.update(schema.contentAutomations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.contentAutomations.id, id))
+      .returning();
+    return automation;
+  }
+
+  async deleteContentAutomation(id: string): Promise<void> {
+    await db.delete(schema.contentAutomations)
+      .where(eq(schema.contentAutomations.id, id));
+  }
+
+  async createContentAutomationExecution(data: InsertContentAutomationExecution): Promise<ContentAutomationExecution> {
+    const [execution] = await db.insert(schema.contentAutomationExecutions).values(data).returning();
+    return execution;
+  }
+
+  async getContentAutomationExecutions(automationId: string): Promise<ContentAutomationExecution[]> {
+    return await db.select().from(schema.contentAutomationExecutions)
+      .where(eq(schema.contentAutomationExecutions.automationId, automationId))
+      .orderBy(desc(schema.contentAutomationExecutions.executionDate));
+  }
+
+  async getContentAutomationExecution(id: string): Promise<ContentAutomationExecution | undefined> {
+    const [execution] = await db.select().from(schema.contentAutomationExecutions)
+      .where(eq(schema.contentAutomationExecutions.id, id));
+    return execution;
+  }
+
+  async updateContentAutomationExecution(id: string, data: Partial<ContentAutomationExecution>): Promise<ContentAutomationExecution> {
+    const [execution] = await db.update(schema.contentAutomationExecutions)
+      .set(data)
+      .where(eq(schema.contentAutomationExecutions.id, id))
+      .returning();
+    return execution;
+  }
+
+  async createNewsSource(data: InsertNewsSource): Promise<NewsSource> {
+    const [source] = await db.insert(schema.newsSources).values(data).returning();
+    return source;
+  }
+
+  async getNewsSources(): Promise<NewsSource[]> {
+    return await db.select().from(schema.newsSources)
+      .orderBy(desc(schema.newsSources.reliabilityScore));
+  }
+
+  async updateNewsSource(id: string, data: Partial<NewsSource>): Promise<NewsSource> {
+    const [source] = await db.update(schema.newsSources)
+      .set(data)
+      .where(eq(schema.newsSources.id, id))
+      .returning();
+    return source;
+  }
+
+  async createGeneratedContent(data: InsertGeneratedContent): Promise<GeneratedContent> {
+    const [content] = await db.insert(schema.generatedContent).values(data).returning();
+    return content;
+  }
+
+  async getGeneratedContent(executionId: string): Promise<GeneratedContent[]> {
+    return await db.select().from(schema.generatedContent)
+      .where(eq(schema.generatedContent.executionId, executionId))
+      .orderBy(desc(schema.generatedContent.createdAt));
   }
 
   // Utility methods

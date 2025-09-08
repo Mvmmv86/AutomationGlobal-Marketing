@@ -20,7 +20,8 @@ import {
   ArrowLeft,
   Play,
   Eye,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
@@ -93,6 +94,8 @@ function ContentAutomationSetupContent() {
   });
 
   const [currentSecondaryKeyword, setCurrentSecondaryKeyword] = useState("");
+  const [testingNews, setTestingNews] = useState(false);
+  const [newsTestResult, setNewsTestResult] = useState<any>(null);
 
   // Create automation mutation
   const createAutomationMutation = useMutation({
@@ -167,6 +170,54 @@ function ContentAutomationSetupContent() {
         return { ...prev, [field]: currentArray.filter(item => item !== value) };
       }
     });
+  };
+
+  // Test news search functionality
+  const testNewsSearch = async () => {
+    setTestingNews(true);
+    setNewsTestResult(null);
+
+    try {
+      const searchParams = {
+        keyword: formData.keywordsPrimary || 'tecnologia',
+        language: formData.language,
+        sources: formData.newsSources,
+        searchPeriod: formData.searchPeriod
+      };
+
+      const response = await fetch('/api/news/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(searchParams)
+      });
+
+      const result = await response.json();
+      setNewsTestResult(result);
+
+      if (result.success) {
+        toast({
+          title: "Teste de busca realizado!",
+          description: `Encontradas ${result.data.total} notícias para "${searchParams.keyword}"`,
+        });
+      } else {
+        toast({
+          title: "Erro no teste de busca",
+          description: result.error || "Erro desconhecido",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error testing news search:', error);
+      toast({
+        title: "Erro no teste de busca",
+        description: "Erro de conexão com o servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingNews(false);
+    }
   };
 
   const glassCardClass = cn(
@@ -694,13 +745,70 @@ function ContentAutomationSetupContent() {
                   <Button
                     type="button"
                     variant="outline"
+                    onClick={testNewsSearch}
+                    disabled={testingNews || !formData.keywordsPrimary}
                     className="border-white/30 text-white hover:bg-white/10"
                     data-testid="button-test-search"
                   >
-                    <Search className="w-4 h-4 mr-2" />
-                    Testar Busca
+                    {testingNews ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Testando...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        Testar Busca
+                      </>
+                    )}
                   </Button>
                 </div>
+
+                {/* Resultados do teste de busca */}
+                {newsTestResult && (
+                  <div className={cn(glassCardClass, "p-4 mt-4")}>
+                    <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+                      <Search className="w-4 h-4 text-cyan-400" />
+                      Resultado do Teste de Busca
+                    </h4>
+                    {newsTestResult.success ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-green-400">
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-sm">Busca realizada com sucesso</span>
+                        </div>
+                        <div className="text-white/80 text-sm">
+                          <strong>{newsTestResult.data.total}</strong> notícias encontradas para "{formData.keywordsPrimary}"
+                        </div>
+                        {newsTestResult.data.articles && newsTestResult.data.articles.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-white/60 text-xs uppercase tracking-wide">Exemplos encontrados:</p>
+                            {newsTestResult.data.articles.slice(0, 3).map((article: any, index: number) => (
+                              <div key={index} className="p-2 rounded-lg bg-white/5 border border-white/10">
+                                <div className="text-white/90 text-sm font-medium truncate">
+                                  {article.title}
+                                </div>
+                                <div className="text-white/60 text-xs">
+                                  {article.source?.name} • {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-red-400">
+                          <AlertCircle className="w-4 h-4" />
+                          <span className="text-sm">Erro na busca</span>
+                        </div>
+                        <div className="text-white/80 text-sm">
+                          {newsTestResult.error || newsTestResult.message || "Erro desconhecido"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex gap-4">
                   <Button
