@@ -3665,9 +3665,9 @@ function MarketingDashboardHome({
                 {/* Funil 3D Exato da Imagem */}
                 <div className="relative flex flex-col items-center space-y-0 py-6" style={{ perspective: '1000px' }}>
                   {/* Geração de Leads */}
-                  <div className="relative w-full max-w-xs">
+                  <div className="relative w-full max-w-md">
                     <div 
-                      className="h-12 flex items-center justify-center text-white font-bold text-sm relative"
+                      className="h-14 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
                         background: 'linear-gradient(135deg, #c53030, #e53e3e)',
                         clipPath: 'polygon(10% 0%, 90% 0%, 85% 100%, 15% 100%)',
@@ -3684,9 +3684,9 @@ function MarketingDashboardHome({
                   </div>
 
                   {/* Qualificar Leads */}
-                  <div className="relative w-11/12 max-w-xs">
+                  <div className="relative w-11/12 max-w-md">
                     <div 
-                      className="h-11 flex items-center justify-center text-white font-bold text-sm relative"
+                      className="h-13 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
                         background: 'linear-gradient(135deg, #d69e2e, #ecc94b)',
                         clipPath: 'polygon(12% 0%, 88% 0%, 82% 100%, 18% 100%)',
@@ -3702,9 +3702,9 @@ function MarketingDashboardHome({
                   </div>
 
                   {/* Avaliar desafios/problemas */}
-                  <div className="relative w-5/6 max-w-xs">
+                  <div className="relative w-5/6 max-w-md">
                     <div 
-                      className="h-10 flex items-center justify-center text-white font-bold text-sm relative"
+                      className="h-12 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
                         background: 'linear-gradient(135deg, #38a169, #48bb78)',
                         clipPath: 'polygon(15% 0%, 85% 0%, 78% 100%, 22% 100%)',
@@ -3720,9 +3720,9 @@ function MarketingDashboardHome({
                   </div>
 
                   {/* Solucionar Problemas */}
-                  <div className="relative w-3/4 max-w-xs">
+                  <div className="relative w-3/4 max-w-md">
                     <div 
-                      className="h-9 flex items-center justify-center text-white font-bold text-sm relative"
+                      className="h-11 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
                         background: 'linear-gradient(135deg, #319795, #4fd1c7)',
                         clipPath: 'polygon(18% 0%, 82% 0%, 75% 100%, 25% 100%)',
@@ -3738,9 +3738,9 @@ function MarketingDashboardHome({
                   </div>
 
                   {/* Converter */}
-                  <div className="relative w-2/3 max-w-xs">
+                  <div className="relative w-2/3 max-w-md">
                     <div 
-                      className="h-8 flex items-center justify-center text-white font-bold text-sm relative"
+                      className="h-10 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
                         background: 'linear-gradient(135deg, #3182ce, #4299e1)',
                         clipPath: 'polygon(22% 0%, 78% 0%, 70% 100%, 30% 100%)',
@@ -3756,9 +3756,9 @@ function MarketingDashboardHome({
                   </div>
 
                   {/* Fechar */}
-                  <div className="relative w-1/2 max-w-xs">
+                  <div className="relative w-1/2 max-w-md">
                     <div 
-                      className="h-7 flex items-center justify-center text-white font-bold text-sm relative"
+                      className="h-9 flex items-center justify-center text-white font-bold text-sm relative"
                       style={{
                         background: 'linear-gradient(135deg, #805ad5, #9f7aea)',
                         clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)',
