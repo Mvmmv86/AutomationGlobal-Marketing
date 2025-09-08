@@ -17,6 +17,32 @@ router.get('/global-metrics/:days?', async (req, res) => {
     const organizationId = req.headers['x-organization-id'] as string;
     loggingService.info('Marketing global metrics requested', { days, organizationId }, req);
 
+    // Se não tiver organizationId, assumir que não há contas conectadas
+    if (!organizationId) {
+      const globalMetrics = {
+        totalImpressions: 0,
+        impressionsGrowth: 0,
+        totalClicks: 0,
+        clicksGrowth: 0,
+        totalConversions: 0,
+        conversionsGrowth: 0,
+        totalROI: 0,
+        roiGrowth: 0,
+        costPerAcquisition: 0,
+        capaGrowth: 0,
+      };
+
+      return res.json({
+        success: true,
+        message: 'Global marketing metrics retrieved successfully',
+        data: globalMetrics,
+        period: `${days} days`,
+        connectedAccounts: 0,
+        hasData: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Verificar se existem contas de mídia social conectadas
     const connectedAccounts = await storage.getSocialMediaAccountsByOrganization(organizationId);
 
@@ -93,6 +119,69 @@ router.get('/channel-performance', async (req, res) => {
   try {
     const organizationId = req.headers['x-organization-id'] as string;
     loggingService.info('Channel performance requested', { organizationId }, req);
+
+    // Se não tiver organizationId, retornar dados zerados
+    if (!organizationId) {
+      const channelPerformance = [
+        {
+          platform: 'instagram',
+          trafficPercentage: 0,
+          engagement: 0,
+          followers: 0,
+          postsCount: 0,
+          isConnected: false,
+          growth: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0
+        },
+        {
+          platform: 'facebook', 
+          trafficPercentage: 0,
+          engagement: 0,
+          followers: 0,
+          postsCount: 0,
+          isConnected: false,
+          growth: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0
+        },
+        {
+          platform: 'youtube',
+          trafficPercentage: 0,
+          engagement: 0,
+          followers: 0,
+          postsCount: 0,
+          isConnected: false,
+          growth: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0
+        },
+        {
+          platform: 'twitter',
+          trafficPercentage: 0,
+          engagement: 0,
+          followers: 0,
+          postsCount: 0,
+          isConnected: false,
+          growth: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0
+        }
+      ];
+
+      return res.json({
+        success: true,
+        message: 'Channel performance data retrieved successfully',
+        data: channelPerformance,
+        connectedAccounts: 0,
+        connectedPlatforms: [],
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // Buscar contas conectadas reais
     const connectedAccounts = await storage.getSocialMediaAccountsByOrganization(organizationId);
