@@ -40,7 +40,9 @@ import {
   Video,
   Heart,
   Share,
-  ArrowLeft
+  ArrowLeft,
+  Building,
+  ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -3285,8 +3287,12 @@ function MarketingDashboardHome({
     refetchInterval: 10000, // Atualizar a cada 10s para tempo real
   });
 
+  // Estado para o setor selecionado do funil
+  const [selectedSector, setSelectedSector] = useState('ecommerce');
+
   const { data: salesFunnel, isLoading: funnelLoading } = useQuery({
-    queryKey: ['/api/marketing/sales-funnel'],
+    queryKey: ['/api/marketing/sales-funnel', selectedSector],
+    queryFn: () => apiRequest(`/api/marketing/sales-funnel?sector=${selectedSector}`),
     refetchInterval: 30000,
   });
 
@@ -3640,6 +3646,77 @@ function MarketingDashboardHome({
           )}>
             <PieChart className="w-5 h-5 text-orange-400" />
             Funil de Vendas Interativo
+            <div className="ml-auto relative group">
+              {/* Botão Setor com hover */}
+              <button 
+                className="glass-button-3d px-4 py-2 text-sm font-medium flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-400/30 hover:from-orange-500/30 hover:to-orange-600/30 transition-all duration-300"
+              >
+                <Building className="w-4 h-4 text-orange-400" />
+                SETOR
+                <ChevronDown className="w-3 h-3 text-orange-400" />
+              </button>
+
+              {/* Dropdown de setores */}
+              <div className="absolute top-full right-0 mt-2 w-56 glass-3d p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-20">
+                {[
+                  { 
+                    key: 'ecommerce', 
+                    label: 'E-commerce', 
+                    desc: 'Lojas online e varejo digital',
+                    cvr: '2.8%',
+                    icon: '🛒'
+                  },
+                  { 
+                    key: 'financeiro', 
+                    label: 'Financeiro', 
+                    desc: 'Bancos, seguros e fintechs',
+                    cvr: '2.8%',
+                    icon: '💰'
+                  },
+                  { 
+                    key: 'educacional', 
+                    label: 'Educacional', 
+                    desc: 'Cursos e instituições de ensino',
+                    cvr: '13.8%',
+                    icon: '📚'
+                  },
+                  { 
+                    key: 'infoproduto', 
+                    label: 'Infoproduto', 
+                    desc: 'Produtos digitais e mentoria',
+                    cvr: '12.0%',
+                    icon: '💡'
+                  }
+                ].map((sector) => (
+                  <button
+                    key={sector.key}
+                    onClick={() => setSelectedSector(sector.key)}
+                    className={cn(
+                      "w-full text-left p-3 rounded-lg transition-all duration-200 mb-1 last:mb-0 border",
+                      selectedSector === sector.key 
+                        ? "bg-gradient-to-r from-orange-500/20 to-orange-600/20 border-orange-400/40 text-white" 
+                        : "hover:bg-white/5 border-transparent text-gray-300 hover:text-white"
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{sector.icon}</span>
+                        <div>
+                          <div className="font-medium text-sm">{sector.label}</div>
+                          <div className="text-xs opacity-70 text-gray-400">{sector.desc}</div>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-orange-400">CVR {sector.cvr}</div>
+                    </div>
+                  </button>
+                ))}
+                <div className="mt-2 p-2 border-t border-white/10">
+                  <div className="text-xs text-gray-400">
+                    📊 Baseado em dados oficiais Meta & Google Ads
+                  </div>
+                </div>
+              </div>
+            </div>
           </h2>
           
           <div className="glass-3d p-6 relative">
@@ -3786,8 +3863,82 @@ function MarketingDashboardHome({
                     <div className="text-cyan-400 font-bold text-lg">{funnel.averageTimeToConvert || 14} dias</div>
                   </div>
                 </div>
+
+                {/* Benchmarks das Plataformas por Setor */}
+                {funnel.platformBenchmarks && (
+                  <div className="mt-6 pt-4 border-t border-gray-600">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        📊 Benchmarks Oficiais - {selectedSector.charAt(0).toUpperCase() + selectedSector.slice(1)}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      {/* Facebook/Instagram */}
+                      <div className="glass-3d-dark p-3 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">f</span>
+                          </div>
+                          <span className="font-medium text-gray-300">Meta Ads</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">CTR:</span>
+                            <span className="text-blue-400 font-medium">{funnel.platformBenchmarks.facebookCTR}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">CVR:</span>
+                            <span className="text-green-400 font-medium">{funnel.platformBenchmarks.facebookCVR}%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Google Ads */}
+                      <div className="glass-3d-dark p-3 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-4 h-4 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">G</span>
+                          </div>
+                          <span className="font-medium text-gray-300">Google Ads</span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">CVR:</span>
+                            <span className="text-green-400 font-medium">{funnel.platformBenchmarks.googleAdsCVR}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">CPA:</span>
+                            <span className="text-orange-400 font-medium">${funnel.platformBenchmarks.avgCPA}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-center">
+                      <div className="text-xs text-gray-500">
+                        Dados atualizados baseados em benchmarks oficiais 2024-2025
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+          </div>
+
+          {/* Setor Atual Badge */}
+          <div className="absolute top-4 right-4">
+            <div className="glass-3d-dark px-3 py-1 rounded-full">
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                <span className="text-gray-300 font-medium">
+                  {selectedSector === 'ecommerce' && '🛒 E-commerce'}
+                  {selectedSector === 'financeiro' && '💰 Financeiro'}
+                  {selectedSector === 'educacional' && '📚 Educacional'}
+                  {selectedSector === 'infoproduto' && '💡 Infoproduto'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
