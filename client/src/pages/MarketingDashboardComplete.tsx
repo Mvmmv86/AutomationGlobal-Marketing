@@ -3657,7 +3657,12 @@ function MarketingDashboardHome({
                 className="glass-button-3d px-2 py-1 text-xs font-medium flex items-center gap-1 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border border-orange-400/30 hover:from-orange-500/30 hover:to-orange-600/30 transition-all duration-300"
               >
                 <Building className="w-3 h-3 text-orange-400" />
-                <span className="text-gray-300">Setor</span>
+                <span className="text-gray-300">
+                  {selectedSector === 'ecommerce' && '🛒 E-commerce'}
+                  {selectedSector === 'financeiro' && '💰 Financeiro'} 
+                  {selectedSector === 'educacional' && '📚 Educacional'}
+                  {selectedSector === 'infoproduto' && '💡 Infoproduto'}
+                </span>
                 <ChevronDown className="w-2 h-2 text-orange-400" />
               </button>
             </div>
@@ -3681,26 +3686,40 @@ function MarketingDashboardHome({
                   <div className="absolute top-6 left-6 right-6 bottom-6 rounded-full bg-white/10"></div>
                 </div>
 
-                {/* Funil 3D Exato da Imagem */}
+                {/* Funil 3D Dinâmico por Setor */}
                 <div className="relative flex flex-col items-center space-y-0 py-6" style={{ perspective: '1000px' }}>
-                  {/* Geração de Leads */}
-                  <div className="relative w-full max-w-md">
-                    <div 
-                      className="h-14 flex items-center justify-center text-white font-bold text-sm relative"
-                      style={{
-                        background: 'linear-gradient(135deg, #c53030, #e53e3e)',
-                        clipPath: 'polygon(10% 0%, 90% 0%, 85% 100%, 15% 100%)',
-                        transform: 'perspective(800px) rotateX(8deg)',
-                        boxShadow: '0 4px 16px rgba(197, 48, 48, 0.5), 0 2px 8px rgba(0,0,0,0.3)',
-                        borderRadius: '8px 8px 0 0'
-                      }}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-bold">Geração de Leads</div>
-                        <div className="text-xs opacity-90">{funnel.awareness?.toLocaleString()}</div>
+                  {salesFunnel?.data?.stages?.map((stage: any, index: number) => {
+                    const widthPercentages = [100, 90, 75, 65, 50]; // Larguras decrescentes
+                    const clipPaths = [
+                      'polygon(10% 0%, 90% 0%, 85% 100%, 15% 100%)',
+                      'polygon(12% 0%, 88% 0%, 82% 100%, 18% 100%)',
+                      'polygon(15% 0%, 85% 0%, 78% 100%, 22% 100%)',
+                      'polygon(18% 0%, 82% 0%, 75% 100%, 25% 100%)',
+                      'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)'
+                    ];
+                    const heights = [14, 13, 12, 11, 9]; // Alturas decrescentes
+                    
+                    return (
+                      <div key={index} className="relative" style={{ width: `${widthPercentages[index] || 50}%`, maxWidth: '400px' }}>
+                        <div 
+                          className="flex items-center justify-center text-white font-bold text-sm relative"
+                          style={{
+                            background: `linear-gradient(135deg, ${stage.color}, ${stage.color}dd)`,
+                            clipPath: clipPaths[index] || clipPaths[4],
+                            transform: 'perspective(800px) rotateX(8deg)',
+                            boxShadow: `0 4px 16px ${stage.color}80, 0 2px 8px rgba(0,0,0,0.3)`,
+                            height: `${heights[index] || 9}rem`,
+                            borderRadius: index === 0 ? '8px 8px 0 0' : index === salesFunnel.data.stages.length - 1 ? '0 0 6px 6px' : '0'
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className="text-sm font-bold">{stage.name}</div>
+                            <div className="text-xs opacity-90">{stage.value?.toLocaleString()}</div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })}
 
                   {/* Qualificar Leads */}
                   <div className="relative w-11/12 max-w-md">
