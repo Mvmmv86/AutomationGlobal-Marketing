@@ -12,15 +12,15 @@ import {
   Bot,
   ChartLine,
   Megaphone,
-  Headphones,
-  TrendingUp,
   Settings,
   Cog,
-  Plug,
   PieChart,
-  CreditCard,
   ChevronDown,
   MoreHorizontal,
+  FileText,
+  Users,
+  BarChart3,
+  DollarSign,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -31,29 +31,14 @@ interface SidebarProps {
 export default function Sidebar({ isOpen }: SidebarProps) {
   const navigationItems = [
     { name: "Dashboard", href: "#dashboard", icon: ChartLine, active: true },
-    { 
-      name: "AI Modules", 
-      items: [
-        { name: "Marketing AI", href: "#marketing", icon: Megaphone, badge: true },
-        { name: "Support AI", href: "#support", icon: Headphones, badge: true },
-        { name: "Trading AI", href: "#trading", icon: TrendingUp, badge: true },
-      ]
-    },
-    {
-      name: "Automation",
-      items: [
-        { name: "Automations", href: "#automations", icon: Cog },
-        { name: "Integrations", href: "#integrations", icon: Plug },
-      ]
-    },
-    {
-      name: "Management", 
-      items: [
-        { name: "Analytics", href: "#analytics", icon: PieChart },
-        { name: "Billing", href: "#billing", icon: CreditCard },
-        { name: "Settings", href: "#settings", icon: Settings },
-      ]
-    }
+    { name: "Campanhas", href: "#campanhas", icon: Megaphone },
+    { name: "Conteúdo", href: "#conteudo", icon: FileText },
+    { name: "Automação", href: "#automacao", icon: Cog },
+    { name: "Analytics", href: "#analytics", icon: BarChart3 },
+    { name: "Audiência", href: "#audiencia", icon: Users },
+    { name: "Relatórios", href: "#relatorios", icon: PieChart },
+    { name: "Cobranças", href: "#cobrancas", icon: DollarSign },
+    { name: "Configurações", href: "#configuracoes", icon: Settings },
   ];
 
   return (
@@ -104,49 +89,21 @@ export default function Sidebar({ isOpen }: SidebarProps) {
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 space-y-2">
-        {navigationItems.map((section, index) => (
-          <div key={index}>
-            {section.items ? (
-              <div className="space-y-1">
-                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  {section.name}
-                </p>
-                {section.items.map((item, itemIndex) => (
-                  <Button
-                    key={itemIndex}
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start text-foreground hover:bg-muted",
-                      item.href === "#dashboard" && "bg-primary text-primary-foreground hover:bg-primary/90"
-                    )}
-                    data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
-                  >
-                    <item.icon className="mr-3 h-4 w-4" />
-                    <span>{item.name}</span>
-                    {item.badge && (
-                      <Badge variant="secondary" className="ml-auto">
-                        <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-                      </Badge>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start",
-                  section.active 
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                    : "text-foreground hover:bg-muted"
-                )}
-                data-testid={`nav-${section.name.toLowerCase()}`}
-              >
-                <section.icon className="mr-3 h-4 w-4" />
-                <span>{section.name}</span>
-              </Button>
+        {navigationItems.map((item, index) => (
+          <Button
+            key={index}
+            variant="ghost"
+            className={cn(
+              "w-full justify-start",
+              item.active 
+                ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                : "text-foreground hover:bg-muted"
             )}
-          </div>
+            data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
+          >
+            <item.icon className="mr-3 h-4 w-4" />
+            <span>{item.name}</span>
+          </Button>
         ))}
       </nav>
 
