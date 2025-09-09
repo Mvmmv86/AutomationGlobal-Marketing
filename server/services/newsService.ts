@@ -192,8 +192,8 @@ Critérios de pontuação:
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 500,
-        temperature: 0.3
+        max_completion_tokens: 500,
+        temperature: 1
       });
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -378,7 +378,7 @@ REQUISITOS:
         ],
         response_format: { type: "json_object" },
         max_completion_tokens: 2000,
-        temperature: 0.7
+        temperature: 1
       });
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -414,8 +414,8 @@ REQUISITOS:
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 300,
-        temperature: 0.7
+        max_completion_tokens: 300,
+        temperature: 1
       });
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -525,7 +525,7 @@ REQUISITOS:
         ],
         response_format: { type: "json_object" },
         max_completion_tokens: 2000,
-        temperature: 0.7
+        temperature: 1
       });
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
