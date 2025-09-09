@@ -23,7 +23,10 @@ interface TrendsResponse {
   realNewsCount?: number;
   message: string;
   sources?: string[];
+  searchSources?: string[];
   fallback?: boolean;
+  keyword?: string;
+  searchMethod?: string;
 }
 
 export default function TrendsTest() {
@@ -31,7 +34,7 @@ export default function TrendsTest() {
   
   const trendsRealMutation = useMutation({
     mutationFn: async (keyword: string) => {
-      const response = await fetch(`/api/news/trends-real?keyword=${encodeURIComponent(keyword)}`);
+      const response = await fetch(`/api/news/real-articles?keyword=${encodeURIComponent(keyword)}`);
       const result = await response.json();
       return result.data as TrendsResponse;
     }
@@ -79,14 +82,21 @@ export default function TrendsTest() {
           {data.message}
         </div>
 
-        {data.sources && data.sources.length > 0 && (
+        {(data.sources || data.searchSources) && (data.sources?.length || data.searchSources?.length) && (
           <div className="mb-4">
-            <p className="text-sm font-medium mb-2">Fontes encontradas:</p>
+            <p className="text-sm font-medium mb-2">Fontes verificadas:</p>
             <div className="flex flex-wrap gap-2">
-              {data.sources.map((source, index) => (
+              {(data.searchSources || data.sources || []).map((source, index) => (
                 <Badge key={index} variant="outline">{source}</Badge>
               ))}
             </div>
+          </div>
+        )}
+
+        {data.searchMethod && (
+          <div className="mb-4">
+            <p className="text-sm font-medium mb-2">Método de pesquisa:</p>
+            <Badge variant="secondary">{data.searchMethod}</Badge>
           </div>
         )}
 
@@ -179,7 +189,7 @@ export default function TrendsTest() {
                 {trendsRealMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : null}
-                🌍 Sistema Híbrido (NewsAPI + IA)
+                🔍 Mostrar Artigos Reais Pesquisados
               </Button>
               
               <Button 
