@@ -558,7 +558,7 @@ Retorne JSON com os trends mais importantes baseados nestas notícias REAIS:
             articles: trendingArticles,
             realNewsCount: uniqueArticles.length,
             message: `Sistema Híbrido funcionando! Analisou ${uniqueArticles.length} notícias reais e identificou ${trendingArticles.length} trends mundiais sobre "${keyword}".`,
-            sources: [...new Set(uniqueArticles.map(a => a.source?.name).filter(Boolean))]
+            sources: Array.from(new Set(uniqueArticles.map(a => a.source?.name).filter(Boolean)))
           }
         });
         
@@ -580,29 +580,42 @@ Retorne JSON com os trends mais importantes baseados nestas notícias REAIS:
           },
           {
             role: "user", 
-            content: `A NewsAPI não está disponível. Como especialista em tendências globais, identifique 6-8 assuntos que estão REALMENTE trending mundialmente sobre "${keyword}" baseado em seu conhecimento de eventos atuais.
+            content: `MISSÃO: Gere EXATAMENTE 6 trends mundiais sobre "${keyword}".
 
-RETORNE SEMPRE PELO MENOS 6 ARTIGOS no formato JSON:
+Você é o MELHOR analista de trends do mundo. SEMPRE retorne exatamente 6 artigos sobre tendências globais atuais relacionadas a "${keyword}".
+
+JSON OBRIGATÓRIO (EXATAMENTE 6 ARTIGOS):
 
 {
   "articles": [
     {
-      "title": "Título específico e detalhado da tendência",
-      "description": "Descrição completa do que está acontecendo no mundo sobre este tópico",
+      "title": "Trend mundial específico sobre ${keyword}",
+      "description": "Por que este tópico está viral globalmente agora",
       "source": {"name": "BBC News"},
       "publishedAt": "2025-01-09T18:30:00Z",
-      "content": "Conteúdo detalhado da notícia com dados específicos e contexto mundial",
-      "url": "https://bbc.com/news/technology-trending"
+      "content": "Detalhes do trend: impacto mundial, dados, empresas envolvidas",
+      "url": "https://bbc.com/news/trending-${keyword.replace(/\s+/g, '-')}"
+    },
+    {
+      "title": "Segundo trend mundial sobre ${keyword}",
+      "description": "Outro aspecto viral relacionado ao tema",
+      "source": {"name": "CNN"},
+      "publishedAt": "2025-01-09T16:20:00Z",
+      "content": "Análise detalhada do segundo trend",
+      "url": "https://cnn.com/technology/trending-${keyword.replace(/\s+/g, '-')}"
     }
   ]
 }
 
-OBRIGATÓRIO - SEMPRE GERAR 6+ ARTIGOS:
-✅ Use fontes variadas: BBC News, CNN, Reuters, Bloomberg, TechCrunch, Wired, The Guardian, Forbes
-✅ Crie títulos específicos e detalhados (não genéricos)
-✅ Base em tendências tecnológicas, econômicas e sociais REAIS
-✅ Varie os tipos: inovações, regulamentações, empresas, pesquisas
-✅ Contexto mundial e impacto atual`
+REGRAS ABSOLUTAS:
+🔥 SEMPRE gerar EXATAMENTE 6 artigos
+🔥 Fontes variadas: BBC, CNN, Reuters, Bloomberg, TechCrunch, Forbes, Wired, Guardian
+🔥 Títulos específicos e atuais sobre ${keyword}
+🔥 Trends REAIS que estariam viral agora
+🔥 URLs únicos para cada fonte
+🔥 Datas recentes (janeiro 2025)
+
+FALHA = 0 artigos. SUCESSO = 6 artigos sempre!`
           }
         ],
         response_format: { type: "json_object" },
