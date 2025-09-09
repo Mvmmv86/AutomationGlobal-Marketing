@@ -27,8 +27,6 @@ import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import CampaignsDashboard from "@/pages/CampaignsDashboard";
-import ContentAutomationSetup from "@/pages/ContentAutomationSetup";
-import TrendsTest from "@/pages/TrendsTest";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -58,11 +56,6 @@ function Router() {
       <Route path="/campaigns" component={CampaignsDashboard} />
       <Route path="/campaigns-dashboard" component={CampaignsDashboard} />
       
-      {/* Content Automation - AI-powered content creation and publishing */}
-      <Route path="/marketing/automation/content/setup" component={() => <ContentAutomationSetup />} />
-      
-      {/* Trends Test - Test page for trending analysis system */}
-      <Route path="/trends-test" component={TrendsTest} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />

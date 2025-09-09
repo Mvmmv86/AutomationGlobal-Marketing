@@ -59,7 +59,6 @@ import { useToast } from "@/hooks/use-toast";
 // Theme Context
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
 import CampaignsDashboard from "./CampaignsDashboard";
-import ContentAutomationSetup from "./ContentAutomationSetup";
 import AutomationDashboard from "./AutomationDashboard";
 
 // Função para comprimir imagens e reduzir tamanho do payload
@@ -737,15 +736,9 @@ function MarketingDashboardCompleteInner() {
         <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
         <div className="flex-1">
-          {selectedAutomation === 'content-automation' ? (
-            <ContentAutomationSetup 
-              onBack={() => setSelectedAutomation(null)}
-            />
-          ) : (
-            <AutomationDashboard 
-              onSelectAutomation={(automationId) => setSelectedAutomation(automationId)} 
-            />
-          )}
+          <AutomationDashboard 
+            onSelectAutomation={(automationId) => setSelectedAutomation(automationId)} 
+          />
         </div>
       </div>
     );

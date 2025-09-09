@@ -15,7 +15,6 @@ import * as schema from "../shared/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { socialMediaPosts } from "../shared/schema";
 import marketingMetricsRoutes from "./routes/marketing-metrics";
-import contentAutomationRoutes from "./routes/content-automation";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -1349,7 +1348,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin/organizations', organizationsAdminRoutes);
 
   // Content automation routes
-  app.use('/api', contentAutomationRoutes);
   console.log('✅ Content automation routes registered at /api');
 
   // Marketing module routes
