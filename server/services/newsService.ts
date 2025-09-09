@@ -375,6 +375,8 @@ Critérios de pontuação (SEJA MAIS LIBERAL para incluir mais notícias):
     writingStyle: string;
     includeElements: string[];
     defaultCta: string;
+    newsSources?: string[];
+    searchPeriod?: string;
   }): Promise<{
     title: string;
     content: string;
@@ -383,58 +385,69 @@ Critérios de pontuação (SEJA MAIS LIBERAL para incluir mais notícias):
     readingTime: number;
   }> {
     try {
-      // First, get relevant news
-      const articles = await this.searchNews({
-        keyword: params.primaryKeyword,
-        language: params.language,
-        searchPeriod: '24h',
-        pageSize: 10
-      });
+      console.log('\n🎯 INICIANDO GERAÇÃO DE ARTIGO COM TRENDING ANALYSIS');
+      console.log(`📝 Palavra-chave: ${params.primaryKeyword}`);
+      console.log(`📰 Fontes selecionadas: ${(params.newsSources || []).length} fontes`);
+      console.log(`⏰ Período: ${params.searchPeriod || '24h'}`);
 
-      // Process with relevance analysis
-      const processedNews = await this.processNewsWithRelevance(
-        articles,
+      // 🚀 Usar TRENDING ANALYSIS em vez de busca simples
+      const trendingAnalysis = await this.analyzeKeywordTrends(
         params.primaryKeyword,
-        params.secondaryKeywords,
-        params.niche,
-        70 // Higher relevance threshold for article generation
+        params.secondaryKeywords || [],
+        params.niche
       );
+
+      console.log(`✅ Trending analysis concluída - ${trendingAnalysis.foundArticles.length} artigos encontrados`);
+      console.log(`🎯 Tópicos trending identificados: ${trendingAnalysis.trending.length}`);
+      console.log(`📺 Fontes com menções: ${trendingAnalysis.sources.join(', ')}`);
+
+      // Converter trending topics para processedNews para compatibilidade
+      const processedNews = trendingAnalysis.trending.map((topic: any) => ({
+        id: `trending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: topic.topic || `Trending: ${params.primaryKeyword}`,
+        description: `Trending em artigos de: ${trendingAnalysis.sources.join(', ')}`,
+        url: trendingAnalysis.foundArticles[0]?.url || '#',
+        publishedAt: new Date(),
+        source: trendingAnalysis.sources[0] || 'Multiple Sources',
+        relevanceScore: 85, // Alta relevância para trending topics
+        relevanceReason: `Trending topic identificado em análise de ${trendingAnalysis.foundArticles.length} artigos`,
+        keywords: [params.primaryKeyword, ...params.secondaryKeywords]
+      }));
+
+      // Comentar código antigo - agora usando trending analysis
+      // const processedNews = await this.processNewsWithRelevance(
+      //   articles,
+      //   params.primaryKeyword,
+      //   params.secondaryKeywords,
+      //   params.niche,
+      //   70 // Higher relevance threshold for article generation
+      // );
 
       let topArticles;
       
-      // If no highly relevant news found, lower the threshold and try again
+      // Se não encontrou trending topics, usar fallback sem notícias
       if (processedNews.length === 0) {
-        console.log('No highly relevant news found, lowering threshold to 40...');
-        const processedNewsLowThreshold = await this.processNewsWithRelevance(
-          articles,
-          params.primaryKeyword,
-          params.secondaryKeywords,
-          params.niche,
-          40 // Lower relevance threshold
-        );
-        
-        if (processedNewsLowThreshold.length === 0) {
-          // If still no relevant news, generate article without news context
-          console.log('No relevant news found, generating article with general knowledge...');
-          return this.generateArticleWithoutNews(params);
-        }
-        
-        // Use lower threshold articles
-        topArticles = processedNewsLowThreshold.slice(0, 3);
-      } else {
-        // Take top 3 most relevant articles
-        topArticles = processedNews.slice(0, 3);
+        console.log('❌ Nenhum trending topic encontrado, gerando artigo sem contexto de notícias...');
+        return this.generateArticleWithoutNews(params);
       }
       
+      // Usar trending topics encontrados
+      topArticles = processedNews.slice(0, 3);
+      console.log(`✅ Usando ${topArticles.length} trending topics para gerar artigo`);
+      
       const prompt = `
-Crie um artigo de blog completo e profissional baseado nas seguintes notícias relevantes:
+Crie um artigo de blog completo e profissional baseado nos seguintes TRENDING TOPICS identificados através de análise de notícias reais:
 
-NOTÍCIAS:
-${topArticles.map((item, index) => `
-${index + 1}. ${item.title}
-Descrição: ${item.description}
-Relevância: ${item.relevanceScore}/100 - ${item.relevanceReason}
+TRENDING TOPICS ENCONTRADOS:
+${topArticles.map((item: any, index: number) => `
+${index + 1}. TÓPICO: ${item.title}
+   DESCRIÇÃO: ${item.description}
+   FONTE(S): ${item.source}
+   RELEVÂNCIA: ${item.relevanceScore}/100 - ${item.relevanceReason}
+   STATUS: Este é um assunto que está "em alta" nas notícias
 `).join('\n')}
+
+🎯 IMPORTANTE: Este artigo deve mencionar especificamente que estes tópicos foram "identificados através de análise de ${trendingAnalysis.sources.length} fontes de notícias diferentes: ${trendingAnalysis.sources.join(', ')}" para dar credibilidade e mostrar onde as informações foram encontradas.
 
 CONFIGURAÇÕES:
 - Palavra-chave principal: ${params.primaryKeyword}

@@ -131,7 +131,9 @@ function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) 
           articleSize: formData.articleSize,
           writingStyle: formData.writingStyle,
           includeElements: formData.includeElements,
-          defaultCta: formData.defaultCta || 'Clique aqui para saber mais!'
+          defaultCta: formData.defaultCta || 'Clique aqui para saber mais!',
+          newsSources: formData.newsSources, // 🎯 Adicionar fontes selecionadas
+          searchPeriod: formData.searchPeriod // 🎯 Adicionar período de busca
         })
       });
 

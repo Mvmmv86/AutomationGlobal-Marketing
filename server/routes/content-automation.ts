@@ -337,7 +337,9 @@ router.post("/news/generate-article", async (req, res) => {
       articleSize, 
       writingStyle, 
       includeElements, 
-      defaultCta 
+      defaultCta,
+      newsSources,
+      searchPeriod
     } = req.body;
     
     if (!primaryKeyword || !niche) {
@@ -355,7 +357,9 @@ router.post("/news/generate-article", async (req, res) => {
       articleSize: articleSize || 'médio',
       writingStyle: writingStyle || 'profissional',
       includeElements: includeElements || [],
-      defaultCta: defaultCta || 'Clique aqui para saber mais!'
+      defaultCta: defaultCta || 'Clique aqui para saber mais!',
+      newsSources: newsSources || [], // 🎯 Fontes selecionadas
+      searchPeriod: searchPeriod || '24h' // 🎯 Período de busca
     });
     
     res.json({
