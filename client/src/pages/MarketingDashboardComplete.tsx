@@ -738,7 +738,9 @@ function MarketingDashboardCompleteInner() {
         
         <div className="flex-1">
           {selectedAutomation === 'content-automation' ? (
-            <ContentAutomationSetup />
+            <ContentAutomationSetup 
+              onBack={() => setSelectedAutomation(null)}
+            />
           ) : (
             <AutomationDashboard 
               onSelectAutomation={(automationId) => setSelectedAutomation(automationId)} 

@@ -62,7 +62,7 @@ interface ContentAutomationFormData {
   manualApproval: boolean;
 }
 
-function ContentAutomationSetupContent() {
+function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) {
   const { theme } = useMarketingTheme();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -260,10 +260,11 @@ function ContentAutomationSetupContent() {
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center gap-4 mb-6">
           <Button
-            onClick={() => setLocation("/marketing")}
+            onClick={() => onBack ? onBack() : setLocation("/marketing")}
             variant="ghost"
             size="sm"
             className="text-white/80 hover:text-white hover:bg-white/10"
+            data-testid="button-back"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -848,10 +849,14 @@ function ContentAutomationSetupContent() {
   );
 }
 
-export default function ContentAutomationSetup() {
+interface ContentAutomationSetupProps {
+  onBack?: () => void;
+}
+
+export default function ContentAutomationSetup({ onBack }: ContentAutomationSetupProps = {}) {
   return (
     <MarketingThemeProvider>
-      <ContentAutomationSetupContent />
+      <ContentAutomationSetupContent onBack={onBack} />
     </MarketingThemeProvider>
   );
 }
