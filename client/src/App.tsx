@@ -27,6 +27,7 @@ import AIManagementGlobal from "@/pages/ai-management-global";
 import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import CampaignsDashboard from "@/pages/CampaignsDashboard";
+import BlogAutomation from "@/pages/BlogAutomation";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -56,6 +57,9 @@ function Router() {
       <Route path="/campaigns" component={CampaignsDashboard} />
       <Route path="/campaigns-dashboard" component={CampaignsDashboard} />
       
+      {/* Blog Automation - Intelligent content generation system */}
+      <Route path="/blog" component={BlogAutomation} />
+      <Route path="/blog-automation" component={BlogAutomation} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
