@@ -470,40 +470,192 @@ function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) 
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Fontes Brasileiras Principais */}
               <div className="space-y-4">
-                <Label className="text-white font-medium">Sites de Notícias Brasileiros</Label>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  {['G1', 'UOL', 'Folha', 'Estadão'].map((source) => (
+                <Label className="text-white font-medium text-lg">📰 Sites de Notícias Brasileiros (19 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'G1', 'UOL', 'Folha', 'Estadão', 'R7', 'Terra', 'Exame', 'Valor Econômico', 
+                    'InfoMoney', 'O Globo', 'Extra', 'Correio Braziliense', 'Zero Hora', 
+                    'Gazeta do Povo', 'Band', 'SBT', 'Record TV', 'CNN Brasil', 'Jovem Pan'
+                  ].map((source) => (
                     <div key={source} className="flex items-center space-x-2">
                       <Checkbox
                         id={`news-${source}`}
                         checked={formData.newsSources.includes(source)}
                         onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
                         className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
-                        data-testid={`checkbox-news-${source.toLowerCase()}`}
+                        data-testid={`checkbox-news-${source.toLowerCase().replace(/\s+/g, '-')}`}
                       />
-                      <Label htmlFor={`news-${source}`} className="text-white/90 cursor-pointer">{source}</Label>
+                      <Label htmlFor={`news-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
                     </div>
                   ))}
                 </div>
               </div>
 
+              {/* Fontes Tecnológicas Globais */}
               <div className="space-y-4">
-                <Label className="text-white font-medium">Sites de Tecnologia Internacionais</Label>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                  {['TechCrunch', 'Wired', 'Ars Technica'].map((source) => (
+                <Label className="text-white font-medium text-lg">🚀 Sites de Tecnologia Globais (12 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'TechCrunch', 'Wired', 'Ars Technica', 'The Verge', 'Engadget', 'TechRadar', 
+                    'CNET', 'ZDNet', 'Mashable', 'VentureBeat', 'Gizmodo', 'TechTarget'
+                  ].map((source) => (
                     <div key={source} className="flex items-center space-x-2">
                       <Checkbox
                         id={`tech-${source}`}
                         checked={formData.newsSources.includes(source)}
                         onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
                         className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
-                        data-testid={`checkbox-tech-${source.toLowerCase().replace(' ', '-')}`}
+                        data-testid={`checkbox-tech-${source.toLowerCase().replace(/\s+/g, '-')}`}
                       />
-                      <Label htmlFor={`tech-${source}`} className="text-white/90 cursor-pointer">{source}</Label>
+                      <Label htmlFor={`tech-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Mídia Internacional Premium */}
+              <div className="space-y-4">
+                <Label className="text-white font-medium text-lg">🌍 Mídia Internacional Premium (20 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'BBC', 'CNN', 'Reuters', 'Bloomberg', 'Associated Press', 'The Guardian', 
+                    'The New York Times', 'Washington Post', 'Wall Street Journal', 'Financial Times',
+                    'The Times', 'The Independent', 'Daily Mail', 'TIME', 'Newsweek', 'Forbes',
+                    'Fortune', 'Business Insider', 'Entrepreneur', 'Fast Company'
+                  ].map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`premium-${source}`}
+                        checked={formData.newsSources.includes(source)}
+                        onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
+                        data-testid={`checkbox-premium-${source.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`premium-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Redes de TV Americanas */}
+              <div className="space-y-4">
+                <Label className="text-white font-medium text-lg">📺 Redes de TV Americanas (8 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'ABC News', 'NBC News', 'CBS News', 'Fox News', 'MSNBC', 'NPR', 'PBS', 'CNBC'
+                  ].map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`tv-${source}`}
+                        checked={formData.newsSources.includes(source)}
+                        onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
+                        data-testid={`checkbox-tv-${source.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`tv-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mídia Europeia */}
+              <div className="space-y-4">
+                <Label className="text-white font-medium text-lg">🇪🇺 Mídia Europeia (9 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'Sky News', 'ITV News', 'Channel 4 News', 'France24', 'Deutsche Welle', 
+                    'Euronews', 'El País', 'Le Monde', 'Corriere della Sera'
+                  ].map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`europe-${source}`}
+                        checked={formData.newsSources.includes(source)}
+                        onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
+                        data-testid={`checkbox-europe-${source.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`europe-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mídia Asiática */}
+              <div className="space-y-4">
+                <Label className="text-white font-medium text-lg">🌏 Mídia Asiática (6 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    'NHK World', 'Japan Times', 'South China Morning Post', 
+                    'Times of India', 'Straits Times', 'Korea Herald'
+                  ].map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`asia-${source}`}
+                        checked={formData.newsSources.includes(source)}
+                        onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
+                        data-testid={`checkbox-asia-${source.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`asia-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mídia de Negócios */}
+              <div className="space-y-4">
+                <Label className="text-white font-medium text-lg">💼 Mídia de Negócios e Economia (7 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'MarketWatch', 'Yahoo Finance', 'Investing.com', 'TheStreet', 
+                    'Seeking Alpha', 'Barrons', 'Kiplinger'
+                  ].map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`business-${source}`}
+                        checked={formData.newsSources.includes(source)}
+                        onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
+                        data-testid={`checkbox-business-${source.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`business-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mídia de Entretenimento */}
+              <div className="space-y-4">
+                <Label className="text-white font-medium text-lg">🎬 Mídia de Entretenimento e Lifestyle (8 fontes)</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    'Entertainment Weekly', 'Variety', 'The Hollywood Reporter', 'People', 
+                    'Us Weekly', 'E! News', 'Cosmopolitan', 'Vogue'
+                  ].map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`entertainment-${source}`}
+                        checked={formData.newsSources.includes(source)}
+                        onCheckedChange={(checked) => handleCheckboxChange('newsSources', source, checked as boolean)}
+                        className="border-white/30 data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-400"
+                        data-testid={`checkbox-entertainment-${source.toLowerCase().replace(/\s+/g, '-')}`}
+                      />
+                      <Label htmlFor={`entertainment-${source}`} className="text-white/90 cursor-pointer text-sm">{source}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contador Total */}
+              <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/20">
+                <p className="text-cyan-400 font-medium text-center">
+                  🎯 Total de <span className="text-white font-bold">89+ canais de notícia</span> disponíveis para análise de trending topics
+                </p>
+                <p className="text-white/70 text-sm text-center mt-1">
+                  Sistema identifica automaticamente onde suas palavras-chave estão "hypadas"
+                </p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
