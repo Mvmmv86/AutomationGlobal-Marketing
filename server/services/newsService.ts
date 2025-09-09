@@ -104,13 +104,39 @@ export class NewsService {
       // Add sources filter if provided
       if (sources && sources.length > 0) {
         const sourceMapping: Record<string, string> = {
+          // Fontes brasileiras
           'G1': 'globo.com',
           'UOL': 'uol.com.br',
           'Folha': 'folha.uol.com.br',
           'Estadão': 'estadao.com.br',
+          'R7': 'r7.com',
+          'Terra': 'terra.com.br',
+          'Exame': 'exame.com',
+          // Fontes tecnológicas
           'TechCrunch': 'techcrunch.com',
           'Wired': 'wired.com',
-          'Ars Technica': 'arstechnica.com'
+          'Ars Technica': 'arstechnica.com',
+          'The Verge': 'theverge.com',
+          'Engadget': 'engadget.com',
+          // Fontes internacionais famosas
+          'BBC': 'bbc.com',
+          'CNN': 'cnn.com',
+          'Reuters': 'reuters.com',
+          'Bloomberg': 'bloomberg.com',
+          'Associated Press': 'apnews.com',
+          'The Guardian': 'theguardian.com',
+          'The New York Times': 'nytimes.com',
+          'Washington Post': 'washingtonpost.com',
+          'Wall Street Journal': 'wsj.com',
+          'Financial Times': 'ft.com',
+          'TIME': 'time.com',
+          'Forbes': 'forbes.com',
+          'Business Insider': 'businessinsider.com',
+          'ABC News': 'abcnews.go.com',
+          'NBC News': 'nbcnews.com',
+          'CBS News': 'cbsnews.com',
+          'Fox News': 'foxnews.com',
+          'Sky News': 'news.sky.com'
         };
 
         const mappedSources = sources
@@ -171,12 +197,13 @@ Retorne um JSON com:
   "keywords": ["array", "de", "palavras-chave", "encontradas"]
 }
 
-Critérios de pontuação:
+Critérios de pontuação (SEJA MAIS LIBERAL para incluir mais notícias):
 - 90-100: Altamente relevante, menciona palavra-chave principal diretamente
 - 70-89: Muito relevante, relacionado ao nicho e algumas palavras-chave
 - 50-69: Moderadamente relevante, indiretamente relacionado
-- 30-49: Pouco relevante, apenas tangencialmente relacionado
-- 0-29: Irrelevante ou não relacionado
+- 30-49: Relevante, conexão clara com o tema
+- 20-29: Parcialmente relevante, pode ser útil
+- 0-19: Irrelevante ou não relacionado
 `;
 
       const response = await this.openai.chat.completions.create({
