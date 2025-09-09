@@ -104,7 +104,7 @@ export class NewsService {
       // Add sources filter if provided
       if (sources && sources.length > 0) {
         const sourceMapping: Record<string, string> = {
-          // Fontes brasileiras
+          // Fontes brasileiras principais
           'G1': 'globo.com',
           'UOL': 'uol.com.br',
           'Folha': 'folha.uol.com.br',
@@ -112,13 +112,34 @@ export class NewsService {
           'R7': 'r7.com',
           'Terra': 'terra.com.br',
           'Exame': 'exame.com',
-          // Fontes tecnológicas
+          'Valor Econômico': 'valor.globo.com',
+          'InfoMoney': 'infomoney.com.br',
+          'O Globo': 'oglobo.globo.com',
+          'Extra': 'extra.globo.com',
+          'Correio Braziliense': 'correiobraziliense.com.br',
+          'Zero Hora': 'gauchazh.clicrbs.com.br',
+          'Gazeta do Povo': 'gazetadopovo.com.br',
+          'Band': 'band.uol.com.br',
+          'SBT': 'sbt.com.br',
+          'Record TV': 'recordtv.r7.com',
+          'CNN Brasil': 'cnnbrasil.com.br',
+          'Jovem Pan': 'jovempan.com.br',
+          
+          // Fontes tecnológicas globais
           'TechCrunch': 'techcrunch.com',
           'Wired': 'wired.com',
           'Ars Technica': 'arstechnica.com',
           'The Verge': 'theverge.com',
           'Engadget': 'engadget.com',
-          // Fontes internacionais famosas
+          'TechRadar': 'techradar.com',
+          'CNET': 'cnet.com',
+          'ZDNet': 'zdnet.com',
+          'Mashable': 'mashable.com',
+          'VentureBeat': 'venturebeat.com',
+          'Gizmodo': 'gizmodo.com',
+          'TechTarget': 'techtarget.com',
+          
+          // Mídia internacional premium
           'BBC': 'bbc.com',
           'CNN': 'cnn.com',
           'Reuters': 'reuters.com',
@@ -129,14 +150,66 @@ export class NewsService {
           'Washington Post': 'washingtonpost.com',
           'Wall Street Journal': 'wsj.com',
           'Financial Times': 'ft.com',
+          'The Times': 'thetimes.co.uk',
+          'The Independent': 'independent.co.uk',
+          'Daily Mail': 'dailymail.co.uk',
           'TIME': 'time.com',
+          'Newsweek': 'newsweek.com',
           'Forbes': 'forbes.com',
+          'Fortune': 'fortune.com',
           'Business Insider': 'businessinsider.com',
+          'Entrepreneur': 'entrepreneur.com',
+          'Fast Company': 'fastcompany.com',
+          
+          // Redes de TV americanas
           'ABC News': 'abcnews.go.com',
           'NBC News': 'nbcnews.com',
           'CBS News': 'cbsnews.com',
           'Fox News': 'foxnews.com',
-          'Sky News': 'news.sky.com'
+          'MSNBC': 'msnbc.com',
+          'NPR': 'npr.org',
+          'PBS': 'pbs.org',
+          'CNBC': 'cnbc.com',
+          
+          // Mídia europeia
+          'Sky News': 'news.sky.com',
+          'ITV News': 'itv.com',
+          'Channel 4 News': 'channel4.com',
+          'France24': 'france24.com',
+          'Deutsche Welle': 'dw.com',
+          'Euronews': 'euronews.com',
+          'El País': 'elpais.com',
+          'Le Monde': 'lemonde.fr',
+          'Corriere della Sera': 'corriere.it',
+          'Spiegel': 'spiegel.de',
+          'Bild': 'bild.de',
+          
+          // Mídia asiática
+          'NHK World': 'nhk.or.jp',
+          'Japan Times': 'japantimes.co.jp',
+          'South China Morning Post': 'scmp.com',
+          'Times of India': 'timesofindia.indiatimes.com',
+          'Straits Times': 'straitstimes.com',
+          'Korea Herald': 'koreaherald.com',
+          
+          // Mídia de negócios e economia
+          'MarketWatch': 'marketwatch.com',
+          'Yahoo Finance': 'finance.yahoo.com',
+          'Investing.com': 'investing.com',
+          'TheStreet': 'thestreet.com',
+          'Seeking Alpha': 'seekingalpha.com',
+          'Barrons': 'barrons.com',
+          'Kiplinger': 'kiplinger.com',
+          
+          // Mídia de entretenimento e lifestyle
+          'Entertainment Weekly': 'ew.com',
+          'Variety': 'variety.com',
+          'The Hollywood Reporter': 'hollywoodreporter.com',
+          'People': 'people.com',
+          'Us Weekly': 'usmagazine.com',
+          'E! News': 'eonline.com',
+          'Cosmopolitan': 'cosmopolitan.com',
+          'Vogue': 'vogue.com'
         };
 
         const mappedSources = sources
@@ -466,14 +539,26 @@ REQUISITOS:
       console.log(`\n🔍 SEARCHING TRENDING TOPICS FOR: ${primaryKeyword}`);
       
       // Search for primary keyword
-      const primaryArticles = await this.searchNews(primaryKeyword, language, [], '24h', 15);
+      const primaryArticles = await this.searchNews({
+        keyword: primaryKeyword,
+        language: language,
+        sources: [],
+        searchPeriod: '24h',
+        pageSize: 15
+      });
       console.log(`📰 Found ${primaryArticles.length} articles for "${primaryKeyword}"`);
       
       // Search for secondary keywords
       let allArticles = [...primaryArticles];
       for (const keyword of secondaryKeywords) {
         if (keyword.trim()) {
-          const articles = await this.searchNews(keyword, language, [], '24h', 10);
+          const articles = await this.searchNews({
+            keyword: keyword,
+            language: language,
+            sources: [],
+            searchPeriod: '24h',
+            pageSize: 10
+          });
           console.log(`📰 Found ${articles.length} articles for "${keyword}"`);
           allArticles = [...allArticles, ...articles];
         }
@@ -491,7 +576,8 @@ REQUISITOS:
       }
 
       // Get list of sources
-      const sourcesFound = [...new Set(uniqueArticles.map(a => a.source.name))];
+      const sourcesSet = new Set(uniqueArticles.map(a => a.source.name));
+      const sourcesFound = Array.from(sourcesSet);
       console.log(`🎯 Sources found: ${sourcesFound.join(', ')}`);
 
       // Analyze what's trending
