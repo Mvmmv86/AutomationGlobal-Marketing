@@ -1,0 +1,414 @@
+# Framework de Automação de Tendências e Geração de Blog (Replit)
+
+> Objetivo: dado um **nicho** (ex.: Cripto, Fintech, Saúde), capturar **tópicos quentes** (trends) em tempo quase real (Google Trends, Twitter/X, Reddit, **YouTube Trends**), tentar extrair **notícias** recentes para esses tópicos; **se houver notícias**, gerar posts baseados nelas; **se não houver**, gerar posts baseados apenas no burburinho social (**Plano B**). Publicar automaticamente no blog/CMS.
+
+---
+
+## 1) Escopo (MVP → V1)
+
+**MVP**
+
+* Input: Nicho (string) + opções de idioma/região.
+* Coleta de trends: Google Trends (web search + **YouTube Trends**), Twitter/X (se disponível), Reddit (subreddits do nicho), YouTube Data API (videos “mostPopular” e/ou busca por keywords em janela de 24–72h).
+* Busca de notícias: News API de sua escolha (ex.: NewsCatcher / WorldNews / NewsAPI / GDELT) com as keywords quentes.
+* Decisão A/B:
+
+  * **A**: Encontrou artigos → gerar post(s) baseado(s) em notícias.
+  * **B**: Não encontrou → gerar post(s) baseado(s) em trends sociais (análise/opinião + contexto).
+* Publicação automática no CMS (WordPress/Medium/Headless CMS).
+
+**V1 (opcional após MVP)**
+
+* Painel simples (streamlit/fastapi + template) para gerenciar nichos, periodicidade, fontes e regras (mínimo de fontes, limite diário de posts, etc.).
+* Deduplicação por hash de URL/título + janela de 7–30 dias.
+* Log & métricas (sucesso, falhas, posts/dia, fontes mais relevantes).
+* Filtros de qualidade (ex.: autor, domínio, sentimento, comprimento, score de engajamento social).
+
+---
+
+## 2) Arquitetura (alto nível)
+
+**Orquestrador** (Python / FastAPI no Replit)
+
+* Executa cron jobs (apscheduler) para rodar os pipelines por nicho.
+* Mantém fila de tarefas (simples: in-memory) e estado mínimo (JSON/Supabase/Postgres).
+
+**Conectores de tendências**
+
+* Google Trends (web + **gprop='youtube'** para **YouTube Trends**).
+* Twitter/X (se houver chave) ou desligado por padrão.
+* Reddit (subreddits do nicho) — top/hot nas últimas 24–72h.
+* YouTube Data API — `videos.list(chart=mostPopular)` por região/categoria e/ou busca por keywords do nicho com ordenação por `viewCount` e janela recente.
+
+**Conector de notícias**
+
+* Uma (primária) + uma (fallback). Ex.: NewsCatcher (primária) e GDELT (fallback).
+
+**Camada de decisão A/B**
+
+* Se `news_count >= N_min` ⇒ Rota A (post baseado em notícias).
+* Senão ⇒ Rota B (post baseado apenas em trends sociais/YouTube).
+
+**Geração de conteúdo**
+
+* LLM (OpenAI/Anthropic) com prompts seguros:
+
+  * Atribuições/sumário com links das fontes (quando houver).
+  * Zero copy-paste; foco em análise, contexto e opinião editorial do nicho.
+
+**Publicação**
+
+* CMS REST (WordPress: `/wp-json/wp/v2/posts`) ou geração de `.md` com commit automático (GitHub Pages/Vercel) via token.
+
+---
+
+## 3) Fluxo detalhado (com **YouTube Trends**)
+
+1. **Entrada**
+
+   * `nicho = "Cripto"` (ex.)
+   * `idioma = "pt"`, `regiao = "BR"`, `janelatempo = 24–72h`, `limite_posts_dia`
+
+2. **Coleta de tendências**
+
+   * **Google Trends (Web Search)** → rising queries do nicho (categoria ex.: Finance / Computers & Electronics)
+   * **Google Trends (YouTube Search)** → rising queries com `gprop='youtube'` (**YouTube Trends**)
+   * **YouTube Data API** → `mostPopular` por `regionCode` + `videoCategoryId` do nicho; opcional: busca por termos do nicho ordenando por `viewCount`/`date` na janela definida
+   * **Reddit** → top/hot em subreddits do nicho (ex.: r/CryptoCurrency, r/defi, r/fintech)
+   * **Twitter/X (opcional)** → hashtags/tópicos (se houver acesso pago)
+   * Normalizar → lista de **keywords\_tendencia** (dedupe + min\_freq + score de origem)
+
+3. **Busca de notícias (Plano A)**
+
+   * Para cada `kw` em `keywords_tendencia`:
+
+     * Buscar artigos recentes (≤ 72h) na API primária.
+     * Filtrar por idioma/região/domínios confiáveis (whitelist opcional).
+   * Agregar resultados e deduplicar por URL/título host.
+
+4. **Decisão**
+
+   * Se `artigos_encontrados >= N_min` → **A** (Post baseado em notícias)
+   * Caso contrário → **B** (Post baseado em trends sociais/YouTube)
+
+5. **Geração**
+
+   * **Rota A (notícias)**
+
+     * Estrutura sugerida:
+
+       1. Título (magnet)
+       2. Resumo crítico (3–5 bullets)
+       3. Contexto do nicho (por quê importa)
+       4. Análise (impactos, cenários)
+       5. Conclusão + CTA
+       6. **Referências** (links das matérias)
+   * **Rota B (trends sociais)**
+
+     * Estrutura sugerida:
+
+       1. Título (trend/opinião)
+       2. O que está bombando (YouTube + Reddit + Trends)
+       3. Possíveis razões/hipóteses
+       4. Implicações para o nicho
+       5. Recomendações práticas
+       6. Observações de risco/limitações
+
+6. **Publicação**
+
+   * WordPress REST / Medium / Static site.
+   * Tags e categorias geradas a partir das keywords.
+   * Imagem destaque: thumbnail do vídeo (YouTube) ou imagem do artigo (quando permitido) ou geração por IA.
+
+7. **Logging & Governança**
+
+   * Salvar: consulta→termos→artigos→post\_id→status → erros.
+   * Dedup: hash(URL) + janela (7–30 dias).
+   * Rate limits: pausar/retry exponencial.
+
+---
+
+## 4) Configuração no Replit
+
+**Dependências (sugestão)**
+
+* `requests`, `python-dotenv`, `fastapi`, `uvicorn`, `apscheduler`
+* `google-api-python-client` (YouTube)
+* `pytrends` (Google Trends, inclusive **YouTube Trends via gprop**)
+* `feedparser` (se usar RSS)
+* `openai` (ou provedor LLM de sua escolha)
+
+**Secrets (.env)**
+
+```
+NEWS_API_KEY=...
+WNEWS_API_KEY=...
+NEWSCATCHER_KEY=...
+GDELT_ON=1
+YOUTUBE_API_KEY=...
+OPENAI_API_KEY=...
+REDDIT_CLIENT_ID=...
+REDDIT_SECRET=...
+WP_BASE_URL=https://seusite.com
+WP_USER=...
+WP_APP_PASSWORD=...
+DEFAULT_NICHO=Cripto
+REGIAO=BR
+IDIOMA=pt
+```
+
+**Scheduler (apscheduler)**
+
+* Job por nicho (ex.: a cada 60 min).
+* Jitter aleatório (±5 min) para evitar picos.
+
+**Web server (FastAPI)**
+
+* `POST /run?nicho=...` → dispara pipeline manual.
+* `GET /health` → healthcheck.
+
+---
+
+## 5) Modelo de dados (simples)
+
+**collections/tabelas** (pode ser Supabase/Postgres ou JSON local):
+
+* `niches`: `{ id, name, lang, region, active }`
+* `trends`: `{ id, niche_id, term, source, score, collected_at }`
+* `articles`: `{ id, niche_id, term, title, url, source, published_at, lang, summary }`
+* `posts`: `{ id, niche_id, status, mode, title, url_publicado, created_at, payload_hash }`
+
+  * `mode ∈ {news, social}`
+* `runs`: `{ id, niche_id, started_at, finished_at, status, errors }`
+
+**Dedup**: `payload_hash = sha256(sorted(set(urls) ∪ set(terms)))`
+
+---
+
+## 6) Regras & Salvaguardas
+
+* **Citação/atribuição** quando houver notícias (linkar fontes).
+* **Nada de copy-paste**: sempre reescrita + análise.
+* **Conteúdo sensível**: checagem básica (evitar desinformação/alegações médicas/financeiras sem fontes).
+* **Idioma**: gerar em pt-BR por padrão; permitir `idioma` no input.
+* **Limites**: máximo `X` posts/dia por nicho; mínimo `N_min` fontes para Rota A.
+* **Fallback garantido**: se 0 artigos ⇒ Rota B assegurada.
+
+---
+
+## 7) Pseudocódigo (pipeline)
+
+```python
+from datetime import datetime, timedelta
+from sources import trends_google, trends_youtube, trends_reddit, trends_twitter
+from news import search_news
+from writers import write_post_from_news, write_post_from_social
+from publish import publish_post
+
+JANELA_H = 48
+N_MIN_ARTIGOS = 3
+
+def run_pipeline(nicho: str, regiao: str = "BR", idioma: str = "pt"):
+    # 1) coletar tendências
+    terms = set()
+    terms |= trends_google(nicho, regiao, idioma, gprop=None)        # Web
+    terms |= trends_google(nicho, regiao, idioma, gprop='youtube')   # **YouTube Trends**
+    terms |= trends_youtube(nicho, regiao)                           # Data API (mostPopular/busca)
+    terms |= trends_reddit(nicho)                                    # subreddits
+    # terms |= trends_twitter(nicho)  # opcional
+
+    if not terms:
+        return {"status": "no_terms"}
+
+    # 2) buscar notícias (Plano A)
+    artigos = search_news(list(terms), horas=JANELA_H, idioma=idioma, regiao=regiao)
+
+    if len(artigos) >= N_MIN_ARTIGOS:
+        post = write_post_from_news(artigos, nicho)
+        mode = 'news'
+    else:
+        post = write_post_from_social(list(terms), nicho)
+        mode = 'social'
+
+    # 3) publicar
+    url = publish_post(post)
+    return {"status": "ok", "mode": mode, "url": url}
+```
+
+---
+
+## 8) Exemplos de stubs (fontes)
+
+```python
+# sources.py
+from pytrends.request import TrendReq
+from googleapiclient.discovery import build
+
+# Google Trends — Web & **YouTube Trends** via gprop='youtube'
+def trends_google(nicho, regiao, idioma, gprop=None):
+    pytrends = TrendReq(hl=f"{idioma}-{regiao}", tz=0)
+    # seed: termos base do nicho
+    seeds = [nicho]
+    pytrends.build_payload(seeds, cat=0, timeframe='now 1-d', geo=regiao, gprop=(gprop or ''))
+    df = pytrends.related_queries()[seeds[0]].get('rising')
+    if df is None:
+        return set()
+    # pegar top N
+    top = df.head(15)['query'].tolist()
+    return set(map(str, top))
+
+# YouTube Data API — vídeos populares por região/categoria
+
+def trends_youtube(nicho, regiao):
+    yt = build('youtube', 'v3', developerKey=os.environ['YOUTUBE_API_KEY'])
+    # 1) mostPopular
+    resp = yt.videos().list(part='snippet,statistics', chart='mostPopular', regionCode=regiao, maxResults=25).execute()
+    terms = set()
+    for item in resp.get('items', []):
+        title = item['snippet']['title']
+        # extrair possíveis termos (simplificado)
+        terms |= extract_terms_from_text(title)
+    return terms
+```
+
+---
+
+## 9) Stubs de busca de notícias & geração
+
+```python
+# news.py
+import requests, os
+
+def search_news(terms, horas=48, idioma='pt', regiao='BR'):
+    # exemplo com NewsCatcher-like; adaptar à API escolhida
+    results = []
+    for term in terms:
+        r = requests.get(
+            'https://api.newscatcherapi.com/v3/search',
+            params={
+                'q': term,
+                'lang': idioma,
+                'from': (datetime.utcnow() - timedelta(hours=horas)).isoformat(timespec='seconds') + 'Z',
+                'page_size': 10
+            },
+            headers={'x-api-key': os.environ['NEWSCATCHER_KEY']}
+        )
+        data = r.json()
+        results += normalize_articles(data)
+    return dedupe(results)
+```
+
+```python
+# writers.py (esboço)
+from openai import OpenAI
+client = OpenAI()
+
+def write_post_from_news(artigos, nicho):
+    prompt = f"""
+    Você é um editor sênior do nicho {nicho}. Escreva um post analítico, em pt-BR, com:
+    - Título chamativo (H1)
+    - 3–5 bullets de highlights
+    - Seções com subtítulos, contexto e implicações práticas
+    - Conclusão com CTA
+    - Referências com links das fontes (lista)
+    Evite copiar trechos; escreva com voz editorial.
+    Artigos-base:
+    {formata_artigos(artigos)}
+    """
+    res = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return res.choices[0].message.content
+
+
+def write_post_from_social(terms, nicho):
+    prompt = f"""
+    Você é um analista do nicho {nicho}. Não há artigos confiáveis suficientes.
+    Gere um post baseado no que está trending em redes sociais (YouTube/Reddit/Trends), com análise e hipóteses.
+    Estruture com H1, H2, bullets e recomendações. pt-BR.
+    Termos quentes: {', '.join(list(terms)[:10])}
+    """
+    res = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return res.choices[0].message.content
+```
+
+---
+
+## 10) Publicação (WordPress exemplo)
+
+```python
+# publish.py
+import requests, os, base64
+
+WP_BASE = os.environ['WP_BASE_URL']
+WP_USER = os.environ['WP_USER']
+WP_PASS = os.environ['WP_APP_PASSWORD']
+
+AUTH = base64.b64encode(f"{WP_USER}:{WP_PASS}".encode()).decode()
+
+def publish_post(content, title=None, tags=None, categories=None):
+    payload = {
+        'title': title or extract_title(content),
+        'content': content,
+        'status': 'publish',
+        'tags': tags or [],
+        'categories': categories or []
+    }
+    r = requests.post(f"{WP_BASE}/wp-json/wp/v2/posts",
+                      json=payload,
+                      headers={'Authorization': f'Basic {AUTH}'})
+    r.raise_for_status()
+    data = r.json()
+    return data.get('link')
+```
+
+---
+
+## 11) Considerações de custo/limites
+
+* Use **1 provedor principal de notícias** + **1 fallback**.
+* Ajuste `page_size`/`maxResults` e janela de tempo.
+* Faça cache de termos e resultados por 15–60 min.
+* Implemente **backoff exponencial** para HTTP 429/5xx.
+
+---
+
+## 12) Roadmap de entrega
+
+**Dia 1–2**: Setup Replit, secrets, endpoints de health/run, pytrends/YouTube funcionando.
+
+**Dia 3–4**: Integração do provedor de notícias (primário), dedupe, primeira publicação em ambiente de teste.
+
+**Dia 5–6**: Plano B (social-only), templates de prompt, imagens destaque.
+
+**Dia 7**: Logs, métricas, hardening (timeouts/retries), checklist de qualidade editorial.
+
+---
+
+## 13) Checklist de qualidade editorial (antes de publicar)
+
+* [ ] Título forte, sem clickbait barato
+* [ ] Highlights objetivos (3–5 bullets)
+* [ ] Contexto do nicho e impacto prático
+* [ ] Links de referência (quando houver)
+* [ ] Ortografia/estilo PT-BR
+* [ ] Evitar promessas não verificadas
+* [ ] CTA final coerente com seu funil
+
+---
+
+## 14) Observações legais/ToS
+
+* Prefira **APIs oficiais**; evite scraping que viole termos.
+* Sempre **linkar as fontes** de notícias.
+* Não reproduzir integralmente conteúdo de terceiros; utilize **resumo + análise**.
+
+---
+
+### Opinião (curta)
+
+Para o seu contexto (cripto/fintech), eu começaria com: **PyTrends (web + gprop='youtube') + YouTube Data API** para captar trends, **NewsCatcher (primário)** e **GDELT (fallback)** para notícias, **WordPress** para publicação. Isso te dá cobertura ampla, custo previsível e uma esteira de conteúdo flexível com o **Plano B** sempre pronto.
