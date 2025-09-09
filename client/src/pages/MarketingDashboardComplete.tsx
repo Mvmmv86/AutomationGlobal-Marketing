@@ -60,6 +60,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
 import CampaignsDashboard from "./CampaignsDashboard";
 import ContentAutomationSetup from "./ContentAutomationSetup";
+import AutomationDashboard from "./AutomationDashboard";
 
 // Função para comprimir imagens e reduzir tamanho do payload
 const compressImage = (base64String: string, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
@@ -641,6 +642,7 @@ function MarketingDashboardCompleteInner() {
   const { theme } = useMarketingTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d');
+  const [selectedAutomation, setSelectedAutomation] = useState<string | null>(null);
   
   // Use um ID padrão para demonstração se não fornecido
   const organizationId = id || '123e4567-e89b-12d3-a456-426614174000';
@@ -735,7 +737,13 @@ function MarketingDashboardCompleteInner() {
         <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
         <div className="flex-1">
-          <ContentAutomationSetup />
+          {selectedAutomation === 'content-automation' ? (
+            <ContentAutomationSetup />
+          ) : (
+            <AutomationDashboard 
+              onSelectAutomation={(automationId) => setSelectedAutomation(automationId)} 
+            />
+          )}
         </div>
       </div>
     );
