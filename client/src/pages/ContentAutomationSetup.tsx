@@ -21,7 +21,8 @@ import {
   Play,
   Eye,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
@@ -96,6 +97,68 @@ function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) 
   const [currentSecondaryKeyword, setCurrentSecondaryKeyword] = useState("");
   const [testingNews, setTestingNews] = useState(false);
   const [newsTestResult, setNewsTestResult] = useState<any>(null);
+  
+  // Instagram optional state
+  const [includeInstagram, setIncludeInstagram] = useState(false);
+  
+  // Article preview states
+  const [articlePreview, setArticlePreview] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+
+  // Generate article preview function
+  const generateArticlePreview = async () => {
+    if (!formData.keywordsPrimary || !formData.niche) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha pelo menos a palavra-chave principal e o nicho para gerar preview.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingPreview(true);
+    try {
+      const response = await fetch('/api/news/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          primaryKeyword: formData.keywordsPrimary,
+          secondaryKeywords: formData.keywordsSecondary,
+          niche: formData.niche,
+          language: formData.language === 'português' ? 'pt' : 'en',
+          articleSize: formData.articleSize,
+          writingStyle: formData.writingStyle,
+          includeElements: formData.includeElements,
+          defaultCta: formData.defaultCta || 'Clique aqui para saber mais!'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao gerar artigo');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setArticlePreview(result.data);
+        setShowPreview(true);
+        toast({
+          title: "Preview gerado com sucesso!",
+          description: "Artigo criado baseado nas suas configurações.",
+        });
+      } else {
+        throw new Error(result.error || 'Erro desconhecido');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao gerar preview",
+        description: error.message || "Erro interno do sistema",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  };
 
   // Create automation mutation
   const createAutomationMutation = useMutation({
@@ -558,22 +621,64 @@ function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) 
                   data-testid="input-default-cta"
                 />
               </div>
+
+              {/* Botão de Preview do Artigo */}
+              <div className="pt-4 border-t border-white/10">
+                <Button
+                  onClick={generateArticlePreview}
+                  disabled={isGeneratingPreview || !formData.keywordsPrimary || !formData.niche}
+                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  data-testid="button-preview-article"
+                >
+                  {isGeneratingPreview ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Gerando Preview...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 mr-2" />
+                      Gerar Preview do Artigo
+                    </>
+                  )}
+                </Button>
+                <p className="text-white/60 text-sm mt-2 text-center">
+                  Visualize como ficará o artigo com suas configurações atuais
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Seção 4: Configurações do Instagram */}
+          {/* Seção 4: Instagram (Opcional) */}
           <Card className={glassCardClass} data-testid="card-instagram-config">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-white">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-blue-500/20">
-                  <Instagram className="w-6 h-6 text-cyan-400" />
+              <CardTitle className="flex items-center justify-between text-white">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-blue-500/20">
+                    <Instagram className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  4. Instagram (Opcional)
                 </div>
-                4. Configurações do Instagram
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="include-instagram" className="text-white text-sm">
+                    Incluir Instagram
+                  </Label>
+                  <Switch
+                    id="include-instagram"
+                    checked={includeInstagram}
+                    onCheckedChange={setIncludeInstagram}
+                    data-testid="switch-include-instagram"
+                  />
+                </div>
               </CardTitle>
               <CardDescription className="text-white/70">
-                Configure como os posts do Instagram serão criados
+                {includeInstagram 
+                  ? "Configure como os posts do Instagram serão criados" 
+                  : "Foco principal: criação de blog posts. Ative o Instagram como canal adicional se desejar."
+                }
               </CardDescription>
             </CardHeader>
+            {includeInstagram && (
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -643,6 +748,7 @@ function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) 
                 />
               </div>
             </CardContent>
+            )}
           </Card>
 
           {/* Seção 5: Frequência e Automação */}
@@ -845,6 +951,63 @@ function ContentAutomationSetupContent({ onBack }: ContentAutomationSetupProps) 
           </Card>
         </div>
       </form>
+
+      {/* Modal de Preview do Artigo */}
+      {showPreview && articlePreview && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900/95 backdrop-blur-xl border border-white/20 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <h2 className="text-2xl font-bold text-white">Preview do Artigo</h2>
+              <Button
+                onClick={() => setShowPreview(false)}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
+                data-testid="button-close-preview"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Título:</h3>
+                  <h1 className="text-2xl font-bold text-white leading-tight">{articlePreview.title}</h1>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Resumo:</h3>
+                  <p className="text-white/80 leading-relaxed">{articlePreview.summary}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold text-cyan-400 mb-2">Conteúdo:</h3>
+                  <div 
+                    className="prose prose-invert max-w-none text-white/90 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: articlePreview.content }}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                  <div>
+                    <h3 className="text-sm font-semibold text-cyan-400 mb-2">Tags SEO:</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {articlePreview.tags?.map((tag: string, index: number) => (
+                        <span key={index} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-md text-sm">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-cyan-400 mb-2">Tempo de Leitura:</h3>
+                    <p className="text-white/80">{articlePreview.readingTime} minutos</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
