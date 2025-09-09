@@ -3225,6 +3225,221 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   app.use('/api/marketing', marketingMetricsRoutes);
   console.log('✅ Marketing metrics routes registered at /api/marketing');
 
+  // ==================== BLOG AUTOMATION ROUTES ====================
+  
+  // Import blog services
+  const { TrendsCollectorService } = await import('./services/trendsCollector');
+  const { NewsSearchService } = await import('./services/newsSearchService');
+  const { ContentGenerationService } = await import('./services/contentGenerationService');
+
+  // Blog Niches routes
+  app.get('/api/blog/niches', requireAuth, loadOrganizationContext, async (req: TenantRequest, res) => {
+    try {
+      const niches = await storage.getBlogNiches(req.organizationId!);
+      res.json({ success: true, data: niches });
+    } catch (error) {
+      console.error('Error getting blog niches:', error);
+      res.status(500).json({ success: false, message: 'Failed to get blog niches' });
+    }
+  });
+
+  app.post('/api/blog/niches', requireAuth, loadOrganizationContext, async (req: TenantRequest, res) => {
+    try {
+      const nicheData = {
+        ...req.body,
+        organizationId: req.organizationId!,
+        createdBy: req.user!.id
+      };
+      const niche = await storage.createBlogNiche(nicheData);
+      res.json({ success: true, data: niche });
+    } catch (error) {
+      console.error('Error creating blog niche:', error);
+      res.status(500).json({ success: false, message: 'Failed to create blog niche' });
+    }
+  });
+
+  app.put('/api/blog/niches/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const niche = await storage.updateBlogNiche(id, req.body);
+      res.json({ success: true, data: niche });
+    } catch (error) {
+      console.error('Error updating blog niche:', error);
+      res.status(500).json({ success: false, message: 'Failed to update blog niche' });
+    }
+  });
+
+  app.delete('/api/blog/niches/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteBlogNiche(id);
+      res.json({ success: true, message: 'Blog niche deleted' });
+    } catch (error) {
+      console.error('Error deleting blog niche:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete blog niche' });
+    }
+  });
+
+  // Blog Posts routes
+  app.get('/api/blog/posts/:nicheId', requireAuth, async (req, res) => {
+    try {
+      const { nicheId } = req.params;
+      const posts = await storage.getGeneratedBlogPosts(nicheId);
+      res.json({ success: true, data: posts });
+    } catch (error) {
+      console.error('Error getting blog posts:', error);
+      res.status(500).json({ success: false, message: 'Failed to get blog posts' });
+    }
+  });
+
+  app.get('/api/blog/posts/single/:id', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const post = await storage.getGeneratedBlogPost(id);
+      if (!post) {
+        return res.status(404).json({ success: false, message: 'Post not found' });
+      }
+      res.json({ success: true, data: post });
+    } catch (error) {
+      console.error('Error getting blog post:', error);
+      res.status(500).json({ success: false, message: 'Failed to get blog post' });
+    }
+  });
+
+  // Full automation run
+  app.post('/api/blog/run-automation/:nicheId', requireAuth, async (req, res) => {
+    try {
+      const { nicheId } = req.params;
+      const niche = await storage.getBlogNiche(nicheId);
+      
+      if (!niche) {
+        return res.status(404).json({ success: false, message: 'Niche not found' });
+      }
+
+      // Create automation run record
+      const automationRun = await storage.createBlogAutomationRun({
+        nicheId,
+        status: 'running',
+        startedAt: new Date(),
+        phase: 'collecting_trends'
+      });
+
+      try {
+        // Phase 1: Collect trends
+        const trendsCollector = new TrendsCollectorService();
+        const trends = await trendsCollector.collectAllTrends(niche);
+        
+        const trendsData = trends.map(trend => ({
+          nicheId,
+          term: trend.term,
+          source: trend.source,
+          sourceType: trend.sourceType,
+          score: trend.score,
+          metadata: trend.metadata
+        }));
+        await storage.bulkCreateTrendingTopics(trendsData);
+
+        // Phase 2: Search news
+        await storage.updateBlogAutomationRun(automationRun.id, { phase: 'searching_news' });
+        const newsSearchService = new NewsSearchService();
+        const trendTerms = trends.slice(0, 5).map(t => t.term);
+        const articles = await newsSearchService.searchNews(trendTerms, niche, 15);
+        
+        const articlesData = articles.map(article => ({
+          nicheId,
+          title: article.title,
+          description: article.description,
+          content: article.content || '',
+          url: article.url,
+          sourceUrl: article.sourceUrl,
+          sourceName: article.sourceName,
+          author: article.author,
+          imageUrl: article.imageUrl,
+          publishedAt: article.publishedAt,
+          language: article.language,
+          relevanceScore: article.relevanceScore
+        }));
+        await storage.bulkCreateNewsArticles(articlesData);
+
+        // Phase 3: Generate content
+        await storage.updateBlogAutomationRun(automationRun.id, { phase: 'generating_content' });
+        const contentGenerator = new ContentGenerationService();
+        
+        const generatedContent = await contentGenerator.generateBlogPost({
+          niche,
+          mode: 'news',
+          sourceData: { articles: articles.slice(0, 5) }
+        });
+
+        const blogPostData = {
+          nicheId,
+          title: generatedContent.title,
+          content: generatedContent.content,
+          summary: generatedContent.summary,
+          tags: generatedContent.tags,
+          featuredImageUrl: generatedContent.featuredImageUrl,
+          readingTime: generatedContent.readingTime,
+          contentHash: generatedContent.contentHash,
+          metadata: generatedContent.metadata,
+          status: 'draft' as const
+        };
+        const savedPost = await storage.createGeneratedBlogPost(blogPostData);
+
+        // Complete automation run
+        await storage.updateBlogAutomationRun(automationRun.id, {
+          status: 'completed',
+          phase: 'completed',
+          completedAt: new Date(),
+          results: {
+            trendsCount: trends.length,
+            articlesCount: articles.length,
+            generatedPostId: savedPost.id
+          }
+        });
+
+        res.json({ 
+          success: true, 
+          data: { 
+            automationRun,
+            post: savedPost,
+            stats: {
+              trends: trends.length,
+              articles: articles.length
+            }
+          },
+          message: 'Blog automation completed successfully'
+        });
+
+      } catch (error) {
+        // Update automation run as failed
+        await storage.updateBlogAutomationRun(automationRun.id, {
+          status: 'failed',
+          completedAt: new Date(),
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        });
+        throw error;
+      }
+
+    } catch (error) {
+      console.error('Error running blog automation:', error);
+      res.status(500).json({ success: false, message: 'Blog automation failed' });
+    }
+  });
+
+  // Get automation runs
+  app.get('/api/blog/automation-runs/:nicheId', requireAuth, async (req, res) => {
+    try {
+      const { nicheId } = req.params;
+      const runs = await storage.getBlogAutomationRuns(nicheId);
+      res.json({ success: true, data: runs });
+    } catch (error) {
+      console.error('Error getting automation runs:', error);
+      res.status(500).json({ success: false, message: 'Failed to get automation runs' });
+    }
+  });
+
+  console.log('✅ Blog automation routes registered at /api/blog');
+
   const httpServer = createServer(app);
   return httpServer;
 }
