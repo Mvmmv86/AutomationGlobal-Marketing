@@ -326,6 +326,52 @@ router.get("/news/test", async (req, res) => {
   }
 });
 
+// POST /api/news/generate-article - Generate complete blog article
+router.post("/news/generate-article", async (req, res) => {
+  try {
+    const { 
+      primaryKeyword, 
+      secondaryKeywords, 
+      niche, 
+      language, 
+      articleSize, 
+      writingStyle, 
+      includeElements, 
+      defaultCta 
+    } = req.body;
+    
+    if (!primaryKeyword || !niche) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: primaryKeyword, niche"
+      });
+    }
+    
+    const article = await newsService.generateBlogArticle({
+      primaryKeyword,
+      secondaryKeywords: secondaryKeywords || [],
+      niche,
+      language: language || 'pt',
+      articleSize: articleSize || 'médio',
+      writingStyle: writingStyle || 'profissional',
+      includeElements: includeElements || [],
+      defaultCta: defaultCta || 'Clique aqui para saber mais!'
+    });
+    
+    res.json({
+      success: true,
+      data: article
+    });
+  } catch (error) {
+    console.error("Error generating article:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate article",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // GET /api/organizations/:id/automation/content/:automationId/executions - Get executions
 router.get("/organizations/:orgId/automation/content/:automationId/executions", async (req, res) => {
   try {

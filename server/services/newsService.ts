@@ -264,6 +264,120 @@ Critérios de pontuação:
   }
 
   /**
+   * Generate complete blog article from processed news
+   */
+  async generateBlogArticle(params: {
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+    niche: string;
+    language: string;
+    articleSize: string;
+    writingStyle: string;
+    includeElements: string[];
+    defaultCta: string;
+  }): Promise<{
+    title: string;
+    content: string;
+    summary: string;
+    tags: string[];
+    readingTime: number;
+  }> {
+    try {
+      // First, get relevant news
+      const articles = await this.searchNews({
+        keyword: params.primaryKeyword,
+        language: params.language,
+        searchPeriod: '24h',
+        pageSize: 10
+      });
+
+      // Process with relevance analysis
+      const processedNews = await this.processNewsWithRelevance(
+        articles,
+        params.primaryKeyword,
+        params.secondaryKeywords,
+        params.niche,
+        70 // Higher relevance threshold for article generation
+      );
+
+      if (processedNews.length === 0) {
+        throw new Error('Nenhuma notícia relevante encontrada para gerar o artigo');
+      }
+
+      // Take top 3 most relevant articles
+      const topArticles = processedNews.slice(0, 3);
+      
+      const prompt = `
+Crie um artigo de blog completo e profissional baseado nas seguintes notícias relevantes:
+
+NOTÍCIAS:
+${topArticles.map((item, index) => `
+${index + 1}. ${item.title}
+Descrição: ${item.description}
+Relevância: ${item.relevanceScore}/100 - ${item.relevanceReason}
+`).join('\n')}
+
+CONFIGURAÇÕES:
+- Palavra-chave principal: ${params.primaryKeyword}
+- Palavras-chave secundárias: ${params.secondaryKeywords.join(', ')}
+- Nicho: ${params.niche}
+- Tamanho: ${params.articleSize}
+- Tom: ${params.writingStyle}
+- Elementos: ${params.includeElements.join(', ')}
+- CTA padrão: ${params.defaultCta}
+
+Retorne um JSON com:
+{
+  "title": "Título SEO otimizado com palavra-chave principal",
+  "content": "Artigo completo em HTML com formatação (h2, p, li, strong, etc)",
+  "summary": "Resumo executivo do artigo",
+  "tags": ["array", "de", "tags", "SEO"],
+  "readingTime": numero_estimado_minutos_leitura
+}
+
+REQUISITOS:
+- Use a palavra-chave principal no título e pelo menos 3 vezes no conteúdo
+- Inclua as palavras-chave secundárias naturalmente
+- Estruture com H2 e H3 para boa legibilidade
+- Adicione o CTA no final
+- Mantenha tom ${params.writingStyle}
+- Tamanho aproximado: ${params.articleSize}
+- Inclua elementos: ${params.includeElements.join(', ')}
+`;
+
+      const response = await this.openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "Você é um redator especialista em marketing de conteúdo e SEO. Crie artigos envolventes, informativos e otimizados para SEO."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 2000,
+        temperature: 0.7
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{}');
+      
+      return {
+        title: result.title || 'Artigo Gerado Automaticamente',
+        content: result.content || 'Conteúdo não disponível',
+        summary: result.summary || 'Resumo não disponível',
+        tags: Array.isArray(result.tags) ? result.tags : [],
+        readingTime: result.readingTime || 5
+      };
+    } catch (error) {
+      console.error('Error generating blog article:', error);
+      throw new Error(`Failed to generate blog article: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Get trending topics for a niche
    */
   async getTrendingTopics(niche: string, language: string = 'pt'): Promise<string[]> {
