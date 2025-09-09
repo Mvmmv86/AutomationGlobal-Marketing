@@ -59,6 +59,7 @@ import { useToast } from "@/hooks/use-toast";
 // Theme Context
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
 import CampaignsDashboard from "./CampaignsDashboard";
+import ContentAutomationSetup from "./ContentAutomationSetup";
 
 // Função para comprimir imagens e reduzir tamanho do payload
 const compressImage = (base64String: string, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
@@ -718,6 +719,23 @@ function MarketingDashboardCompleteInner() {
         
         <div className="flex-1">
           <CampaignsDashboard />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'automation') {
+    return (
+      <div className={cn(
+        "min-h-screen flex transition-all duration-500",
+        theme === 'dark' 
+          ? "marketing-gradient-bg text-white" 
+          : "marketing-gradient-bg light text-gray-900"
+      )}>
+        <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        
+        <div className="flex-1">
+          <ContentAutomationSetup />
         </div>
       </div>
     );
