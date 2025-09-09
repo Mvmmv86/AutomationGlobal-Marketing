@@ -391,4 +391,45 @@ router.get("/organizations/:orgId/automation/content/:automationId/executions", 
   }
 });
 
+// POST /api/news/test-trending - Test trending analysis with source citations
+router.post("/news/test-trending", async (req, res) => {
+  try {
+    const { primaryKeyword, secondaryKeywords = [], niche, language = 'pt' } = req.body;
+    
+    console.log(`\n🧪 TESTE DE ANÁLISE TRENDING - SOLICITADO PELO USUÁRIO`);
+    console.log(`📝 Palavra-chave: ${primaryKeyword}`);
+    console.log(`📝 Palavras secundárias: ${secondaryKeywords.join(', ')}`);
+    
+    const trendingAnalysis = await newsService.analyzeKeywordTrends(
+      primaryKeyword,
+      secondaryKeywords,
+      niche,
+      language
+    );
+
+    const response = {
+      success: true,
+      keyword_searched: primaryKeyword,
+      secondary_keywords: secondaryKeywords,
+      channels_found: trendingAnalysis.sources,
+      total_channels: trendingAnalysis.sources.length,
+      trending_topics: trendingAnalysis.trending,
+      articles_sample: trendingAnalysis.foundArticles,
+      summary: `Análise completa realizada em ${trendingAnalysis.sources.length} canais de notícia. ` +
+              `Encontrados ${trendingAnalysis.trending.length} tópicos em alta.`,
+      where_found: trendingAnalysis.sources.length > 0 ? 
+        `Informações coletadas dos seguintes canais: ${trendingAnalysis.sources.join(', ')}` :
+        'Nenhuma informação trending encontrada nos canais pesquisados.'
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error in trending test:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to analyze trending topics'
+    });
+  }
+});
+
 export default router;
