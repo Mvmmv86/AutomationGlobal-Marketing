@@ -1153,3 +1153,173 @@ export type InsertNewsSource = z.infer<typeof insertNewsSourceSchema>;
 
 export type GeneratedContent = typeof generatedContent.$inferSelect;
 export type InsertGeneratedContent = z.infer<typeof insertGeneratedContentSchema>;
+
+// =============================================================================
+// BLOG & TRENDS AUTOMATION SYSTEM
+// =============================================================================
+
+// Blog & Trends System Tables
+export const blogNiches = pgTable("blog_niches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  name: text("name").notNull(), // "Tecnologia", "Cripto", "Marketing"
+  slug: text("slug").notNull().unique(), // "tecnologia", "cripto"
+  description: text("description"),
+  keywords: jsonb("keywords").default([]), // ["IA", "blockchain", "NFT"]
+  language: text("language").default('pt'), // pt, en, es
+  region: text("region").default('BR'), // BR, US, ES
+  isActive: boolean("is_active").default(true),
+  minArticlesForNewsMode: integer("min_articles_for_news_mode").default(3),
+  maxPostsPerDay: integer("max_posts_per_day").default(5),
+  scheduleCron: text("schedule_cron").default('0 */4 * * *'), // A cada 4 horas
+  lastProcessedAt: timestamp("last_processed_at"),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const trendingTopics = pgTable("trending_topics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nicheId: varchar("niche_id").references(() => blogNiches.id).notNull(),
+  term: text("term").notNull(),
+  source: text("source").notNull(), // 'google_trends', 'youtube', 'reddit', 'twitter'
+  sourceType: text("source_type").notNull(), // 'web', 'youtube_trends', 'youtube_popular', 'reddit_hot'
+  score: integer("score").default(1), // Relevância 1-100
+  metadata: jsonb("metadata").default({}), // Dados extras da fonte
+  collectedAt: timestamp("collected_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const newsArticles = pgTable("news_articles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nicheId: varchar("niche_id").references(() => blogNiches.id).notNull(),
+  trendTerm: text("trend_term"), // Termo que gerou o artigo
+  title: text("title").notNull(),
+  description: text("description"),
+  content: text("content"),
+  url: text("url").notNull().unique(),
+  sourceUrl: text("source_url"), // Domínio da fonte
+  sourceName: text("source_name"), // Nome da publicação
+  author: text("author"),
+  imageUrl: text("image_url"),
+  publishedAt: timestamp("published_at"),
+  language: text("language").default('pt'),
+  relevanceScore: integer("relevance_score").default(0), // 0-100
+  sentimentScore: decimal("sentiment_score", { precision: 3, scale: 2 }), // -1.00 a 1.00
+  isUsed: boolean("is_used").default(false), // Se já foi usado em post
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const generatedBlogPosts = pgTable("generated_blog_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nicheId: varchar("niche_id").references(() => blogNiches.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  summary: text("summary"),
+  mode: text("mode").notNull(), // 'news' ou 'social'
+  sourceData: jsonb("source_data").notNull(), // IDs dos artigos ou trends usados
+  tags: jsonb("tags").default([]),
+  featuredImageUrl: text("featured_image_url"),
+  wordpressPostId: text("wordpress_post_id"), // ID no WordPress após publicação
+  status: text("status").default('draft'), // 'draft', 'published', 'failed'
+  publishedAt: timestamp("published_at"),
+  publicationUrl: text("publication_url"), // URL final do post publicado
+  contentHash: text("content_hash").notNull(), // Hash para deduplicação
+  metadata: jsonb("metadata").default({}),
+  readingTime: integer("reading_time"), // Tempo de leitura em minutos
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const blogAutomationRuns = pgTable("blog_automation_runs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  nicheId: varchar("niche_id").references(() => blogNiches.id).notNull(),
+  startedAt: timestamp("started_at").defaultNow(),
+  finishedAt: timestamp("finished_at"),
+  status: text("status").notNull(), // 'running', 'completed', 'failed'
+  trendsCollected: integer("trends_collected").default(0),
+  articlesFound: integer("articles_found").default(0),
+  postsGenerated: integer("posts_generated").default(0),
+  postsPublished: integer("posts_published").default(0),
+  mode: text("mode"), // 'news' ou 'social' - qual rota foi usada
+  errors: jsonb("errors").default([]),
+  processingTime: integer("processing_time"), // Segundos
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Configurações do sistema de blog
+export const blogSettings = pgTable("blog_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  wordpressApiUrl: text("wordpress_api_url"),
+  wordpressUsername: text("wordpress_username"),
+  wordpressAppPassword: text("wordpress_app_password"),
+  defaultAuthor: text("default_author"),
+  defaultCategories: jsonb("default_categories").default([]),
+  contentPromptTemplate: text("content_prompt_template"),
+  newsPromptTemplate: text("news_prompt_template"),
+  socialPromptTemplate: text("social_prompt_template"),
+  isActive: boolean("is_active").default(true),
+  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// =============================================================================
+// BLOG SYSTEM SCHEMAS
+// =============================================================================
+
+export const insertBlogNicheSchema = createInsertSchema(blogNiches).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastProcessedAt: true,
+});
+
+export const insertTrendingTopicSchema = createInsertSchema(trendingTopics).omit({
+  id: true,
+  createdAt: true,
+  collectedAt: true,
+});
+
+export const insertNewsArticleSchema = createInsertSchema(newsArticles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGeneratedBlogPostSchema = createInsertSchema(generatedBlogPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  publishedAt: true,
+});
+
+export const insertBlogSettingsSchema = createInsertSchema(blogSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// =============================================================================
+// BLOG SYSTEM TYPE EXPORTS
+// =============================================================================
+
+export type BlogNiche = typeof blogNiches.$inferSelect;
+export type InsertBlogNiche = z.infer<typeof insertBlogNicheSchema>;
+
+export type TrendingTopic = typeof trendingTopics.$inferSelect;
+export type InsertTrendingTopic = z.infer<typeof insertTrendingTopicSchema>;
+
+export type NewsArticle = typeof newsArticles.$inferSelect;
+export type InsertNewsArticle = z.infer<typeof insertNewsArticleSchema>;
+
+export type GeneratedBlogPost = typeof generatedBlogPosts.$inferSelect;
+export type InsertGeneratedBlogPost = z.infer<typeof insertGeneratedBlogPostSchema>;
+
+export type BlogAutomationRun = typeof blogAutomationRuns.$inferSelect;
+export type InsertBlogAutomationRun = typeof blogAutomationRuns.$inferInsert;
+
+export type BlogSettings = typeof blogSettings.$inferSelect;
+export type InsertBlogSettings = z.infer<typeof insertBlogSettingsSchema>;
