@@ -46,7 +46,19 @@ import type {
   NewsSource,
   InsertNewsSource,
   GeneratedContent,
-  InsertGeneratedContent
+  InsertGeneratedContent,
+  BlogNiche,
+  InsertBlogNiche,
+  TrendingTopic,
+  InsertTrendingTopic,
+  NewsArticle,
+  InsertNewsArticle,
+  GeneratedBlogPost,
+  InsertGeneratedBlogPost,
+  BlogAutomationRun,
+  InsertBlogAutomationRun,
+  BlogSettings,
+  InsertBlogSettings
 } from "@shared/schema";
 
 // Database connection for production
@@ -182,6 +194,36 @@ export interface IStorage {
   updateNewsSource(id: string, data: Partial<NewsSource>): Promise<NewsSource>;
   createGeneratedContent(data: InsertGeneratedContent): Promise<GeneratedContent>;
   getGeneratedContent(executionId: string): Promise<GeneratedContent[]>;
+
+  // Blog system methods
+  getBlogNiches(organizationId: string): Promise<BlogNiche[]>;
+  getBlogNiche(id: string): Promise<BlogNiche | undefined>;
+  createBlogNiche(data: InsertBlogNiche): Promise<BlogNiche>;
+  updateBlogNiche(id: string, data: Partial<BlogNiche>): Promise<BlogNiche>;
+  deleteBlogNiche(id: string): Promise<void>;
+  
+  getTrendingTopics(nicheId: string): Promise<TrendingTopic[]>;
+  createTrendingTopic(data: InsertTrendingTopic): Promise<TrendingTopic>;
+  bulkCreateTrendingTopics(data: InsertTrendingTopic[]): Promise<TrendingTopic[]>;
+  
+  getNewsArticles(nicheId: string): Promise<NewsArticle[]>;
+  createNewsArticle(data: InsertNewsArticle): Promise<NewsArticle>;
+  bulkCreateNewsArticles(data: InsertNewsArticle[]): Promise<NewsArticle[]>;
+  markArticleAsUsed(id: string): Promise<void>;
+  
+  getGeneratedBlogPosts(nicheId: string): Promise<GeneratedBlogPost[]>;
+  getGeneratedBlogPost(id: string): Promise<GeneratedBlogPost | undefined>;
+  createGeneratedBlogPost(data: InsertGeneratedBlogPost): Promise<GeneratedBlogPost>;
+  updateGeneratedBlogPost(id: string, data: Partial<GeneratedBlogPost>): Promise<GeneratedBlogPost>;
+  
+  getBlogAutomationRuns(nicheId: string): Promise<BlogAutomationRun[]>;
+  getLatestBlogAutomationRun(nicheId: string): Promise<BlogAutomationRun | undefined>;
+  createBlogAutomationRun(data: InsertBlogAutomationRun): Promise<BlogAutomationRun>;
+  updateBlogAutomationRun(id: string, data: Partial<BlogAutomationRun>): Promise<BlogAutomationRun>;
+  
+  getBlogSettings(organizationId: string): Promise<BlogSettings | undefined>;
+  createBlogSettings(data: InsertBlogSettings): Promise<BlogSettings>;
+  updateBlogSettings(id: string, data: Partial<BlogSettings>): Promise<BlogSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1077,6 +1119,145 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(schema.generatedContent)
       .where(eq(schema.generatedContent.executionId, executionId))
       .orderBy(desc(schema.generatedContent.createdAt));
+  }
+
+  // Blog system methods implementation
+  async getBlogNiches(organizationId: string): Promise<BlogNiche[]> {
+    return await db.select().from(schema.blogNiches)
+      .where(eq(schema.blogNiches.organizationId, organizationId))
+      .orderBy(desc(schema.blogNiches.createdAt));
+  }
+
+  async getBlogNiche(id: string): Promise<BlogNiche | undefined> {
+    const niches = await db.select().from(schema.blogNiches).where(eq(schema.blogNiches.id, id));
+    return niches[0];
+  }
+
+  async createBlogNiche(data: InsertBlogNiche): Promise<BlogNiche> {
+    const [niche] = await db.insert(schema.blogNiches).values(data).returning();
+    return niche;
+  }
+
+  async updateBlogNiche(id: string, data: Partial<BlogNiche>): Promise<BlogNiche> {
+    const [niche] = await db.update(schema.blogNiches)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.blogNiches.id, id))
+      .returning();
+    return niche;
+  }
+
+  async deleteBlogNiche(id: string): Promise<void> {
+    await db.update(schema.blogNiches)
+      .set({ isActive: false })
+      .where(eq(schema.blogNiches.id, id));
+  }
+
+  async getTrendingTopics(nicheId: string): Promise<TrendingTopic[]> {
+    return await db.select().from(schema.trendingTopics)
+      .where(eq(schema.trendingTopics.nicheId, nicheId))
+      .orderBy(desc(schema.trendingTopics.score));
+  }
+
+  async createTrendingTopic(data: InsertTrendingTopic): Promise<TrendingTopic> {
+    const [topic] = await db.insert(schema.trendingTopics).values(data).returning();
+    return topic;
+  }
+
+  async bulkCreateTrendingTopics(data: InsertTrendingTopic[]): Promise<TrendingTopic[]> {
+    const topics = await db.insert(schema.trendingTopics).values(data).returning();
+    return topics;
+  }
+
+  async getNewsArticles(nicheId: string): Promise<NewsArticle[]> {
+    return await db.select().from(schema.newsArticles)
+      .where(eq(schema.newsArticles.nicheId, nicheId))
+      .orderBy(desc(schema.newsArticles.relevanceScore));
+  }
+
+  async createNewsArticle(data: InsertNewsArticle): Promise<NewsArticle> {
+    const [article] = await db.insert(schema.newsArticles).values(data).returning();
+    return article;
+  }
+
+  async bulkCreateNewsArticles(data: InsertNewsArticle[]): Promise<NewsArticle[]> {
+    const articles = await db.insert(schema.newsArticles).values(data).returning();
+    return articles;
+  }
+
+  async markArticleAsUsed(id: string): Promise<void> {
+    await db.update(schema.newsArticles)
+      .set({ isUsed: true })
+      .where(eq(schema.newsArticles.id, id));
+  }
+
+  async getGeneratedBlogPosts(nicheId: string): Promise<GeneratedBlogPost[]> {
+    return await db.select().from(schema.generatedBlogPosts)
+      .where(eq(schema.generatedBlogPosts.nicheId, nicheId))
+      .orderBy(desc(schema.generatedBlogPosts.createdAt));
+  }
+
+  async getGeneratedBlogPost(id: string): Promise<GeneratedBlogPost | undefined> {
+    const posts = await db.select().from(schema.generatedBlogPosts).where(eq(schema.generatedBlogPosts.id, id));
+    return posts[0];
+  }
+
+  async createGeneratedBlogPost(data: InsertGeneratedBlogPost): Promise<GeneratedBlogPost> {
+    const [post] = await db.insert(schema.generatedBlogPosts).values(data).returning();
+    return post;
+  }
+
+  async updateGeneratedBlogPost(id: string, data: Partial<GeneratedBlogPost>): Promise<GeneratedBlogPost> {
+    const [post] = await db.update(schema.generatedBlogPosts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.generatedBlogPosts.id, id))
+      .returning();
+    return post;
+  }
+
+  async getBlogAutomationRuns(nicheId: string): Promise<BlogAutomationRun[]> {
+    return await db.select().from(schema.blogAutomationRuns)
+      .where(eq(schema.blogAutomationRuns.nicheId, nicheId))
+      .orderBy(desc(schema.blogAutomationRuns.startedAt));
+  }
+
+  async getLatestBlogAutomationRun(nicheId: string): Promise<BlogAutomationRun | undefined> {
+    const runs = await db.select().from(schema.blogAutomationRuns)
+      .where(eq(schema.blogAutomationRuns.nicheId, nicheId))
+      .orderBy(desc(schema.blogAutomationRuns.startedAt))
+      .limit(1);
+    return runs[0];
+  }
+
+  async createBlogAutomationRun(data: InsertBlogAutomationRun): Promise<BlogAutomationRun> {
+    const [run] = await db.insert(schema.blogAutomationRuns).values(data).returning();
+    return run;
+  }
+
+  async updateBlogAutomationRun(id: string, data: Partial<BlogAutomationRun>): Promise<BlogAutomationRun> {
+    const [run] = await db.update(schema.blogAutomationRuns)
+      .set(data)
+      .where(eq(schema.blogAutomationRuns.id, id))
+      .returning();
+    return run;
+  }
+
+  async getBlogSettings(organizationId: string): Promise<BlogSettings | undefined> {
+    const settings = await db.select().from(schema.blogSettings)
+      .where(eq(schema.blogSettings.organizationId, organizationId));
+    return settings[0];
+  }
+
+  async createBlogSettings(data: InsertBlogSettings): Promise<BlogSettings> {
+    const [settings] = await db.insert(schema.blogSettings).values(data).returning();
+    return settings;
+  }
+
+  async updateBlogSettings(id: string, data: Partial<BlogSettings>): Promise<BlogSettings> {
+    const [settings] = await db.update(schema.blogSettings)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.blogSettings.id, id))
+      .returning();
+    return settings;
   }
 
   // Utility methods
