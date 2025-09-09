@@ -454,6 +454,122 @@ REQUISITOS:
   }
 
   /**
+   * Analyze what's trending for specific keywords and return with sources
+   */
+  async analyzeKeywordTrends(
+    primaryKeyword: string, 
+    secondaryKeywords: string[], 
+    niche: string,
+    language: string = 'pt'
+  ): Promise<{trending: any[], sources: string[], foundArticles: any[]}> {
+    try {
+      console.log(`\n🔍 SEARCHING TRENDING TOPICS FOR: ${primaryKeyword}`);
+      
+      // Search for primary keyword
+      const primaryArticles = await this.searchNews(primaryKeyword, language, [], '24h', 15);
+      console.log(`📰 Found ${primaryArticles.length} articles for "${primaryKeyword}"`);
+      
+      // Search for secondary keywords
+      let allArticles = [...primaryArticles];
+      for (const keyword of secondaryKeywords) {
+        if (keyword.trim()) {
+          const articles = await this.searchNews(keyword, language, [], '24h', 10);
+          console.log(`📰 Found ${articles.length} articles for "${keyword}"`);
+          allArticles = [...allArticles, ...articles];
+        }
+      }
+
+      // Remove duplicates
+      const uniqueArticles = allArticles.filter((article, index, self) => 
+        index === self.findIndex(a => a.url === article.url)
+      );
+
+      console.log(`📊 Total unique articles found: ${uniqueArticles.length}`);
+
+      if (uniqueArticles.length === 0) {
+        return { trending: [], sources: [], foundArticles: [] };
+      }
+
+      // Get list of sources
+      const sourcesFound = [...new Set(uniqueArticles.map(a => a.source.name))];
+      console.log(`🎯 Sources found: ${sourcesFound.join(', ')}`);
+
+      // Analyze what's trending
+      const prompt = `
+Analise estas notícias reais coletadas nas últimas 24h sobre "${primaryKeyword}" e palavras relacionadas.
+
+NOTÍCIAS ENCONTRADAS:
+${uniqueArticles.slice(0, 10).map((article, index) => `
+${index + 1}. FONTE: ${article.source.name}
+   TÍTULO: ${article.title}
+   DESCRIÇÃO: ${article.description}
+   URL: ${article.url}
+   DATA: ${new Date(article.publishedAt).toLocaleString('pt-BR')}
+`).join('\n')}
+
+ANÁLISE SOLICITADA:
+- Palavra-chave principal: ${primaryKeyword}
+- Palavras-chave secundárias: ${secondaryKeywords.join(', ')}
+- Nicho: ${niche}
+
+Retorne um JSON identificando os tópicos mais "hypados" (trending) baseado nestas notícias REAIS:
+
+{
+  "trending": [
+    {
+      "topic": "Nome do assunto que está em alta",
+      "why_trending": "Por que está trending agora",
+      "mentioned_in_sources": ["Nome exato da fonte 1", "Nome exato da fonte 2"],
+      "related_articles": ["Título do artigo 1", "Título do artigo 2"],
+      "trend_score": 85,
+      "keywords_found": ["palavra1", "palavra2"]
+    }
+  ],
+  "summary": "Resumo dos principais assuntos em alta encontrados",
+  "total_sources_analyzed": ${sourcesFound.length}
+}
+
+IMPORTANTE: Use apenas informações das notícias fornecidas. Cite fontes exatas.
+`;
+
+      const response = await this.openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [
+          {
+            role: "system",
+            content: "Você é um analista de tendências especializado em identificar assuntos em alta baseado em notícias reais. Sempre cite as fontes exatas onde encontrou as informações."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 1500,
+        temperature: 1
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"trending": [], "summary": ""}');
+      console.log(`✅ ANALYSIS COMPLETED: Found ${result.trending?.length || 0} trending topics`);
+      
+      return {
+        trending: result.trending || [],
+        sources: sourcesFound,
+        foundArticles: uniqueArticles.slice(0, 5).map(a => ({
+          title: a.title,
+          source: a.source.name,
+          url: a.url,
+          publishedAt: a.publishedAt
+        }))
+      };
+
+    } catch (error) {
+      console.error('Error analyzing keyword trends:', error);
+      return { trending: [], sources: [], foundArticles: [] };
+    }
+  }
+
+  /**
    * Test news search functionality
    */
   async testNewsSearch(keyword: string = 'tecnologia'): Promise<{
