@@ -3235,8 +3235,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // Blog Niches routes (temporary without auth for testing)
   app.get('/api/blog/niches', async (req, res) => {
     try {
-      // For testing, use a default organization ID
-      const niches = await storage.getBlogNiches('default-org-id');
+      // For testing, use the first available organization ID
+      const niches = await storage.getBlogNiches('550e8400-e29b-41d4-a716-446655440000');
       res.json({ success: true, data: niches });
     } catch (error) {
       console.error('Error getting blog niches:', error);
@@ -3246,10 +3246,23 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
 
   app.post('/api/blog/niches', async (req, res) => {
     try {
+      // Generate slug from name
+      const generateSlug = (name: string): string => {
+        return name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+          .replace(/\s+/g, '-') // Replace spaces with hyphens
+          .replace(/-+/g, '-') // Replace multiple hyphens with single
+          .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+      };
+
       const nicheData = {
         ...req.body,
-        organizationId: 'default-org-id',
-        createdBy: 'default-user-id'
+        slug: generateSlug(req.body.name),
+        organizationId: '550e8400-e29b-41d4-a716-446655440000',
+        createdBy: '550e8400-e29b-41d4-a716-446655440001'
       };
       const niche = await storage.createBlogNiche(nicheData);
       res.json({ success: true, data: niche });
