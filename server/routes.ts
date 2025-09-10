@@ -5,7 +5,8 @@ import { organizationService } from "./services/organizations";
 import { aiService } from "./services/ai";
 import { requireAuth, requireOrganization, requirePermission } from "./middleware/auth";
 import { loadOrganizationContext, requireActiveOrganization } from "./middleware/tenant";
-import type { AuthenticatedRequest, TenantRequest } from "./middleware/auth";
+import type { AuthenticatedRequest } from "./middleware/auth";
+import type { TenantRequest } from "./middleware/tenant";
 import { storage, db } from "./storage";
 import { securityManager } from "./database/security-policies";
 import { cacheManager } from "./cache/cache-manager";
@@ -190,14 +191,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           modules: {
             count: modules.length,
             active: modules.filter(m => m.isActive).length,
-            categories: [...new Set(modules.map(m => m.category))],
+            categories: Array.from(new Set(modules.map(m => m.category))),
             features: modules.reduce((acc, m) => acc + m.features.length, 0)
           },
           aiProviders: {
             count: aiProviders.length,
             active: aiProviders.filter(p => p.isActive).length,
             models: aiProviders.reduce((acc, p) => acc + p.models.length, 0),
-            capabilities: [...new Set(aiProviders.flatMap(p => p.capabilities))]
+            capabilities: Array.from(new Set(aiProviders.flatMap(p => p.capabilities)))
           },
           system: systemStatus
         },
@@ -651,8 +652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Try simple REST API call
       const { createClient } = await import('@supabase/supabase-js');
       const client = createClient(
-        process.env.SUPABASE_URL,
-        process.env.SUPABASE_ANON_KEY
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_ANON_KEY!
       );
 
       // Quick test query
@@ -888,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { user, tokens } = await authService.register(req.body);
       res.status(201).json({ user, tokens });
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ message: (error as any).message });
     }
   });
 
@@ -897,7 +898,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { user, tokens } = await authService.login(req.body);
       res.json({ user, tokens });
     } catch (error) {
-      res.status(401).json({ message: error.message });
+      res.status(401).json({ message: (error as any).message });
     }
   });
 
@@ -907,39 +908,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tokens = await authService.refreshToken(refreshToken);
       res.json({ tokens });
     } catch (error) {
-      res.status(401).json({ message: error.message });
+      res.status(401).json({ message: (error as any).message });
     }
   });
 
   app.post('/api/auth/switch-organization', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
       const { organizationId } = req.body;
-      const tokens = await authService.switchOrganization(req.user!.userId, organizationId);
+      const tokens = await authService.switchOrganization(req.user!.id, organizationId);
       res.json({ tokens });
     } catch (error) {
-      res.status(403).json({ message: error.message });
+      res.status(403).json({ message: (error as any).message });
     }
   });
 
   // User Routes
   app.get('/api/user/profile', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const user = await storage.getUser(req.user!.userId);
+      const user = await storage.getUser(req.user!.id);
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
       res.json({ user });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as any).message });
     }
   });
 
   app.get('/api/user/organizations', requireAuth, async (req: AuthenticatedRequest, res) => {
     try {
-      const organizations = await storage.getUserOrganizations(req.user!.userId);
+      const organizations = await storage.getUserOrganizations(req.user!.id);
       res.json({ organizations });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as any).message });
     }
   });
 
@@ -961,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         res.json({ organization });
       } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: (error as any).message });
       }
     }
   );
@@ -973,7 +974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const stats = await organizationService.getOrganizationStats(req.organization!.id);
         res.json({ stats });
       } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: (error as any).message });
       }
     }
   );
@@ -985,7 +986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const quotas = await organizationService.checkQuotas(req.organization!.id);
         res.json({ quotas });
       } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: (error as any).message });
       }
     }
   );
@@ -996,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const providers = await aiService.getAvailableProviders();
       res.json({ providers });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: (error as any).message });
     }
   });
 
@@ -1016,13 +1017,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const response = await aiService.generateCompletion({
           organizationId: req.organization!.id,
-          userId: req.user!.userId,
+          userId: req.user!.id,
           ...req.body
         });
 
         res.json({ response });
       } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: (error as any).message });
       }
     }
   );
@@ -1035,7 +1036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const usage = await aiService.getUsageStats(req.organization!.id, period);
         res.json({ usage });
       } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: (error as any).message });
       }
     }
   );
@@ -1121,7 +1122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         res.json(dashboardData);
       } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: (error as any).message });
       }
     }
   );
