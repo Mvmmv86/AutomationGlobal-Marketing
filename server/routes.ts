@@ -3294,6 +3294,50 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
+  // TESTE TEMPORÁRIO: YouTube API
+  app.get('/api/test/youtube', requireAuth, async (req, res) => {
+    try {
+      const { google } = await import('googleapis');
+      const youtube = google.youtube({ version: 'v3', auth: process.env.YOUTUBE_API_KEY });
+
+      console.log('🎥 Testando YouTube API...');
+
+      // Busca simples por "criptomoeda" (relacionado ao nicho Finanças)
+      const response = await youtube.search.list({
+        part: ['snippet'],
+        q: 'criptomoeda bitcoin',
+        type: ['video'],
+        order: 'relevance',
+        maxResults: 3,
+        regionCode: 'BR'
+      });
+
+      const videos = response.data.items || [];
+      console.log(`✅ YouTube API funcionando! Encontrados ${videos.length} vídeos`);
+
+      res.json({
+        success: true,
+        message: `YouTube API teste bem-sucedido! Encontrados ${videos.length} vídeos`,
+        data: {
+          quota_used: 100, // Estimativa: search.list = ~100 unidades
+          videos: videos.map(video => ({
+            title: video.snippet?.title,
+            channel: video.snippet?.channelTitle,
+            publishedAt: video.snippet?.publishedAt,
+            videoId: video.id?.videoId
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('❌ Erro no teste YouTube API:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro no teste YouTube API',
+        error: error.message
+      });
+    }
+  });
+
   // Phase 1: Trends Collection routes
   app.post('/api/blog/niches/:id/collect-trends', requireAuth, async (req, res) => {
     try {
