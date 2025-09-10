@@ -3294,6 +3294,98 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   });
 
+  // Phase 1: Trends Collection routes
+  app.post('/api/blog/niches/:id/collect-trends', requireAuth, async (req, res) => {
+    try {
+      const { id: nicheId } = req.params;
+      const niche = await storage.getBlogNiche(nicheId);
+      
+      if (!niche) {
+        return res.status(404).json({ success: false, message: 'Niche not found' });
+      }
+
+      // Import services dynamically to avoid circular dependencies
+      const TrendsCollectorService = (await import('./services/trendsCollector')).TrendsCollectorService;
+      const NewsSearchService = (await import('./services/newsSearchService')).NewsSearchService;
+
+      // Phase 1a: Collect trends
+      const trendsCollector = new TrendsCollectorService();
+      const trends = await trendsCollector.collectAllTrends(niche);
+      
+      if (trends.length > 0) {
+        const trendsData = trends.map(trend => ({
+          nicheId,
+          term: trend.term,
+          source: trend.source,
+          sourceType: trend.sourceType,
+          score: trend.score,
+          metadata: trend.metadata
+        }));
+        await storage.bulkCreateTrendingTopics(trendsData);
+      }
+
+      // Phase 1b: Search news for top trends
+      const newsSearchService = new NewsSearchService();
+      const trendTerms = trends.slice(0, 5).map(t => t.term);
+      if (trendTerms.length > 0) {
+        const articles = await newsSearchService.searchNews(trendTerms, niche, 15);
+        
+        if (articles.length > 0) {
+          const articlesData = articles.map(article => ({
+            nicheId,
+            title: article.title,
+            description: article.description,
+            content: article.content,
+            url: article.url,
+            imageUrl: article.imageUrl,
+            publishedAt: article.publishedAt,
+            source: article.source,
+            author: article.author,
+            relevanceScore: article.relevanceScore,
+            sentiment: article.sentiment,
+            language: article.language,
+            region: article.region
+          }));
+          await storage.bulkCreateNewsArticles(articlesData);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        data: { 
+          trendsCollected: trends.length,
+          newsArticlesCollected: trendTerms.length > 0 ? await storage.getNewsArticles(nicheId).then(articles => articles.length) : 0,
+          message: 'Phase 1 completed successfully'
+        }
+      });
+    } catch (error) {
+      console.error('Error collecting trends:', error);
+      res.status(500).json({ success: false, message: 'Failed to collect trends' });
+    }
+  });
+
+  app.get('/api/blog/niches/:id/trends', requireAuth, async (req, res) => {
+    try {
+      const { id: nicheId } = req.params;
+      const trends = await storage.getTrendingTopics(nicheId);
+      res.json({ success: true, data: trends });
+    } catch (error) {
+      console.error('Error getting trends:', error);
+      res.status(500).json({ success: false, message: 'Failed to get trends' });
+    }
+  });
+
+  app.get('/api/blog/niches/:id/news', requireAuth, async (req, res) => {
+    try {
+      const { id: nicheId } = req.params;
+      const news = await storage.getNewsArticles(nicheId);
+      res.json({ success: true, data: news });
+    } catch (error) {
+      console.error('Error getting news:', error);
+      res.status(500).json({ success: false, message: 'Failed to get news' });
+    }
+  });
+
   // Blog Posts routes
   app.get('/api/blog/posts/:nicheId', async (req, res) => {
     try {

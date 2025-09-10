@@ -68,9 +68,38 @@ interface AutomationRun {
   };
 }
 
+interface TrendingTopic {
+  id: string;
+  nicheId: string;
+  term: string;
+  source: string;
+  sourceType: string;
+  score: number;
+  metadata: any;
+  createdAt: string;
+}
+
+interface NewsArticle {
+  id: string;
+  nicheId: string;
+  title: string;
+  description?: string;
+  content?: string;
+  url: string;
+  imageUrl?: string;
+  publishedAt?: string;
+  source: string;
+  author?: string;
+  relevanceScore: number;
+  sentiment?: string;
+  language: string;
+  region: string;
+  createdAt: string;
+}
+
 export default function BlogAutomation() {
   const [selectedNiche, setSelectedNiche] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('niches');
+  const [activeTab, setActiveTab] = useState('trends');
   const [isCreateNicheOpen, setIsCreateNicheOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -94,6 +123,20 @@ export default function BlogAutomation() {
     enabled: !!selectedNiche,
   });
   const automationRuns = (runsData as any)?.data || [];
+
+  // Fetch trending topics for selected niche (Phase 1)
+  const { data: trendsData, isLoading: isLoadingTrends } = useQuery({
+    queryKey: ['/api/blog/niches', selectedNiche, 'trends'],
+    enabled: !!selectedNiche,
+  });
+  const trends: TrendingTopic[] = (trendsData as any)?.data || [];
+
+  // Fetch news articles for selected niche (Phase 1)
+  const { data: newsData, isLoading: isLoadingNews } = useQuery({
+    queryKey: ['/api/blog/niches', selectedNiche, 'news'],
+    enabled: !!selectedNiche,
+  });
+  const newsArticles: NewsArticle[] = (newsData as any)?.data || [];
 
   // Create niche mutation
   const createNicheMutation = useMutation({
@@ -146,6 +189,32 @@ export default function BlogAutomation() {
       toast({
         title: "Erro",
         description: "Falha na automação do blog",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Collect trends mutation (Phase 1)
+  const collectTrendsMutation = useMutation({
+    mutationFn: async (nicheId: string) => {
+      const response = await fetch(`/api/blog/niches/${nicheId}/collect-trends`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to collect trends');
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blog/niches', selectedNiche, 'trends'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/blog/niches', selectedNiche, 'news'] });
+      toast({
+        title: "Fase 1 Concluída",
+        description: `${data.data.trendsCollected} tendências e ${data.data.newsArticlesCollected} notícias coletadas com sucesso!`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha na coleta de tendências (Fase 1)",
         variant: "destructive",
       });
     },
@@ -375,24 +444,44 @@ export default function BlogAutomation() {
                         <Zap className="w-5 h-5 mr-2" />
                         Automação Inteligente
                       </CardTitle>
-                      <Button
-                        onClick={() => runAutomationMutation.mutate(selectedNiche)}
-                        disabled={runAutomationMutation.isPending}
-                        className="glass-button-3d bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0"
-                        data-testid="button-run-automation"
-                      >
-                        {runAutomationMutation.isPending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Executando...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2" />
-                            Executar Automação
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex space-x-3">
+                        <Button
+                          onClick={() => collectTrendsMutation.mutate(selectedNiche)}
+                          disabled={collectTrendsMutation.isPending}
+                          className="glass-button-3d bg-gradient-to-r from-orange-500 to-red-500 text-white border-0"
+                          data-testid="button-run-phase1"
+                        >
+                          {collectTrendsMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Coletando...
+                            </>
+                          ) : (
+                            <>
+                              <TrendingUp className="w-4 h-4 mr-2" />
+                              Executar Fase 1
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => runAutomationMutation.mutate(selectedNiche)}
+                          disabled={runAutomationMutation.isPending}
+                          className="glass-button-3d bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0"
+                          data-testid="button-run-automation"
+                        >
+                          {runAutomationMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Executando...
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-2" />
+                              Automação Completa
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -423,6 +512,22 @@ export default function BlogAutomation() {
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="glass-3d border-white/10 w-full">
                     <TabsTrigger 
+                      value="trends" 
+                      className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
+                      data-testid="tab-trends"
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Tendências ({trends.length})
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="news" 
+                      className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
+                      data-testid="tab-news"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      Notícias ({newsArticles.length})
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="posts" 
                       className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
                       data-testid="tab-posts"
@@ -439,6 +544,125 @@ export default function BlogAutomation() {
                       Histórico de Execuções
                     </TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="trends" className="space-y-4">
+                    {isLoadingTrends ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                      </div>
+                    ) : trends.length === 0 ? (
+                      <div className="text-center py-12">
+                        <TrendingUp className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                        <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                          Nenhuma tendência coletada ainda
+                        </h3>
+                        <p className="text-gray-400 mb-4">
+                          Execute a Fase 1 para coletar tendências atuais
+                        </p>
+                      </div>
+                    ) : (
+                      trends.map((trend: TrendingTopic) => (
+                        <Card key={trend.id} className="glass-3d-light border-white/10" data-testid={`trend-card-${trend.id}`}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg text-white">
+                                {trend.term}
+                              </CardTitle>
+                              <div className="flex items-center space-x-2">
+                                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                                  Score: {trend.score}
+                                </Badge>
+                                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                                  {trend.source}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-gray-300">Tipo:</span>
+                                <span className="text-sm bg-purple-500/20 text-purple-300 px-2 py-1 rounded-lg">
+                                  {trend.sourceType}
+                                </span>
+                              </div>
+                              <span className="text-sm text-gray-400">
+                                {formatDistanceToNow(new Date(trend.createdAt), { addSuffix: true })}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="news" className="space-y-4">
+                    {isLoadingNews ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                      </div>
+                    ) : newsArticles.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Search className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
+                        <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                          Nenhuma notícia coletada ainda
+                        </h3>
+                        <p className="text-gray-400 mb-4">
+                          Execute a Fase 1 para coletar notícias relevantes
+                        </p>
+                      </div>
+                    ) : (
+                      newsArticles.map((article: NewsArticle) => (
+                        <Card key={article.id} className="glass-3d-light border-white/10" data-testid={`news-card-${article.id}`}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg text-white line-clamp-2">
+                                <a href={article.url} target="_blank" rel="noopener noreferrer" className="hover:text-purple-300 transition-colors">
+                                  {article.title}
+                                </a>
+                              </CardTitle>
+                              <div className="flex items-center space-x-2">
+                                <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">
+                                  {article.relevanceScore}/10
+                                </Badge>
+                                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                                  {article.source}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {article.description && (
+                              <p className="text-gray-300 mb-4 line-clamp-3">{article.description}</p>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                {article.author && (
+                                  <span className="text-sm text-gray-400">Por: {article.author}</span>
+                                )}
+                                {article.sentiment && (
+                                  <span className={`text-xs px-2 py-1 rounded-lg ${
+                                    article.sentiment === 'positive' 
+                                      ? 'bg-green-500/20 text-green-300' 
+                                      : article.sentiment === 'negative'
+                                      ? 'bg-red-500/20 text-red-300'
+                                      : 'bg-gray-500/20 text-gray-300'
+                                  }`}>
+                                    {article.sentiment}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-sm text-gray-400">
+                                {article.publishedAt 
+                                  ? formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })
+                                  : formatDistanceToNow(new Date(article.createdAt), { addSuffix: true })}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    )}
+                  </TabsContent>
 
                   <TabsContent value="posts" className="space-y-4">
                     {isLoadingPosts ? (
