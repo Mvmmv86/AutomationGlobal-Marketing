@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation } from "wouter";
 import { 
   Bot, 
   Mail, 
@@ -127,14 +128,20 @@ const automationCards: AutomationCard[] = [
   }
 ];
 
-interface AutomationDashboardProps {
-  onSelectAutomation: (automationId: string) => void;
-}
-
-export default function AutomationDashboard({ onSelectAutomation }: AutomationDashboardProps) {
+export default function AutomationDashboard() {
+  const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const categories = ['all', 'Marketing', 'Vendas', 'Suporte'];
+
+  const handleSelectAutomation = (automationId: string) => {
+    if (automationId === 'content-automation') {
+      setLocation('/automation/content');
+    } else {
+      // Para outras automações, pode expandir aqui
+      console.log('Automation selected:', automationId);
+    }
+  };
   
   const filteredCards = selectedCategory === 'all' 
     ? automationCards 
@@ -264,7 +271,7 @@ export default function AutomationDashboard({ onSelectAutomation }: AutomationDa
           <div 
             key={automation.id}
             className={glassCardClass}
-            onClick={() => onSelectAutomation(automation.id)}
+            onClick={() => handleSelectAutomation(automation.id)}
             data-testid={`automation-card-${automation.id}`}
           >
             <div className="p-6 space-y-4">
