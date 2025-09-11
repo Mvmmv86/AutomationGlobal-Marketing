@@ -182,9 +182,10 @@ export class TrendsCollectorService {
   async collectAllTrends(niche: BlogNiche): Promise<TrendData[]> {
     const allTrends: TrendData[] = [];
 
-    // TEMPORÁRIO FASE 1: Apenas coletas funcionais
+    // TESTE REAL: Google Trends habilitado
     const results = await Promise.allSettled([
-      this.collectRedditTrends(niche)  // TEMPORÁRIO: Apenas Reddit por enquanto
+      this.collectGoogleTrends(niche),  // HABILITADO para teste real
+      this.collectRedditTrends(niche)
     ]);
     
     // CORREÇÃO: Loop seguro ao invés de destructuring
@@ -194,22 +195,7 @@ export class TrendsCollectorService {
       }
     }
     
-    // TEMPORÁRIO: Adicionar dados mock para demonstração da Fase 1
-    if (allTrends.length === 0) {
-      const nicheKeywords = (niche.keywords as string[]) || [];
-      nicheKeywords.forEach((keyword, index) => {
-        allTrends.push({
-          term: `${keyword} trending hoje`,
-          source: 'mock_data',
-          sourceType: 'demo',
-          score: 80 - (index * 10),
-          metadata: {
-            demo: true,
-            reason: 'Demonstração Fase 1 - APIs externas com problemas temporários'
-          }
-        });
-      });
-    }
+    // MOCK DATA REMOVIDO - Teste real apenas com APIs funcionais
 
     // Remover duplicatas e ordenar por score
     const uniqueTrends = this.deduplicateTrends(allTrends);
