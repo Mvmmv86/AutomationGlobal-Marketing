@@ -547,6 +547,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Blog Automation Test - Test trends collection
+  app.post('/api/test/blog-automation', async (req, res) => {
+    try {
+      console.log('🚀 Testing Blog Automation with Trends Collection...');
+      const { nicheId, keyword } = req.body;
+      
+      // Import services
+      const { TrendsCollectorService } = await import('./services/trendsCollector');
+      const { NewsSearchService } = await import('./services/newsSearchService');
+      
+      // Create test niche
+      const testNiche = {
+        id: nicheId || 'finance',
+        name: nicheId === 'finance' ? 'Finanças e Investimentos' : 'Tecnologia',
+        slug: nicheId || 'finance',
+        keywords: nicheId === 'finance' 
+          ? ['Criptomoeda', 'investimento', 'blockchain']
+          : ['inteligência artificial', 'programação', 'tecnologia'],
+        language: 'pt',
+        region: 'BR',
+        targetAudience: 'Investidores e entusiastas de finanças',
+        contentTypes: ['artigos', 'análises', 'tutoriais'],
+        postingFrequency: 'daily',
+        tone: 'profissional',
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      console.log('📊 Testing niche:', testNiche.name);
+      console.log('🔑 Keywords:', testNiche.keywords);
+      
+      // Collect trends
+      const trendsCollector = new TrendsCollectorService();
+      console.log('🔍 Collecting trends...');
+      const trends = await trendsCollector.collectAllTrends(testNiche);
+      
+      console.log(`✅ Found ${trends.length} trends`);
+      
+      // Search for news articles
+      const newsSearcher = new NewsSearchService();
+      const trendTerms = trends.slice(0, 5).map(t => t.term);
+      console.log('📰 Searching for news articles...');
+      const articles = await newsSearcher.searchNews(trendTerms, testNiche, 10);
+      
+      console.log(`✅ Found ${articles.length} articles`);
+      
+      res.json({
+        success: true,
+        message: 'Blog automation test completed successfully!',
+        data: {
+          niche: {
+            id: testNiche.id,
+            name: testNiche.name,
+            keywords: testNiche.keywords
+          },
+          trends: {
+            total: trends.length,
+            items: trends.slice(0, 5).map(t => ({
+              term: t.term,
+              source: t.source,
+              score: t.score
+            }))
+          },
+          articles: {
+            total: articles.length,
+            items: articles.slice(0, 3).map(a => ({
+              title: a.title,
+              url: a.url,
+              source: a.sourceName,
+              relevanceScore: a.relevanceScore
+            }))
+          }
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Blog automation test failed:', error.message);
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Simple table check (works with manually created tables)
   app.get('/api/database/simple-check', async (req, res) => {
     try {

@@ -43,30 +43,83 @@ export class NewsSearchService {
   }
 
   /**
-   * Busca notícias usando múltiplas APIs
+   * Busca notícias usando múultiplas APIs
    */
   async searchNews(trends: string[], niche: BlogNiche, limit: number = 10): Promise<NewsSearchResult[]> {
     const allArticles: NewsSearchResult[] = [];
+    
+    // Se não há trends, usar as keywords do nicho diretamente
+    let searchTerms = trends.length > 0 ? trends : (niche.keywords as string[]) || [];
+    
+    // Garantir que sempre temos algo para buscar
+    if (searchTerms.length === 0) {
+      console.warn('Nenhum termo de busca disponível, usando fallback...');
+      searchTerms = ['finanças', 'economia', 'mercado'];
+    }
 
-    // Buscar em paralelo em múltiplas fontes
+    console.log(`Buscando notícias para termos: ${searchTerms.join(', ')}`);
+
+    // Buscar em paralelo em múultiplas fontes
     const searches = await Promise.allSettled([
-      this.searchNewsAPI(trends, niche, limit),
-      this.searchNewsCatcherAPI(trends, niche, limit),
-      this.searchGDELT(trends, niche, limit)
+      this.searchNewsAPI(searchTerms, niche, limit),
+      this.searchNewsCatcherAPI(searchTerms, niche, limit),
+      this.searchGDELT(searchTerms, niche, limit)
     ]);
 
     // Adicionar resultados bem-sucedidos
-    searches.forEach(result => {
-      if (result.status === 'fulfilled') {
+    searches.forEach((result, index) => {
+      const sources = ['NewsAPI', 'NewsCatcher', 'GDELT'];
+      if (result.status === 'fulfilled' && result.value.length > 0) {
+        console.log(`${sources[index]}: ${result.value.length} artigos encontrados`);
         allArticles.push(...result.value);
+      } else if (result.status === 'rejected') {
+        console.warn(`${sources[index]} falhou:`, result.reason);
       }
     });
+    
+    // Se não encontrou nada, buscar com keywords expandidas
+    if (allArticles.length === 0) {
+      console.log('Nenhum artigo encontrado, tentando com keywords expandidas...');
+      const expandedKeywords = this.expandKeywords(niche.keywords as string[]);
+      const fallbackSearches = await Promise.allSettled([
+        this.searchGDELT(expandedKeywords.slice(0, 3), niche, limit)
+      ]);
+      
+      fallbackSearches.forEach(result => {
+        if (result.status === 'fulfilled') {
+          allArticles.push(...result.value);
+        }
+      });
+    }
+
+    console.log(`Total de artigos coletados: ${allArticles.length}`);
 
     // Remover duplicatas e ordenar por relevância
     const uniqueArticles = this.deduplicateArticles(allArticles);
     return uniqueArticles
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
       .slice(0, limit);
+  }
+  
+  /**
+   * Expande keywords com sinônimos e termos relacionados
+   */
+  private expandKeywords(keywords: string[]): string[] {
+    const expansionMap: { [key: string]: string[] } = {
+      'criptomoeda': ['bitcoin', 'crypto', 'moeda digital', 'ethereum', 'btc'],
+      'investimento': ['ações', 'bolsa', 'mercado financeiro', 'trading', 'invest'],
+      'blockchain': ['defi', 'web3', 'nft', 'smart contract']
+    };
+    
+    const expanded = new Set(keywords);
+    for (const keyword of keywords) {
+      const keyLower = keyword.toLowerCase();
+      if (expansionMap[keyLower]) {
+        expansionMap[keyLower].forEach(term => expanded.add(term));
+      }
+    }
+    
+    return Array.from(expanded);
   }
 
   /**
@@ -177,32 +230,42 @@ export class NewsSearchService {
     try {
       const articles: NewsSearchResult[] = [];
       
-      for (const trend of trends.slice(0, 2)) {
-        const response = await axios.get('https://api.gdeltproject.org/api/v2/doc/doc', {
-          params: {
-            query: trend,
-            mode: 'artlist',
-            maxrecords: Math.ceil(limit / 2),
-            format: 'json',
-            sort: 'hybridrel'
-          }
-        });
+      // Usar mais termos de busca para garantir resultados
+      const searchTerms = trends.length > 0 ? trends : (niche.keywords as string[]);
+      
+      for (const trend of searchTerms.slice(0, 3)) {
+        try {
+          console.log(`GDELT: Buscando por "${trend}"`);
+          const response = await axios.get('https://api.gdeltproject.org/api/v2/doc/doc', {
+            params: {
+              query: trend,
+              mode: 'artlist',
+              maxrecords: Math.max(10, Math.ceil(limit / 2)),
+              format: 'json',
+              sort: 'hybridrel'
+            },
+            timeout: 10000
+          });
 
-        const newsArticles = response.data.articles || [];
-        
-        for (const article of newsArticles) {
-          if (article.title && article.url) {
-            articles.push({
-              title: article.title,
-              description: article.seendate || '',
-              url: article.url,
-              sourceUrl: this.extractDomain(article.url),
-              sourceName: article.domain || 'Unknown',
-              publishedAt: this.parseDate(article.seendate),
-              language: niche.language || 'pt',
-              relevanceScore: this.calculateRelevanceScore(article.title, niche.keywords as string[])
-            });
+          const newsArticles = response.data.articles || [];
+          console.log(`GDELT: ${newsArticles.length} artigos retornados para "${trend}"`);
+          
+          for (const article of newsArticles) {
+            if (article.title && article.url) {
+              articles.push({
+                title: article.title,
+                description: article.seendate || '',
+                url: article.url,
+                sourceUrl: this.extractDomain(article.url),
+                sourceName: article.domain || 'Unknown',
+                publishedAt: this.parseDate(article.seendate),
+                language: niche.language || 'pt',
+                relevanceScore: this.calculateRelevanceScore(article.title, niche.keywords as string[])
+              });
+            }
           }
+        } catch (gdeltError) {
+          console.warn(`GDELT erro para "${trend}":`, gdeltError.message);
         }
       }
 
@@ -272,15 +335,27 @@ export class NewsSearchService {
    * Calcula score de relevância baseado nas palavras-chave do nicho
    */
   private calculateRelevanceScore(text: string, keywords: string[]): number {
-    if (!text || !keywords?.length) return 0;
+    if (!text || !keywords?.length) return 50; // Score base para garantir que artigos sejam incluídos
     
     const textLower = text.toLowerCase();
-    let score = 0;
+    let score = 50; // Score base
     
-    for (const keyword of keywords) {
+    // Expandir keywords para melhor matching
+    const expandedKeywords = this.expandKeywords(keywords);
+    
+    for (const keyword of expandedKeywords) {
       const keywordLower = keyword.toLowerCase();
-      const occurrences = (textLower.match(new RegExp(keywordLower, 'g')) || []).length;
-      score += occurrences * 10;
+      // Verificar ocorrências exatas
+      const occurrences = (textLower.match(new RegExp(keywordLower, 'gi')) || []).length;
+      score += occurrences * 5;
+      
+      // Verificar palavras parciais
+      const words = keywordLower.split(/\s+/);
+      for (const word of words) {
+        if (word.length > 3 && textLower.includes(word)) {
+          score += 2;
+        }
+      }
     }
     
     return Math.min(score, 100); // Máximo 100

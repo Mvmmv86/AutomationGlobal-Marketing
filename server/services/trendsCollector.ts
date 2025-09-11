@@ -48,7 +48,8 @@ export class TrendsCollectorService {
           const parsedResults = JSON.parse(results);
           const trendingSearches = parsedResults.default?.trendingSearchesDays?.[0]?.trendingSearches || [];
 
-          for (const trend of trendingSearches.slice(0, 10)) {
+          // Primeiro, adicionar trends relevantes
+          for (const trend of trendingSearches.slice(0, 20)) { // Aumentar para 20 para ter mais chances
             const isRelevant = this.isRelevantToNiche(trend.title?.query, niche.keywords as string[]);
             
             if (isRelevant) {
@@ -65,14 +66,57 @@ export class TrendsCollectorService {
               });
             }
           }
+          
+          // Se não encontrou trends relevantes, pegar os top trends e adicionar contexto do nicho
+          if (trends.length === 0 && trendingSearches.length > 0) {
+            console.log('Nenhum trend relevante encontrado, usando top trends com contexto do nicho...');
+            for (const trend of trendingSearches.slice(0, 3)) {
+              const keywords = (niche.keywords as string[]) || [];
+              // Combinar trend com keyword para criar contexto
+              for (const keyword of keywords.slice(0, 1)) {
+                trends.push({
+                  term: `${keyword}: ${trend.title?.query || 'Tendência do dia'}`,
+                  source: 'google_trends',
+                  sourceType: 'contextualized_trend',
+                  score: 60,
+                  metadata: {
+                    originalTrend: trend.title?.query,
+                    nicheContext: keyword,
+                    traffic: trend.formattedTraffic
+                  }
+                });
+              }
+            }
+          }
         }
       } catch (trendsError) {
         console.log('Google Trends API retornou HTML/erro, usando método alternativo...');
       }
 
-      // Se não conseguiu trends do Google, usar método alternativo
+      // Se ainda não tem trends, usar método alternativo baseado em keywords
       if (trends.length === 0) {
-        // Buscar trending topics através de agregação de notícias
+        console.log('Usando método alternativo baseado em keywords do nicho...');
+        
+        // Criar trends baseados nas keywords do nicho
+        const keywords = (niche.keywords as string[]) || [];
+        const expandedKeywords = this.expandKeywords(keywords);
+        
+        // Usar keywords expandidas como base para trends
+        for (const keyword of expandedKeywords.slice(0, 5)) {
+          trends.push({
+            term: `${keyword} - Tendências e Novidades ${new Date().getFullYear()}`,
+            source: 'keyword_based',
+            sourceType: 'niche_trends',
+            score: 75,
+            metadata: {
+              baseKeyword: keyword,
+              nicheSlug: niche.slug,
+              generated: true
+            }
+          });
+        }
+        
+        // Também buscar trending topics através de agregação de notícias
         const trendingTopics = await this.collectTrendingFromNews(niche);
         trends.push(...trendingTopics);
       }
@@ -80,7 +124,19 @@ export class TrendsCollectorService {
       return trends;
     } catch (error) {
       console.error('Erro ao coletar trends:', error);
-      return [];
+      
+      // Fallback final: retornar trends baseados em keywords
+      const keywords = (niche.keywords as string[]) || [];
+      return keywords.slice(0, 3).map(keyword => ({
+        term: `${keyword} - Análise e Tendências`,
+        source: 'fallback',
+        sourceType: 'keyword_fallback',
+        score: 50,
+        metadata: {
+          keyword,
+          error: error.message
+        }
+      }));
     }
   }
 
@@ -90,81 +146,87 @@ export class TrendsCollectorService {
   private async collectTrendingFromNews(niche: BlogNiche): Promise<TrendData[]> {
     const trends: TrendData[] = [];
     const keywords = (niche.keywords as string[]) || [];
+    const expandedKeywords = this.expandKeywords(keywords);
     
     try {
       // Usar NewsAPI para buscar notícias recentes
       if (process.env.NEWS_API_KEY) {
         
-        for (const keyword of keywords.slice(0, 3)) {
-          const response = await axios.get('https://newsapi.org/v2/everything', {
-            params: {
-              q: keyword,
-              language: niche.language || 'pt',
-              sortBy: 'popularity', // Ordenar por popularidade
-              pageSize: 5,
-              from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Últimas 24h
-              apiKey: process.env.NEWS_API_KEY
-            }
-          });
-
-          if (response.data?.articles?.length > 0) {
-            // Extrair termos mais mencionados nos títulos
-            const titles = response.data.articles.map((a: any) => a.title);
-            const commonTerms = this.extractCommonTerms(titles, keyword);
-            
-            commonTerms.forEach((term, index) => {
-              trends.push({
-                term: term,
-                source: 'news_analysis',
-                sourceType: 'trending_news',
-                score: 90 - (index * 10), // Score baseado em frequência
-                metadata: {
-                  articleCount: response.data.totalResults || 0,
-                  source: 'NewsAPI',
-                  keyword: keyword
-                }
-              });
-            });
-          }
-        }
-      }
-
-      // Usar GDELT como backup gratuito
-      if (trends.length === 0) {
-        
-        for (const keyword of keywords.slice(0, 2)) {
+        // Usar keywords expandidas para ter mais resultados
+        for (const keyword of expandedKeywords.slice(0, 5)) {
           try {
-            const response = await axios.get('https://api.gdeltproject.org/api/v2/doc/doc', {
+            const response = await axios.get('https://newsapi.org/v2/everything', {
               params: {
-                query: keyword,
-                mode: 'artlist',
-                maxrecords: 10,
-                format: 'json',
-                sort: 'hybridrel'
+                q: keyword,
+                language: niche.language || 'pt',
+                sortBy: 'popularity', // Ordenar por popularidade
+                pageSize: 5,
+                from: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString().split('T')[0], // Últimas 72h para ter mais resultados
+                apiKey: process.env.NEWS_API_KEY
               }
             });
 
             if (response.data?.articles?.length > 0) {
-              // Analisar títulos para encontrar trending topics
-              const titles = response.data.articles.map((a: any) => a.title || '');
+              // Extrair termos mais mencionados nos títulos
+              const titles = response.data.articles.map((a: any) => a.title);
               const commonTerms = this.extractCommonTerms(titles, keyword);
               
               commonTerms.forEach((term, index) => {
                 trends.push({
                   term: term,
-                  source: 'gdelt',
-                  sourceType: 'news_trends',
-                  score: 80 - (index * 10),
+                  source: 'news_analysis',
+                  sourceType: 'trending_news',
+                  score: 90 - (index * 10), // Score baseado em frequência
                   metadata: {
-                    articleCount: response.data.articles.length,
-                    source: 'GDELT Project'
+                    articleCount: response.data.totalResults || 0,
+                    source: 'NewsAPI',
+                    keyword: keyword
                   }
                 });
               });
             }
-          } catch (gdeltError) {
-            console.log(`GDELT erro para ${keyword}:`, gdeltError.message);
+          } catch (newsError) {
+            console.log(`NewsAPI erro para ${keyword}:`, newsError.message);
           }
+        }
+      }
+
+      // Sempre usar GDELT para ter mais resultados (não apenas como backup)
+      console.log('Buscando artigos no GDELT para complementar resultados...');
+      
+      // Usar keywords expandidas para GDELT também
+      for (const keyword of expandedKeywords.slice(0, 3)) {
+        try {
+          const response = await axios.get('https://api.gdeltproject.org/api/v2/doc/doc', {
+            params: {
+              query: keyword,
+              mode: 'artlist',
+              maxrecords: 10,
+              format: 'json',
+              sort: 'hybridrel'
+            }
+          });
+
+          if (response.data?.articles?.length > 0) {
+            // Analisar títulos para encontrar trending topics
+            const titles = response.data.articles.map((a: any) => a.title || '');
+            const commonTerms = this.extractCommonTerms(titles, keyword);
+            
+            commonTerms.forEach((term, index) => {
+              trends.push({
+                term: term,
+                source: 'gdelt',
+                sourceType: 'news_trends',
+                score: 80 - (index * 10),
+                metadata: {
+                  articleCount: response.data.articles.length,
+                  source: 'GDELT Project'
+                }
+              });
+            });
+          }
+        } catch (gdeltError) {
+          console.log(`GDELT erro para ${keyword}:`, gdeltError.message);
         }
       }
 
@@ -353,10 +415,79 @@ export class TrendsCollectorService {
     if (!term || !keywords?.length) return false;
     
     const termLower = term.toLowerCase();
-    return keywords.some(keyword => 
-      termLower.includes(keyword.toLowerCase()) || 
-      keyword.toLowerCase().includes(termLower)
-    );
+    
+    // Expandir keywords com sinônimos e termos relacionados
+    const expandedKeywords = this.expandKeywords(keywords);
+    
+    // Verificar correspondência direta ou parcial
+    for (const keyword of expandedKeywords) {
+      const keywordLower = keyword.toLowerCase();
+      
+      // Match direto
+      if (termLower.includes(keywordLower) || keywordLower.includes(termLower)) {
+        return true;
+      }
+      
+      // Match parcial (palavras individuais)
+      const termWords = termLower.split(/\s+/);
+      const keywordWords = keywordLower.split(/\s+/);
+      
+      // Se alguma palavra do keyword aparece no termo
+      const hasMatch = keywordWords.some(kw => 
+        termWords.some(tw => tw.includes(kw) || kw.includes(tw))
+      );
+      
+      if (hasMatch) return true;
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Expande keywords com sinônimos e termos relacionados
+   */
+  private expandKeywords(keywords: string[]): string[] {
+    const expansionMap: { [key: string]: string[] } = {
+      // Finanças e Cripto
+      'criptomoeda': ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'moeda digital', 'altcoin', 'defi', 'nft', 'token'],
+      'investimento': ['invest', 'ações', 'bolsa', 'mercado', 'renda', 'trading', 'trader', 'ativos', 'fundos', 'dividendos'],
+      'blockchain': ['block chain', 'ledger', 'descentralizado', 'web3', 'smart contract', 'contrato inteligente'],
+      
+      // Tecnologia
+      'inteligência artificial': ['ia', 'ai', 'machine learning', 'ml', 'deep learning', 'neural', 'gpt', 'llm'],
+      'programação': ['código', 'coding', 'developer', 'software', 'app', 'javascript', 'python', 'react'],
+      'tecnologia': ['tech', 'inovação', 'digital', 'startup', 'gadget', 'dispositivo'],
+      
+      // Marketing
+      'marketing digital': ['marketing', 'social media', 'seo', 'ads', 'publicidade', 'campanha', 'influencer'],
+      'vendas': ['venda', 'comercial', 'e-commerce', 'conversão', 'lead', 'funil'],
+      
+      // Games
+      'jogos': ['game', 'gaming', 'videogame', 'esports', 'gamer', 'console', 'pc'],
+      'playstation': ['ps5', 'ps4', 'sony', 'console'],
+      'xbox': ['microsoft', 'gamepass', 'series x', 'series s'],
+      'nintendo': ['switch', 'mario', 'zelda', 'pokemon']
+    };
+    
+    const expanded = new Set(keywords);
+    
+    for (const keyword of keywords) {
+      const keyLower = keyword.toLowerCase();
+      
+      // Adicionar expansões diretas
+      if (expansionMap[keyLower]) {
+        expansionMap[keyLower].forEach(term => expanded.add(term));
+      }
+      
+      // Verificar se keyword está em alguma expansão
+      for (const [key, values] of Object.entries(expansionMap)) {
+        if (keyLower.includes(key) || key.includes(keyLower)) {
+          values.forEach(term => expanded.add(term));
+        }
+      }
+    }
+    
+    return Array.from(expanded);
   }
 
   /**

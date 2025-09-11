@@ -25,7 +25,8 @@ import {
   Settings,
   Sparkles,
   BarChart3,
-  Zap
+  Zap,
+  Check
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -398,13 +399,22 @@ export default function BlogAutomation() {
                     <div
                       key={niche.id}
                       className={`glass-3d-light rounded-xl p-4 cursor-pointer transition-all duration-300 hover:scale-105 ${
-                        selectedNiche === niche.id ? 'ring-2 ring-purple-400' : ''
+                        selectedNiche === niche.id 
+                          ? 'ring-2 ring-purple-400 bg-purple-500/20 shadow-lg shadow-purple-500/30 border border-purple-400/50' 
+                          : 'hover:bg-white/5'
                       }`}
                       onClick={() => setSelectedNiche(niche.id)}
                       data-testid={`niche-card-${niche.id}`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-white">{niche.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-white">{niche.name}</h3>
+                          {selectedNiche === niche.id && (
+                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
                         <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
                           {niche.keywords.length} keywords
                         </Badge>
