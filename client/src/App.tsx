@@ -28,6 +28,7 @@ import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import CampaignsDashboard from "@/pages/CampaignsDashboard";
 import BlogAutomation from "@/pages/BlogAutomation";
+import BlogAutomationEnhanced from "@/pages/BlogAutomationEnhanced";
 import AutomationDashboard from "@/pages/AutomationDashboard";
 import NotFound from "@/pages/not-found";
 
@@ -63,9 +64,11 @@ function Router() {
       <Route path="/automation-dashboard" component={AutomationDashboard} />
       
       {/* Blog Automation - Intelligent content generation system */}
-      <Route path="/automation/content" component={BlogAutomation} />
-      <Route path="/blog" component={BlogAutomation} />
-      <Route path="/blog-automation" component={BlogAutomation} />
+      <Route path="/automation/content" component={BlogAutomationEnhanced} />
+      <Route path="/blog" component={BlogAutomationEnhanced} />
+      <Route path="/blog-automation" component={BlogAutomationEnhanced} />
+      <Route path="/blog-enhanced" component={BlogAutomationEnhanced} />
+      <Route path="/blog-original" component={BlogAutomation} />
       
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />

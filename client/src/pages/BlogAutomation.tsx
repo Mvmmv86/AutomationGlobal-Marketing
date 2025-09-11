@@ -26,8 +26,16 @@ import {
   Sparkles,
   BarChart3,
   Zap,
-  Check
+  Check,
+  ExternalLink,
+  Youtube,
+  Hash,
+  Newspaper,
+  MessageSquare,
+  Activity,
+  Info
 } from 'lucide-react';
+import { SiReddit, SiGooglenews } from 'react-icons/si';
 import { formatDistanceToNow } from 'date-fns';
 
 interface BlogNiche {
@@ -216,6 +224,31 @@ export default function BlogAutomation() {
       toast({
         title: "Erro",
         description: "Falha na coleta de tendências (Fase 1)",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Test mutation to add sample data
+  const addTestTrendsMutation = useMutation({
+    mutationFn: async (nicheId: string) => {
+      const response = await fetch(`/api/blog/niches/${nicheId}/test-trends`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to add test trends');
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blog/niches', selectedNiche, 'trends'] });
+      toast({
+        title: "Dados de Teste Adicionados",
+        description: `${data.data.trendsAdded} tendências de exemplo foram adicionadas!`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao adicionar dados de teste",
         variant: "destructive",
       });
     },
@@ -455,6 +488,25 @@ export default function BlogAutomation() {
                         Automação Inteligente
                       </CardTitle>
                       <div className="flex space-x-3">
+                        {/* Temporary test button */}
+                        <Button
+                          onClick={() => addTestTrendsMutation.mutate(selectedNiche)}
+                          disabled={addTestTrendsMutation.isPending}
+                          className="glass-button-3d bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                          data-testid="button-test-trends"
+                        >
+                          {addTestTrendsMutation.isPending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Adicionando...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              Adicionar Dados Teste
+                            </>
+                          )}
+                        </Button>
                         <Button
                           onClick={() => collectTrendsMutation.mutate(selectedNiche)}
                           disabled={collectTrendsMutation.isPending}
@@ -571,38 +623,267 @@ export default function BlogAutomation() {
                         </p>
                       </div>
                     ) : (
-                      trends.map((trend: TrendingTopic) => (
-                        <Card key={trend.id} className="glass-3d-light border-white/10" data-testid={`trend-card-${trend.id}`}>
-                          <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg text-white">
-                                {trend.term}
-                              </CardTitle>
-                              <div className="flex items-center space-x-2">
-                                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                                  Score: {trend.score}
-                                </Badge>
-                                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                                  {trend.source}
-                                </Badge>
+                      <>
+                        {/* Resumo das Tendências */}
+                        <div className="glass-3d rounded-2xl p-6 border border-white/10 mb-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xl font-bold text-purple-400">Análise de Tendências</h3>
+                            <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0">
+                              {trends.length} tendências identificadas
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-4 gap-4">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-green-400">
+                                {trends.filter(t => t.source === 'google_trends').length}
                               </div>
+                              <div className="text-sm text-gray-300">Google Trends</div>
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm text-gray-300">Tipo:</span>
-                                <span className="text-sm bg-purple-500/20 text-purple-300 px-2 py-1 rounded-lg">
-                                  {trend.sourceType}
-                                </span>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-red-400">
+                                {trends.filter(t => t.source === 'youtube').length}
                               </div>
-                              <span className="text-sm text-gray-400">
-                                {formatDistanceToNow(new Date(trend.createdAt), { addSuffix: true })}
-                              </span>
+                              <div className="text-sm text-gray-300">YouTube</div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-orange-400">
+                                {trends.filter(t => t.source === 'reddit').length}
+                              </div>
+                              <div className="text-sm text-gray-300">Reddit</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-blue-400">
+                                {trends.filter(t => t.source === 'gdelt' || t.source === 'keyword_based').length}
+                              </div>
+                              <div className="text-sm text-gray-300">Outras Fontes</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Lista de Tendências Ordenadas */}
+                        {[...trends]
+                          .sort((a, b) => {
+                            // Ordenar por prioridade: Google Trends primeiro
+                            const priorityOrder = ['google_trends', 'youtube', 'reddit', 'gdelt', 'keyword_based'];
+                            const aPriority = priorityOrder.indexOf(a.source) !== -1 ? priorityOrder.indexOf(a.source) : 999;
+                            const bPriority = priorityOrder.indexOf(b.source) !== -1 ? priorityOrder.indexOf(b.source) : 999;
+                            if (aPriority !== bPriority) return aPriority - bPriority;
+                            // Se mesma fonte, ordenar por score
+                            return b.score - a.score;
+                          })
+                          .map((trend: TrendingTopic) => {
+                            // Determinar ícone e cor baseado na fonte
+                            const getSourceIcon = () => {
+                              switch(trend.source) {
+                                case 'google_trends':
+                                  return <SiGooglenews className="w-5 h-5 text-green-400" />;
+                                case 'youtube':
+                                  return <Youtube className="w-5 h-5 text-red-400" />;
+                                case 'reddit':
+                                  return <SiReddit className="w-5 h-5 text-orange-400" />;
+                                case 'gdelt':
+                                  return <Newspaper className="w-5 h-5 text-blue-400" />;
+                                case 'keyword_based':
+                                  return <Hash className="w-5 h-5 text-purple-400" />;
+                                default:
+                                  return <Activity className="w-5 h-5 text-gray-400" />;
+                              }
+                            };
+
+                            const getSourceColor = () => {
+                              switch(trend.source) {
+                                case 'google_trends': return 'from-green-500/20 to-green-400/10 border-green-500/30';
+                                case 'youtube': return 'from-red-500/20 to-red-400/10 border-red-500/30';
+                                case 'reddit': return 'from-orange-500/20 to-orange-400/10 border-orange-500/30';
+                                case 'gdelt': return 'from-blue-500/20 to-blue-400/10 border-blue-500/30';
+                                case 'keyword_based': return 'from-purple-500/20 to-purple-400/10 border-purple-500/30';
+                                default: return 'from-gray-500/20 to-gray-400/10 border-gray-500/30';
+                              }
+                            };
+
+                            // Extrair links e informações do metadata
+                            const extractLinks = () => {
+                              const links = [];
+                              if (trend.metadata?.articles?.length > 0) {
+                                links.push(...trend.metadata.articles.slice(0, 2).map((article: any) => ({
+                                  title: article.title || 'Artigo relacionado',
+                                  url: article.url
+                                })));
+                              }
+                              if (trend.metadata?.url) {
+                                links.push({ title: 'Fonte original', url: trend.metadata.url });
+                              }
+                              if (trend.metadata?.relatedQueries?.length > 0) {
+                                // Adicionar apenas pesquisas relacionadas como texto, não links
+                              }
+                              return links;
+                            };
+
+                            const links = extractLinks();
+                            
+                            // Gerar links de pesquisa diretos
+                            const searchTerm = encodeURIComponent(trend.term);
+                            const googleSearchUrl = `https://www.google.com/search?q=${searchTerm}`;
+                            const googleTrendsUrl = `https://trends.google.com/trends/explore?q=${searchTerm}&geo=BR`;
+                            const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${searchTerm}`;
+
+                            return (
+                              <Card 
+                                key={trend.id} 
+                                className={`glass-3d-light border-white/10 bg-gradient-to-r ${getSourceColor()} hover:scale-[1.02] transition-all duration-300`} 
+                                data-testid={`trend-card-${trend.id}`}
+                              >
+                                <CardHeader>
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 glass-3d rounded-xl flex items-center justify-center">
+                                          {getSourceIcon()}
+                                        </div>
+                                        <CardTitle className="text-lg text-white flex-1">
+                                          {trend.term}
+                                        </CardTitle>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                      <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
+                                        Score: {trend.score}
+                                      </Badge>
+                                      <Badge className="glass-3d-light border-white/20 text-gray-200">
+                                        {trend.source.replace('_', ' ').toUpperCase()}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                  {/* Detalhes da Coleta */}
+                                  <div className="flex flex-wrap gap-2">
+                                    <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-1">
+                                      <Info className="w-4 h-4 text-blue-400" />
+                                      <span className="text-sm text-gray-200">Método:</span>
+                                      <span className="text-sm text-blue-300">
+                                        {trend.sourceType.replace('_', ' ')}
+                                      </span>
+                                    </div>
+                                    {trend.metadata?.traffic && (
+                                      <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-1">
+                                        <Activity className="w-4 h-4 text-green-400" />
+                                        <span className="text-sm text-gray-200">Tráfego:</span>
+                                        <span className="text-sm text-green-300">{trend.metadata.traffic}</span>
+                                      </div>
+                                    )}
+                                    {trend.metadata?.nicheContext && (
+                                      <div className="flex items-center gap-2 bg-black/20 rounded-lg px-3 py-1">
+                                        <Target className="w-4 h-4 text-purple-400" />
+                                        <span className="text-sm text-gray-200">Contexto:</span>
+                                        <span className="text-sm text-purple-300">{trend.metadata.nicheContext}</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Links de Pesquisa Diretos */}
+                                  <div className="space-y-2">
+                                    <div className="text-sm text-gray-300 font-medium mb-2">🔍 Pesquisar Tendência:</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                      {/* Google Search */}
+                                      <a
+                                        href={googleSearchUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-white hover:text-green-200 transition-all bg-gradient-to-r from-green-500/20 to-green-400/10 border border-green-500/30 rounded-lg px-3 py-2 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20"
+                                        data-testid={`google-search-${trend.id}`}
+                                      >
+                                        <SiGooglenews className="w-4 h-4 flex-shrink-0" />
+                                        <span className="font-medium">Google Search</span>
+                                        <ExternalLink className="w-3 h-3 ml-auto" />
+                                      </a>
+                                      
+                                      {/* Google Trends */}
+                                      <a
+                                        href={googleTrendsUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-white hover:text-blue-200 transition-all bg-gradient-to-r from-blue-500/20 to-blue-400/10 border border-blue-500/30 rounded-lg px-3 py-2 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
+                                        data-testid={`google-trends-${trend.id}`}
+                                      >
+                                        <TrendingUp className="w-4 h-4 flex-shrink-0" />
+                                        <span className="font-medium">Google Trends</span>
+                                        <ExternalLink className="w-3 h-3 ml-auto" />
+                                      </a>
+                                      
+                                      {/* YouTube Search (se relevante) */}
+                                      <a
+                                        href={youtubeSearchUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-white hover:text-red-200 transition-all bg-gradient-to-r from-red-500/20 to-red-400/10 border border-red-500/30 rounded-lg px-3 py-2 hover:scale-105 hover:shadow-lg hover:shadow-red-500/20"
+                                        data-testid={`youtube-search-${trend.id}`}
+                                      >
+                                        <Youtube className="w-4 h-4 flex-shrink-0" />
+                                        <span className="font-medium">YouTube</span>
+                                        <ExternalLink className="w-3 h-3 ml-auto" />
+                                      </a>
+                                    </div>
+                                  </div>
+
+                                  {/* Links de Referência (se existirem) */}
+                                  {links.length > 0 && (
+                                    <div className="space-y-2">
+                                      <div className="text-sm text-gray-300 font-medium">📰 Artigos Relacionados:</div>
+                                      <div className="space-y-1">
+                                        {links.map((link, idx) => (
+                                          <a
+                                            key={idx}
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-sm text-blue-300 hover:text-blue-200 transition-colors bg-black/20 rounded-lg px-3 py-2 hover:bg-black/30"
+                                          >
+                                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                            <span className="line-clamp-1">{link.title}</span>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Pesquisas Relacionadas */}
+                                  {trend.metadata?.relatedQueries?.length > 0 && (
+                                    <div className="space-y-2">
+                                      <div className="text-sm text-gray-300 font-medium">Pesquisas Relacionadas:</div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {trend.metadata.relatedQueries.slice(0, 5).map((query: any, idx: number) => (
+                                          <span
+                                            key={idx}
+                                            className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-lg"
+                                          >
+                                            {query.query || query}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Timestamp */}
+                                  <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-4 h-4 text-gray-400" />
+                                      <span className="text-sm text-gray-400">
+                                        {formatDistanceToNow(new Date(trend.createdAt), { addSuffix: true })}
+                                      </span>
+                                    </div>
+                                    {trend.metadata?.generated && (
+                                      <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 text-xs">
+                                        Auto-gerado
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })
+                        }
+                      </>
                     )}
                   </TabsContent>
 
