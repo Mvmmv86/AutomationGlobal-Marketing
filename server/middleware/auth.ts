@@ -9,13 +9,15 @@ import { supabaseREST } from '../database/supabase-rest.js';
 import { cacheManager } from '../cache/cache-manager.js';
 import { AppError } from './validation.js';
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  organizationId?: string;
+}
+
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    organizationId?: string;
-  };
+  user?: AuthUser;
   organization?: {
     id: string;
     name: string;

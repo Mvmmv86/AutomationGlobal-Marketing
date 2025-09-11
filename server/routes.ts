@@ -3340,7 +3340,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   });
 
   // Phase 1: Trends Collection routes
-  app.post('/api/blog/niches/:id/collect-trends', requireAuth, async (req, res) => {
+  app.post('/api/blog/niches/:id/collect-trends', async (req, res) => {
     try {
       const { id: nicheId } = req.params;
       const niche = await storage.getBlogNiche(nicheId);
