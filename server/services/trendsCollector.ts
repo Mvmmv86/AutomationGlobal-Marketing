@@ -182,22 +182,33 @@ export class TrendsCollectorService {
   async collectAllTrends(niche: BlogNiche): Promise<TrendData[]> {
     const allTrends: TrendData[] = [];
 
-    // Executar coletas em paralelo
-    const [googleTrends, youtubeTrends, redditTrends] = await Promise.allSettled([
-      this.collectGoogleTrends(niche),
-      this.collectYouTubeTrends(niche),
-      this.collectRedditTrends(niche)
+    // TEMPORÁRIO FASE 1: Apenas coletas funcionais
+    const results = await Promise.allSettled([
+      this.collectRedditTrends(niche)  // TEMPORÁRIO: Apenas Reddit por enquanto
     ]);
-
-    // Adicionar resultados bem-sucedidos
-    if (googleTrends.status === 'fulfilled') {
-      allTrends.push(...googleTrends.value);
+    
+    // CORREÇÃO: Loop seguro ao invés de destructuring
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        allTrends.push(...result.value);
+      }
     }
-    if (youtubeTrends.status === 'fulfilled') {
-      allTrends.push(...youtubeTrends.value);
-    }
-    if (redditTrends.status === 'fulfilled') {
-      allTrends.push(...redditTrends.value);
+    
+    // TEMPORÁRIO: Adicionar dados mock para demonstração da Fase 1
+    if (allTrends.length === 0) {
+      const nicheKeywords = (niche.keywords as string[]) || [];
+      nicheKeywords.forEach((keyword, index) => {
+        allTrends.push({
+          term: `${keyword} trending hoje`,
+          source: 'mock_data',
+          sourceType: 'demo',
+          score: 80 - (index * 10),
+          metadata: {
+            demo: true,
+            reason: 'Demonstração Fase 1 - APIs externas com problemas temporários'
+          }
+        });
+      });
     }
 
     // Remover duplicatas e ordenar por score
