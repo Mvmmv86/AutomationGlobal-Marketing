@@ -3376,21 +3376,30 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         const articles = await newsSearchService.searchNews(trendTerms, niche, 15);
         
         if (articles.length > 0) {
-          const articlesData = articles.map(article => ({
-            nicheId,
-            title: article.title,
-            description: article.description,
-            content: article.content,
-            url: article.url,
-            imageUrl: article.imageUrl,
-            publishedAt: article.publishedAt,
-            source: article.source,
-            author: article.author,
-            relevanceScore: article.relevanceScore,
-            sentiment: article.sentiment,
-            language: article.language,
-            region: article.region
-          }));
+          const articlesData = articles.map(article => {
+            // Validate publishedAt date
+            let publishedAt = article.publishedAt;
+            if (!publishedAt || isNaN(new Date(publishedAt).getTime())) {
+              publishedAt = new Date();
+            }
+            
+            return {
+              nicheId,
+              title: article.title,
+              description: article.description,
+              content: article.content,
+              url: article.url,
+              imageUrl: article.imageUrl,
+              publishedAt: publishedAt,
+              sourceName: article.sourceName || article.source,
+              sourceUrl: article.sourceUrl,
+              author: article.author,
+              relevanceScore: article.relevanceScore || 50,
+              sentimentScore: article.sentiment,
+              language: article.language || 'pt',
+              region: article.region
+            };
+          });
           await storage.bulkCreateNewsArticles(articlesData);
         }
       }
@@ -3496,20 +3505,28 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         const trendTerms = trends.slice(0, 5).map(t => t.term);
         const articles = await newsSearchService.searchNews(trendTerms, niche, 15);
         
-        const articlesData = articles.map(article => ({
-          nicheId,
-          title: article.title,
-          description: article.description,
-          content: article.content || '',
-          url: article.url,
-          sourceUrl: article.sourceUrl,
-          sourceName: article.sourceName,
-          author: article.author,
-          imageUrl: article.imageUrl,
-          publishedAt: article.publishedAt,
-          language: article.language,
-          relevanceScore: article.relevanceScore
-        }));
+        const articlesData = articles.map(article => {
+          // Validate publishedAt date
+          let publishedAt = article.publishedAt;
+          if (!publishedAt || isNaN(new Date(publishedAt).getTime())) {
+            publishedAt = new Date();
+          }
+          
+          return {
+            nicheId,
+            title: article.title,
+            description: article.description,
+            content: article.content || '',
+            url: article.url,
+            sourceUrl: article.sourceUrl,
+            sourceName: article.sourceName,
+            author: article.author,
+            imageUrl: article.imageUrl,
+            publishedAt: publishedAt,
+            language: article.language || 'pt',
+            relevanceScore: article.relevanceScore || 50
+          };
+        });
         await storage.bulkCreateNewsArticles(articlesData);
 
         // Phase 3: Generate content

@@ -21,6 +21,28 @@ export class NewsSearchService {
   private readonly newsCatcherApiKey = process.env.NEWSCATCHER_API_KEY;
 
   /**
+   * Helper function to safely parse dates with fallback to current date
+   */
+  private parseDate(dateValue: any): Date {
+    if (!dateValue) {
+      return new Date();
+    }
+    
+    try {
+      const date = new Date(dateValue);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date value: ${dateValue}, using current date`);
+        return new Date();
+      }
+      return date;
+    } catch (error) {
+      console.warn(`Error parsing date: ${dateValue}, using current date`);
+      return new Date();
+    }
+  }
+
+  /**
    * Busca notícias usando múltiplas APIs
    */
   async searchNews(trends: string[], niche: BlogNiche, limit: number = 10): Promise<NewsSearchResult[]> {
@@ -83,7 +105,7 @@ export class NewsSearchService {
               sourceName: article.source?.name || 'Unknown',
               author: article.author,
               imageUrl: article.urlToImage,
-              publishedAt: new Date(article.publishedAt),
+              publishedAt: this.parseDate(article.publishedAt),
               language: niche.language || 'pt',
               relevanceScore: this.calculateRelevanceScore(article.title + ' ' + article.description, niche.keywords as string[])
             });
@@ -134,7 +156,7 @@ export class NewsSearchService {
             sourceName: article.clean_url || 'Unknown',
             author: article.author,
             imageUrl: article.media,
-            publishedAt: new Date(article.published_date),
+            publishedAt: this.parseDate(article.published_date),
             language: niche.language || 'pt',
             relevanceScore: this.calculateRelevanceScore(article.title + ' ' + article.excerpt, niche.keywords as string[])
           });
@@ -176,7 +198,7 @@ export class NewsSearchService {
               url: article.url,
               sourceUrl: this.extractDomain(article.url),
               sourceName: article.domain || 'Unknown',
-              publishedAt: new Date(article.seendate),
+              publishedAt: this.parseDate(article.seendate),
               language: niche.language || 'pt',
               relevanceScore: this.calculateRelevanceScore(article.title, niche.keywords as string[])
             });

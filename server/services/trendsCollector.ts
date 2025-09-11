@@ -30,45 +30,189 @@ export class TrendsCollectorService {
   }
 
   /**
-   * Coleta trends do Google Trends
+   * Coleta trends do Google Trends - Com fallback para busca alternativa
    */
   async collectGoogleTrends(niche: BlogNiche): Promise<TrendData[]> {
     try {
       const trends: TrendData[] = [];
       
-      // Google Trends by region
-      const results = await googleTrends.dailyTrends({
-        trendDate: new Date(),
-        geo: niche.region || 'BR',
-      });
+      // Tentar Google Trends primeiro
+      try {
+        const results = await googleTrends.dailyTrends({
+          trendDate: new Date(),
+          geo: niche.region || 'BR',
+        });
 
-      const parsedResults = JSON.parse(results);
-      const trendingSearches = parsedResults.default?.trendingSearchesDays?.[0]?.trendingSearches || [];
+        // Verificar se é JSON válido
+        if (results && results.startsWith('{')) {
+          const parsedResults = JSON.parse(results);
+          const trendingSearches = parsedResults.default?.trendingSearchesDays?.[0]?.trendingSearches || [];
 
-      for (const trend of trendingSearches.slice(0, 10)) {
-        // Filtrar por keywords do nicho
-        const isRelevant = this.isRelevantToNiche(trend.title?.query, niche.keywords as string[]);
-        
-        if (isRelevant) {
-          trends.push({
-            term: trend.title?.query || '',
-            source: 'google_trends',
-            sourceType: 'daily_trends',
-            score: Math.floor(trend.formattedTraffic ? parseInt(trend.formattedTraffic.replace(/\D/g, '')) / 1000 : 50),
-            metadata: {
-              traffic: trend.formattedTraffic,
-              relatedQueries: trend.relatedQueries || [],
-              articles: trend.articles || []
+          for (const trend of trendingSearches.slice(0, 10)) {
+            const isRelevant = this.isRelevantToNiche(trend.title?.query, niche.keywords as string[]);
+            
+            if (isRelevant) {
+              trends.push({
+                term: trend.title?.query || '',
+                source: 'google_trends',
+                sourceType: 'daily_trends',
+                score: Math.floor(trend.formattedTraffic ? parseInt(trend.formattedTraffic.replace(/\D/g, '')) / 1000 : 50),
+                metadata: {
+                  traffic: trend.formattedTraffic,
+                  relatedQueries: trend.relatedQueries || [],
+                  articles: trend.articles || []
+                }
+              });
             }
-          });
+          }
         }
+      } catch (trendsError) {
+        console.log('Google Trends API retornou HTML/erro, usando método alternativo...');
+      }
+
+      // Se não conseguiu trends do Google, usar método alternativo
+      if (trends.length === 0) {
+        // Buscar trending topics através de agregação de notícias
+        const trendingTopics = await this.collectTrendingFromNews(niche);
+        trends.push(...trendingTopics);
       }
 
       return trends;
     } catch (error) {
-      console.error('Erro ao coletar Google Trends:', error);
+      console.error('Erro ao coletar trends:', error);
       return [];
     }
+  }
+
+  /**
+   * Método alternativo: Coleta trending topics através de análise de notícias
+   */
+  private async collectTrendingFromNews(niche: BlogNiche): Promise<TrendData[]> {
+    const trends: TrendData[] = [];
+    const keywords = (niche.keywords as string[]) || [];
+    
+    try {
+      // Usar NewsAPI para buscar notícias recentes
+      if (process.env.NEWS_API_KEY) {
+        
+        for (const keyword of keywords.slice(0, 3)) {
+          const response = await axios.get('https://newsapi.org/v2/everything', {
+            params: {
+              q: keyword,
+              language: niche.language || 'pt',
+              sortBy: 'popularity', // Ordenar por popularidade
+              pageSize: 5,
+              from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Últimas 24h
+              apiKey: process.env.NEWS_API_KEY
+            }
+          });
+
+          if (response.data?.articles?.length > 0) {
+            // Extrair termos mais mencionados nos títulos
+            const titles = response.data.articles.map((a: any) => a.title);
+            const commonTerms = this.extractCommonTerms(titles, keyword);
+            
+            commonTerms.forEach((term, index) => {
+              trends.push({
+                term: term,
+                source: 'news_analysis',
+                sourceType: 'trending_news',
+                score: 90 - (index * 10), // Score baseado em frequência
+                metadata: {
+                  articleCount: response.data.totalResults || 0,
+                  source: 'NewsAPI',
+                  keyword: keyword
+                }
+              });
+            });
+          }
+        }
+      }
+
+      // Usar GDELT como backup gratuito
+      if (trends.length === 0) {
+        
+        for (const keyword of keywords.slice(0, 2)) {
+          try {
+            const response = await axios.get('https://api.gdeltproject.org/api/v2/doc/doc', {
+              params: {
+                query: keyword,
+                mode: 'artlist',
+                maxrecords: 10,
+                format: 'json',
+                sort: 'hybridrel'
+              }
+            });
+
+            if (response.data?.articles?.length > 0) {
+              // Analisar títulos para encontrar trending topics
+              const titles = response.data.articles.map((a: any) => a.title || '');
+              const commonTerms = this.extractCommonTerms(titles, keyword);
+              
+              commonTerms.forEach((term, index) => {
+                trends.push({
+                  term: term,
+                  source: 'gdelt',
+                  sourceType: 'news_trends',
+                  score: 80 - (index * 10),
+                  metadata: {
+                    articleCount: response.data.articles.length,
+                    source: 'GDELT Project'
+                  }
+                });
+              });
+            }
+          } catch (gdeltError) {
+            console.log(`GDELT erro para ${keyword}:`, gdeltError.message);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Erro ao coletar trending de notícias:', error);
+    }
+
+    return trends;
+  }
+
+  /**
+   * Extrai termos comuns de uma lista de títulos
+   */
+  private extractCommonTerms(titles: string[], baseKeyword: string): string[] {
+    const termFrequency: { [key: string]: number } = {};
+    
+    // Palavras para ignorar
+    const stopWords = ['a', 'o', 'de', 'da', 'do', 'em', 'com', 'para', 'por', 'que', 'e', 'é', 'um', 'uma', 'the', 'and', 'or', 'for', 'with', 'in', 'on', 'at'];
+    
+    titles.forEach(title => {
+      // Limpar e dividir em palavras
+      const words = title.toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 3 && !stopWords.includes(word));
+      
+      // Contar frequência
+      words.forEach(word => {
+        if (word !== baseKeyword.toLowerCase()) {
+          termFrequency[word] = (termFrequency[word] || 0) + 1;
+        }
+      });
+      
+      // Também contar bigramas (duas palavras juntas)
+      for (let i = 0; i < words.length - 1; i++) {
+        const bigram = `${words[i]} ${words[i + 1]}`;
+        if (!bigram.includes(baseKeyword.toLowerCase())) {
+          termFrequency[bigram] = (termFrequency[bigram] || 0) + 1;
+        }
+      }
+    });
+    
+    // Ordenar por frequência e retornar top 5
+    return Object.entries(termFrequency)
+      .filter(([_, count]) => count > 1) // Apenas termos que aparecem mais de uma vez
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([term]) => `${baseKeyword} ${term}`);
   }
 
   /**
