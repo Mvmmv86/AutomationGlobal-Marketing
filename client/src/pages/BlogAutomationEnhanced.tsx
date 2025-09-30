@@ -128,6 +128,13 @@ export default function BlogAutomationEnhanced() {
   });
   const trends = (trendsData as any)?.data || [];
 
+  // Fetch news articles for selected niche
+  const { data: articlesData, isLoading: isLoadingArticles } = useQuery({
+    queryKey: ['/api/blog/niches', selectedNiche, 'news'],
+    enabled: !!selectedNiche,
+  });
+  const articles = (articlesData as any)?.data || [];
+
   // Create niche mutation
   const createNicheMutation = useMutation({
     mutationFn: async (data: Partial<BlogNiche>) => {
@@ -173,8 +180,9 @@ export default function BlogAutomationEnhanced() {
           newsCount: data.data.newsArticlesCollected || 0
         }
       }));
-      // Invalidar query de tendências para atualizar a lista
+      // Invalidar queries para atualizar a lista
       queryClient.invalidateQueries({ queryKey: ['/api/blog/niches', selectedNiche, 'trends'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/blog/niches', selectedNiche, 'news'] });
       toast({
         title: "Fase 1 Concluída",
         description: `${data.data.trendsCollected} tendências coletadas!`,
@@ -199,6 +207,8 @@ export default function BlogAutomationEnhanced() {
           sources: data.data.uniqueSources || 0
         }
       }));
+      // Invalidar query de artigos para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ['/api/blog/niches', selectedNiche, 'news'] });
       toast({
         title: "Fase 2 Concluída",
         description: `${data.data.articlesCollected} artigos encontrados!`,
@@ -699,6 +709,77 @@ export default function BlogAutomationEnhanced() {
                                 >
                                   <Youtube className="w-4 h-4" />
                                   YouTube
+                                </a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* News Articles Display */}
+                {articles.length > 0 && (
+                  <Card className="glass-3d border-white/10">
+                    <CardHeader>
+                      <CardTitle className="flex items-center text-xl text-blue-400">
+                        <Newspaper className="w-5 h-5 mr-2" />
+                        Artigos de Notícias Coletados ({articles.length})
+                      </CardTitle>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Artigos encontrados baseados nas tendências da Fase 1
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[500px] w-full pr-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          {articles.map((article: any) => (
+                            <div key={article.id} className="glass-3d-light rounded-xl p-4 hover:scale-[1.02] transition-all">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                  <a 
+                                    href={article.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="group"
+                                  >
+                                    <h4 className="font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                                      {article.title}
+                                    </h4>
+                                  </a>
+                                  
+                                  {article.description && (
+                                    <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                                      {article.description}
+                                    </p>
+                                  )}
+                                  
+                                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                                    <span className="flex items-center gap-1">
+                                      <Globe className="w-3 h-3" />
+                                      {article.sourceName || 'Unknown'}
+                                    </span>
+                                    {article.publishedAt && (
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    )}
+                                    <Badge className="bg-green-500/20 text-green-300 text-xs">
+                                      Relevância: {article.relevanceScore || 50}%
+                                    </Badge>
+                                  </div>
+                                </div>
+                                
+                                <a
+                                  href={article.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="glass-button-3d p-2 text-blue-400 hover:text-blue-300 transition-colors shrink-0"
+                                  data-testid={`link-article-${article.id}`}
+                                >
+                                  <ExternalLink className="w-4 h-4" />
                                 </a>
                               </div>
                             </div>
