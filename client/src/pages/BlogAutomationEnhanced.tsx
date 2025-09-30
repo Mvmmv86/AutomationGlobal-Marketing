@@ -298,6 +298,94 @@ export default function BlogAutomationEnhanced() {
     }
   };
 
+  // Individual phase runners
+  const runPhase1 = async () => {
+    if (!selectedNiche || automationState.isRunning) return;
+    
+    setAutomationState({
+      isRunning: true,
+      currentPhase: 'phase1',
+      progress: 10,
+      error: undefined
+    });
+
+    try {
+      await collectTrendsMutation.mutateAsync(selectedNiche);
+      setAutomationState(prev => ({ 
+        ...prev, 
+        currentPhase: 'idle', 
+        progress: 33,
+        isRunning: false 
+      }));
+    } catch (error) {
+      setAutomationState(prev => ({
+        ...prev,
+        isRunning: false,
+        error: 'Erro na Fase 1. Tente novamente.',
+        currentPhase: 'idle',
+        progress: 0
+      }));
+    }
+  };
+
+  const runPhase2 = async () => {
+    if (!selectedNiche || automationState.isRunning) return;
+    
+    setAutomationState({
+      isRunning: true,
+      currentPhase: 'phase2',
+      progress: 45,
+      error: undefined
+    });
+
+    try {
+      await searchNewsMutation.mutateAsync(selectedNiche);
+      setAutomationState(prev => ({ 
+        ...prev, 
+        currentPhase: 'idle', 
+        progress: 66,
+        isRunning: false 
+      }));
+    } catch (error) {
+      setAutomationState(prev => ({
+        ...prev,
+        isRunning: false,
+        error: 'Erro na Fase 2. Tente novamente.',
+        currentPhase: 'idle',
+        progress: 33
+      }));
+    }
+  };
+
+  const runPhase3 = async () => {
+    if (!selectedNiche || automationState.isRunning) return;
+    
+    setAutomationState({
+      isRunning: true,
+      currentPhase: 'phase3',
+      progress: 80,
+      error: undefined
+    });
+
+    try {
+      await generatePostMutation.mutateAsync(selectedNiche);
+      setAutomationState(prev => ({ 
+        ...prev, 
+        currentPhase: 'completed', 
+        progress: 100,
+        isRunning: false 
+      }));
+    } catch (error) {
+      setAutomationState(prev => ({
+        ...prev,
+        isRunning: false,
+        error: 'Erro na Fase 3. Tente novamente.',
+        currentPhase: 'idle',
+        progress: 66
+      }));
+    }
+  };
+
   const handleCreateNiche = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -586,6 +674,16 @@ export default function BlogAutomationEnhanced() {
                             </Badge>
                           </div>
                         )}
+                        <Button
+                          onClick={runPhase1}
+                          disabled={automationState.isRunning}
+                          size="sm"
+                          className="mt-3 w-full bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30"
+                          data-testid="button-run-phase1"
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          Executar
+                        </Button>
                       </div>
 
                       {/* Phase 2 */}
@@ -610,6 +708,16 @@ export default function BlogAutomationEnhanced() {
                             </Badge>
                           </div>
                         )}
+                        <Button
+                          onClick={runPhase2}
+                          disabled={automationState.isRunning}
+                          size="sm"
+                          className="mt-3 w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30"
+                          data-testid="button-run-phase2"
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          Executar
+                        </Button>
                       </div>
 
                       {/* Phase 3 */}
@@ -634,6 +742,16 @@ export default function BlogAutomationEnhanced() {
                             </Badge>
                           </div>
                         )}
+                        <Button
+                          onClick={runPhase3}
+                          disabled={automationState.isRunning}
+                          size="sm"
+                          className="mt-3 w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30"
+                          data-testid="button-run-phase3"
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          Executar
+                        </Button>
                       </div>
                     </div>
 

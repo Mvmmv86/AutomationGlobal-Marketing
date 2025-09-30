@@ -67,6 +67,7 @@ function Router() {
       <Route path="/automation/content" component={BlogAutomationEnhanced} />
       <Route path="/blog" component={BlogAutomationEnhanced} />
       <Route path="/blog-automation" component={BlogAutomationEnhanced} />
+      <Route path="/blog-automation-enhanced" component={BlogAutomationEnhanced} />
       <Route path="/blog-enhanced" component={BlogAutomationEnhanced} />
       <Route path="/blog-original" component={BlogAutomation} />
       
