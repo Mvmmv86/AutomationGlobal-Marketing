@@ -73,6 +73,18 @@ interface BlogPost {
   createdAt: string;
 }
 
+interface TrendingTopic {
+  id: string;
+  nicheId: string;
+  term: string;
+  source: string;
+  sourceType: string;
+  score: number;
+  metadata: any;
+  collectedAt: string;
+  createdAt: string;
+}
+
 interface AutomationState {
   isRunning: boolean;
   currentPhase: 'idle' | 'phase1' | 'phase2' | 'phase3' | 'completed';
@@ -108,6 +120,13 @@ export default function BlogAutomationEnhanced() {
     enabled: !!selectedNiche,
   });
   const posts = (postsData as any)?.data || [];
+
+  // Fetch trends for selected niche
+  const { data: trendsData, isLoading: isLoadingTrends } = useQuery({
+    queryKey: ['/api/blog/niches', selectedNiche, 'trends'],
+    enabled: !!selectedNiche,
+  });
+  const trends = (trendsData as any)?.data || [];
 
   // Create niche mutation
   const createNicheMutation = useMutation({

@@ -1180,7 +1180,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async bulkCreateNewsArticles(data: InsertNewsArticle[]): Promise<NewsArticle[]> {
-    const articles = await db.insert(schema.newsArticles).values(data).returning();
+    const articles = await db.insert(schema.newsArticles)
+      .values(data)
+      .onConflictDoNothing({ target: schema.newsArticles.url })
+      .returning();
     return articles;
   }
 
