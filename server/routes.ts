@@ -3588,7 +3588,9 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
               region: article.region
             };
           });
-          await storage.bulkCreateNewsArticles(articlesData);
+          if (articlesData.length > 0) {
+            await storage.bulkCreateNewsArticles(articlesData);
+          }
         }
       }
 
@@ -3717,7 +3719,9 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
             relevanceScore: article.relevanceScore || 50
           };
         });
-        await storage.bulkCreateNewsArticles(articlesData);
+        if (articlesData.length > 0) {
+          await storage.bulkCreateNewsArticles(articlesData);
+        }
 
         // Phase 3: Generate content
         await storage.updateBlogAutomationRun(automationRun.id, { phase: 'generating_content' });
@@ -3734,6 +3738,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
           title: generatedContent.title,
           content: generatedContent.content,
           summary: generatedContent.summary,
+          mode: 'news' as const,
+          sourceData: { articles: articles.slice(0, 5).map(a => a.id || a.title) },
           tags: generatedContent.tags,
           featuredImageUrl: generatedContent.featuredImageUrl,
           readingTime: generatedContent.readingTime,
@@ -3855,7 +3861,9 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         };
       });
       
-      await storage.bulkCreateNewsArticles(articlesData);
+      if (articlesData.length > 0) {
+        await storage.bulkCreateNewsArticles(articlesData);
+      }
 
       res.json({ 
         success: true, 
@@ -3939,6 +3947,9 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         content: generatedContent.content,
         summary: generatedContent.summary,
         mode: useMode as 'news' | 'social',
+        sourceData: useMode === 'news' 
+          ? { articles: articles.slice(0, 10).map(a => a.id || a.title) }
+          : { trends: trends.slice(0, 15).map(t => t.id || t.term) },
         tags: generatedContent.tags,
         featuredImageUrl,
         readingTime: generatedContent.readingTime,

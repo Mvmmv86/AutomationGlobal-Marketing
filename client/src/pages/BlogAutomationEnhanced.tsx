@@ -224,7 +224,11 @@ export default function BlogAutomationEnhanced() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ useMode: 'news' }),
       });
-      if (!response.ok) throw new Error('Failed to generate post');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Phase 3 error:', errorData);
+        throw new Error(errorData.message || 'Failed to generate post');
+      }
       return response.json();
     },
     onSuccess: (data: any) => {
@@ -742,11 +746,17 @@ export default function BlogAutomationEnhanced() {
                             </Badge>
                           </div>
                         )}
+                        {articles.length === 0 && (
+                          <p className="mt-2 text-xs text-yellow-400">
+                            <Info className="w-3 h-3 inline mr-1" />
+                            Execute a Fase 2 primeiro
+                          </p>
+                        )}
                         <Button
                           onClick={runPhase3}
-                          disabled={automationState.isRunning}
+                          disabled={automationState.isRunning || articles.length === 0}
                           size="sm"
-                          className="mt-3 w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30"
+                          className="mt-3 w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                           data-testid="button-run-phase3"
                         >
                           <Play className="w-3 h-3 mr-1" />

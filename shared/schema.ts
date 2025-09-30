@@ -1227,7 +1227,7 @@ export const generatedBlogPosts = pgTable("generated_blog_posts", {
   contentHash: text("content_hash").notNull(), // Hash para deduplicação
   metadata: jsonb("metadata").default({}),
   readingTime: integer("reading_time"), // Tempo de leitura em minutos
-  createdBy: uuid("created_by").references(() => users.id).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
