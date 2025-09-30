@@ -3938,6 +3938,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
         title: generatedContent.title,
         content: generatedContent.content,
         summary: generatedContent.summary,
+        mode: useMode as 'news' | 'social',
         tags: generatedContent.tags,
         featuredImageUrl,
         readingTime: generatedContent.readingTime,
