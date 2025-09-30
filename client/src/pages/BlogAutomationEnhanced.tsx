@@ -649,60 +649,62 @@ export default function BlogAutomationEnhanced() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 gap-4">
-                        {trends.map((trend: TrendingTopic) => (
-                          <div key={trend.id} className="glass-3d-light rounded-xl p-4 hover:scale-[1.02] transition-all">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-semibold text-white">{trend.term}</h4>
-                                  <Badge className="bg-purple-500/20 text-purple-300">
-                                    Score: {trend.score}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-400">
-                                  {trend.source === 'google_trends' && <Globe className="w-4 h-4" />}
-                                  {trend.source === 'gdelt' && <SiGooglenews className="w-4 h-4" />}
-                                  {trend.source === 'news_analysis' && <Newspaper className="w-4 h-4" />}
-                                  {trend.source === 'keyword_based' && <Hash className="w-4 h-4" />}
-                                  <span>{trend.source}</span>
+                      <ScrollArea className="h-[500px] w-full pr-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          {trends.map((trend: TrendingTopic) => (
+                            <div key={trend.id} className="glass-3d-light rounded-xl p-4 hover:scale-[1.02] transition-all">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-white">{trend.term}</h4>
+                                    <Badge className="bg-purple-500/20 text-purple-300">
+                                      Score: {trend.score}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                                    {trend.source === 'google_trends' && <Globe className="w-4 h-4" />}
+                                    {trend.source === 'gdelt' && <SiGooglenews className="w-4 h-4" />}
+                                    {trend.source === 'news_analysis' && <Newspaper className="w-4 h-4" />}
+                                    {trend.source === 'keyword_based' && <Hash className="w-4 h-4" />}
+                                    <span>{trend.source}</span>
+                                  </div>
                                 </div>
                               </div>
+                              
+                              {/* Search Links */}
+                              <div className="grid grid-cols-3 gap-2 mt-3">
+                                <a
+                                  href={`https://www.google.com/search?q=${encodeURIComponent(trend.term)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="glass-button-3d flex items-center justify-center gap-1 px-3 py-2 text-sm text-green-400 hover:text-green-300 transition-colors"
+                                >
+                                  <Search className="w-4 h-4" />
+                                  Google
+                                </a>
+                                <a
+                                  href={`https://trends.google.com/trends/explore?q=${encodeURIComponent(trend.term)}&geo=BR`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="glass-button-3d flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                                >
+                                  <BarChart3 className="w-4 h-4" />
+                                  Trends
+                                </a>
+                                <a
+                                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(trend.term)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="glass-button-3d flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-colors"
+                                >
+                                  <Youtube className="w-4 h-4" />
+                                  YouTube
+                                </a>
+                              </div>
                             </div>
-                            
-                            {/* Search Links */}
-                            <div className="grid grid-cols-3 gap-2 mt-3">
-                              <a
-                                href={`https://www.google.com/search?q=${encodeURIComponent(trend.term)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="glass-button-3d flex items-center justify-center gap-1 px-3 py-2 text-sm text-green-400 hover:text-green-300 transition-colors"
-                              >
-                                <Search className="w-4 h-4" />
-                                Google
-                              </a>
-                              <a
-                                href={`https://trends.google.com/trends/explore?q=${encodeURIComponent(trend.term)}&geo=BR`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="glass-button-3d flex items-center justify-center gap-1 px-3 py-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                              >
-                                <BarChart3 className="w-4 h-4" />
-                                Trends
-                              </a>
-                              <a
-                                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(trend.term)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="glass-button-3d flex items-center justify-center gap-1 px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-colors"
-                              >
-                                <Youtube className="w-4 h-4" />
-                                YouTube
-                              </a>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     </CardContent>
                   </Card>
                 )}
