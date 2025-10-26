@@ -18,6 +18,7 @@ import { z } from "zod";
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['starter', 'professional', 'enterprise']);
 export const organizationTypeEnum = pgEnum('organization_type', ['marketing', 'support', 'trading']);
 export const userRoleEnum = pgEnum('user_role', ['super_admin', 'org_owner', 'org_admin', 'org_manager', 'org_user', 'org_viewer']);
+export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'pending', 'suspended']);
 export const aiProviderEnum = pgEnum('ai_provider', ['openai', 'anthropic', 'custom']);
 export const moduleStatusEnum = pgEnum('module_status', ['active', 'inactive', 'pending']);
 
@@ -31,6 +32,7 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   password: text("password").notNull(),
   emailVerified: boolean("email_verified").default(false),
+  status: userStatusEnum("status").default('active'),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1267,6 +1269,25 @@ export const blogSettings = pgTable("blog_settings", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Blog automation schedules - Schedule automatic post generation
+export const blogAutomationSchedules = pgTable("blog_automation_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+  nicheIds: jsonb("niche_ids").notNull(), // Array of niche IDs to run automation for
+  executionTime: text("execution_time").notNull(), // HH:MM format (e.g., "09:00")
+  daysOfWeek: jsonb("days_of_week").notNull(), // Array of 0-6 (Sunday-Saturday)
+  timezone: text("timezone").default('America/Sao_Paulo'),
+  isActive: boolean("is_active").default(true),
+  lastRunAt: timestamp("last_run_at"),
+  nextRunAt: timestamp("next_run_at"),
+  runCount: integer("run_count").default(0),
+  successCount: integer("success_count").default(0),
+  failureCount: integer("failure_count").default(0),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // =============================================================================
 // BLOG SYSTEM SCHEMAS
 // =============================================================================
@@ -1302,6 +1323,17 @@ export const insertBlogSettingsSchema = createInsertSchema(blogSettings).omit({
   updatedAt: true,
 });
 
+export const insertBlogAutomationScheduleSchema = createInsertSchema(blogAutomationSchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastRunAt: true,
+  nextRunAt: true,
+  runCount: true,
+  successCount: true,
+  failureCount: true,
+});
+
 // =============================================================================
 // BLOG SYSTEM TYPE EXPORTS
 // =============================================================================
@@ -1323,3 +1355,6 @@ export type InsertBlogAutomationRun = typeof blogAutomationRuns.$inferInsert;
 
 export type BlogSettings = typeof blogSettings.$inferSelect;
 export type InsertBlogSettings = z.infer<typeof insertBlogSettingsSchema>;
+
+export type BlogAutomationSchedule = typeof blogAutomationSchedules.$inferSelect;
+export type InsertBlogAutomationSchedule = z.infer<typeof insertBlogAutomationScheduleSchema>;

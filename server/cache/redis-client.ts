@@ -19,6 +19,9 @@ export class RedisClient {
   private redis: Redis | null = null;
   private isConnected = false;
   private fallbackCache = new Map<string, { value: any; expires: number }>();
+  private hasFallenBack = false; // Flag para evitar múltiplos logs
+  private connectionAttempts = 0;
+  private readonly MAX_CONNECTION_ATTEMPTS = 3;
 
   constructor() {
     this.initializeRedis();
@@ -32,31 +35,60 @@ export class RedisClient {
       console.log('🔄 Attempting Redis connection...');
       
       this.redis = new Redis(redisUrl, {
-        retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
+        retryStrategy: (times: number) => {
+          this.connectionAttempts = times;
+          
+          // Desistir após MAX_CONNECTION_ATTEMPTS tentativas
+          if (times > this.MAX_CONNECTION_ATTEMPTS) {
+            if (!this.hasFallenBack) {
+              console.warn('⚠️ Redis not available after 3 attempts, using in-memory cache');
+              this.hasFallenBack = true;
+            }
+            return null; // Para as tentativas de reconexão
+          }
+          
+          // Delay exponencial: 100ms, 200ms, 400ms
+          return Math.min(times * 100, 2000);
+        },
+        maxRetriesPerRequest: 1,
         lazyConnect: true,
-        connectionTimeout: 5000,
-        commandTimeout: 3000
+        connectionTimeout: 3000,
+        commandTimeout: 2000,
+        enableOfflineQueue: false, // Não enfileirar comandos quando offline
+        enableReadyCheck: false
       });
 
-      // Test connection
-      await this.redis.ping();
-      this.isConnected = true;
-      console.log('✅ Redis connected successfully!');
-
-      this.redis.on('error', (error) => {
-        console.warn('⚠️ Redis connection error, falling back to memory cache:', error.message);
+      // Silenciar eventos de erro duplicados
+      this.redis.on('error', () => {
+        // Silenciar completamente - já tratamos no retryStrategy
         this.isConnected = false;
       });
 
       this.redis.on('disconnect', () => {
-        console.warn('⚠️ Redis disconnected, using memory cache');
         this.isConnected = false;
       });
 
+      this.redis.on('close', () => {
+        this.isConnected = false;
+      });
+
+      // Tentar conectar uma vez
+      await this.redis.connect();
+      this.isConnected = true;
+      console.log('✅ Redis connected successfully!');
+
     } catch (error) {
-      console.warn('⚠️ Redis not available, using in-memory cache:', (error as Error).message);
+      if (!this.hasFallenBack) {
+        console.warn('⚠️ Redis not available, using in-memory cache');
+        this.hasFallenBack = true;
+      }
       this.isConnected = false;
+      
+      // Garantir que a instância Redis seja limpa
+      if (this.redis) {
+        this.redis.disconnect(false); // false = não reconectar
+        this.redis = null;
+      }
     }
   }
 
@@ -68,7 +100,8 @@ export class RedisClient {
       try {
         return await this.redis.get(key);
       } catch (error) {
-        console.warn('Redis get error, falling back to memory:', (error as Error).message);
+        // Silenciar erro - fallback automático
+        this.isConnected = false;
         return this.getFromMemory(key);
       }
     }
@@ -88,7 +121,8 @@ export class RedisClient {
         }
         return;
       } catch (error) {
-        console.warn('Redis set error, falling back to memory:', (error as Error).message);
+        // Silenciar erro - fallback automático
+        this.isConnected = false;
       }
     }
     this.setInMemory(key, value, ttlSeconds);
@@ -103,7 +137,8 @@ export class RedisClient {
         await this.redis.del(key);
         return;
       } catch (error) {
-        console.warn('Redis del error, falling back to memory:', (error as Error).message);
+        // Silenciar erro - fallback automático
+        this.isConnected = false;
       }
     }
     this.fallbackCache.delete(key);
@@ -126,7 +161,7 @@ export class RedisClient {
     try {
       return JSON.parse(value) as T;
     } catch (error) {
-      console.warn('Failed to parse JSON from cache:', (error as Error).message);
+      // Silenciar erro de parsing - retornar null
       return null;
     }
   }
@@ -139,7 +174,8 @@ export class RedisClient {
       try {
         return await this.redis.incr(key);
       } catch (error) {
-        console.warn('Redis incr error, falling back to memory:', (error as Error).message);
+        // Silenciar erro - fallback automático
+        this.isConnected = false;
       }
     }
     
@@ -159,7 +195,8 @@ export class RedisClient {
         await this.redis.expire(key, seconds);
         return;
       } catch (error) {
-        console.warn('Redis expire error:', (error as Error).message);
+        // Silenciar erro - fallback automático
+        this.isConnected = false;
       }
     }
     
@@ -179,7 +216,8 @@ export class RedisClient {
         const result = await this.redis.exists(key);
         return result === 1;
       } catch (error) {
-        console.warn('Redis exists error:', (error as Error).message);
+        // Silenciar erro - fallback automático
+        this.isConnected = false;
       }
     }
     

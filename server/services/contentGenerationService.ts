@@ -112,9 +112,12 @@ export class ContentGenerationService {
    * Gera conteúdo usando OpenAI GPT-5
    */
   private async generateWithOpenAI(prompt: string): Promise<string> {
+    console.log('🤖 Gerando conteúdo com OpenAI GPT-5...');
+    console.log('📝 Tamanho do prompt:', prompt.length, 'caracteres');
+
     const response = await this.openai.chat.completions.create({
       // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-      model: "gpt-5", 
+      model: "gpt-5",
       messages: [
         {
           role: "system",
@@ -128,13 +131,25 @@ export class ContentGenerationService {
       max_completion_tokens: 4000,
     });
 
-    return response.choices[0].message.content || '';
+    const content = response.choices[0].message.content || '';
+    console.log('✅ OpenAI respondeu com', content.length, 'caracteres');
+
+    if (!content || content.length < 100) {
+      console.error('⚠️ ERRO: OpenAI retornou conteúdo vazio ou muito curto!');
+      console.error('Resposta da API:', JSON.stringify(response, null, 2));
+      throw new Error('OpenAI retornou conteúdo vazio ou insuficiente');
+    }
+
+    return content;
   }
 
   /**
    * Gera conteúdo usando Anthropic Claude
    */
   private async generateWithAnthropic(prompt: string): Promise<string> {
+    console.log('🤖 Gerando conteúdo com Anthropic Claude...');
+    console.log('📝 Tamanho do prompt:', prompt.length, 'caracteres');
+
     const response = await this.anthropic.messages.create({
       // The newest Anthropic model is "claude-sonnet-4-20250514"
       model: "claude-sonnet-4-20250514",
@@ -148,7 +163,16 @@ export class ContentGenerationService {
       max_tokens: 4000,
     });
 
-    return response.content[0].type === 'text' ? response.content[0].text : '';
+    const content = response.content[0].type === 'text' ? response.content[0].text : '';
+    console.log('✅ Anthropic respondeu com', content.length, 'caracteres');
+
+    if (!content || content.length < 100) {
+      console.error('⚠️ ERRO: Anthropic retornou conteúdo vazio ou muito curto!');
+      console.error('Resposta da API:', JSON.stringify(response, null, 2));
+      throw new Error('Anthropic retornou conteúdo vazio ou insuficiente');
+    }
+
+    return content;
   }
 
   /**
@@ -279,28 +303,36 @@ export class ContentGenerationService {
    * Processa o conteúdo gerado e extrai metadados
    */
   private processGeneratedContent(content: string, request: ContentGenerationRequest, sourceContext: any[]): GeneratedContent {
+    console.log('📋 Processando conteúdo gerado...');
+    console.log('📝 Conteúdo recebido:', content.length, 'caracteres');
+    console.log('🔍 Primeiros 200 caracteres:', content.substring(0, 200));
+
     // Extrair título (primeira linha com #)
     const titleMatch = content.match(/^#\s*(.+)$/m);
     const title = titleMatch ? titleMatch[1].trim() : 'Artigo sem título';
+    console.log('📌 Título extraído:', title);
 
     // Extrair resumo
     const summaryMatch = content.match(/##\s*Resumo\s*\n(.*?)(?=\n##|\n\n|$)/s);
     const summary = summaryMatch ? summaryMatch[1].trim() : '';
+    console.log('📄 Resumo extraído:', summary.length, 'caracteres');
 
     // Extrair tags
     const tagsMatch = content.match(/##\s*Tags\s*\n(.+?)(?=\n##|\n\n|$)/s);
-    const tags = tagsMatch 
+    const tags = tagsMatch
       ? tagsMatch[1].split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       : [];
+    console.log('🏷️ Tags extraídas:', tags.length, 'tags');
 
     // Calcular tempo de leitura (aproximadamente 200 palavras por minuto)
     const wordCount = content.split(/\s+/).length;
     const readingTime = Math.ceil(wordCount / 200);
+    console.log('⏱️ Palavras:', wordCount, '| Tempo de leitura:', readingTime, 'min');
 
     // Gerar hash para deduplicação
     const contentHash = crypto.createHash('md5').update(content).digest('hex');
 
-    return {
+    const result = {
       title,
       content,
       summary,
@@ -315,6 +347,9 @@ export class ContentGenerationService {
         sourceContext: sourceContext.slice(0, 5) // Limitar metadados
       }
     };
+
+    console.log('✅ Conteúdo processado com sucesso!');
+    return result;
   }
 
   /**

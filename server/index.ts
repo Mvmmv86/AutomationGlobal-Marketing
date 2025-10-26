@@ -104,11 +104,23 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
+  
+  // Configuração compatível com Windows e Linux
+  const listenOptions: any = {
     port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+    host: "0.0.0.0"
+  };
+  
+  // reusePort só funciona em Linux/Unix
+  if (process.platform !== 'win32') {
+    listenOptions.reusePort = true;
+  }
+  
+  server.listen(listenOptions, () => {
     log(`serving on port ${port}`);
+    console.log(`\n🚀 Automation Global v4.0 ONLINE!`);
+    console.log(`📍 Local: http://localhost:${port}`);
+    console.log(`🌍 Network: http://0.0.0.0:${port}`);
+    console.log(`\n✅ Pressione Ctrl+C para parar\n`);
   });
 })();

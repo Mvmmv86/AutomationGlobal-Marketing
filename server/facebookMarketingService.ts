@@ -388,7 +388,7 @@ export class FacebookMarketingService {
     campaignData: FacebookCampaignData, 
     accessToken: string
   ): Promise<any> {
-    const url = `https://graph.facebook.com/v18.0/act_${adAccountId}/campaigns`;
+    const url = `https://graph.facebook.com/v19.0/act_${adAccountId}/campaigns`;
     
     const params = new URLSearchParams({
       access_token: accessToken,
@@ -420,7 +420,7 @@ export class FacebookMarketingService {
    * Buscar campanhas do Facebook
    */
   private async getFacebookCampaigns(adAccountId: string, accessToken: string): Promise<any> {
-    const url = `https://graph.facebook.com/v18.0/act_${adAccountId}/campaigns?fields=id,name,objective,status,created_time,updated_time&access_token=${accessToken}`;
+    const url = `https://graph.facebook.com/v19.0/act_${adAccountId}/campaigns?fields=id,name,objective,status,created_time,updated_time&access_token=${accessToken}`;
     
     const response = await fetch(url);
     const data = await response.json();
@@ -436,7 +436,7 @@ export class FacebookMarketingService {
    * Buscar contas de anúncios do Facebook
    */
   private async fetchFacebookAdAccounts(accessToken: string): Promise<any> {
-    const url = `https://graph.facebook.com/v18.0/me/adaccounts?fields=id,name,account_status,currency,timezone_name&access_token=${accessToken}`;
+    const url = `https://graph.facebook.com/v19.0/me/adaccounts?fields=id,name,account_status,currency,timezone_name&access_token=${accessToken}`;
     
     const response = await fetch(url);
     const data = await response.json();
@@ -551,7 +551,7 @@ export class FacebookMarketingService {
     mediaUrls: string[],
     accessToken: string
   ): Promise<string> {
-    const url = `https://graph.facebook.com/v18.0/${pageId}/feed`;
+    const url = `https://graph.facebook.com/v19.0/${pageId}/feed`;
     
     const params = new URLSearchParams({
       access_token: accessToken,
@@ -590,7 +590,7 @@ export class FacebookMarketingService {
     }
 
     // Para Instagram, precisamos primeiro criar um container de mídia
-    const containerUrl = `https://graph.facebook.com/v18.0/${instagramAccountId}/media`;
+    const containerUrl = `https://graph.facebook.com/v19.0/${instagramAccountId}/media`;
     
     const containerParams = new URLSearchParams({
       access_token: accessToken,
@@ -613,7 +613,7 @@ export class FacebookMarketingService {
     }
 
     // Agora publicar o container
-    const publishUrl = `https://graph.facebook.com/v18.0/${instagramAccountId}/media_publish`;
+    const publishUrl = `https://graph.facebook.com/v19.0/${instagramAccountId}/media_publish`;
     
     const publishParams = new URLSearchParams({
       access_token: accessToken,

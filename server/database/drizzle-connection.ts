@@ -1,4 +1,16 @@
 // server/database/drizzle-connection.ts
+/**
+ * ⚠️ IMPORTANTE - SEGURANÇA:
+ * Este arquivo NÃO deve conter credenciais hardcoded.
+ * Todas as credenciais devem vir do arquivo .env através do CONFIG.
+ * 
+ * Variáveis necessárias no .env:
+ * - DATABASE_URL ou SUPABASE_CONNECTION_STRING
+ * - SUPABASE_URL
+ * - SUPABASE_ANON_KEY
+ * - SUPABASE_SERVICE_KEY
+ */
+
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { CONFIG } from '../config.js';
@@ -25,15 +37,10 @@ if (!connectionString) {
 
 console.log('🔗 Connection string:', connectionString.replace(/:[^:]*@/, ':***@')); // Ocultar senha
 
-// Configurações otimizadas para Replit + Supabase
+// Configurações otimizadas para produção
+// IMPORTANTE: Todas as credenciais vêm do DATABASE_URL no .env
 const connectionConfig = {
-  host: 'aws-1-us-east-1.pooler.supabase.com',
-  port: 6543,
-  database: 'postgres',
-  username: 'postgres.zqzxaulmzwymkybctnzw',
-  password: 'Chaves@@$$1986',
-  
-  // Configurações de conexão otimizadas para Replit
+  // Configurações de conexão otimizadas
   ssl: {
     rejectUnauthorized: false // Necessário para Supabase pooler
   },
@@ -42,9 +49,9 @@ const connectionConfig = {
   connect_timeout: 30, // 30 segundos para conectar
   statement_timeout: 25000, // 25 segundos para queries
   
-  // Configurações específicas para Replit
+  // Configurações específicas da aplicação
   connection: {
-    application_name: 'automation-global-replit',
+    application_name: 'automation-global',
     statement_timeout: '25s',
     idle_in_transaction_session_timeout: '30s'
   },

@@ -1,18 +1,7 @@
 // server/middleware/permission-middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import { PermissionService, ACTIONS, RESOURCES } from '../services/permission-service';
-// Simple error class for permissions
-class AppError extends Error {
-  constructor(
-    public message: string,
-    public statusCode: number = 500,
-    public code?: string,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
+import { PermissionService, ACTIONS, RESOURCES } from '../services/permission-service.js';
+import { AppError } from './validation.js';
 
 /**
  * Middleware para verificar permissões específicas

@@ -1,0 +1,81 @@
+# ==========================================
+# AUTOMATION GLOBAL - VARIÁVEIS DE AMBIENTE
+# ==========================================
+# 
+# INSTRUÇÕES:
+# 1. Copiar este conteúdo para arquivo .env
+# 2. Preencher valores reais (remover comentários <-- SUBSTITUIR)
+# 3. Salvar na raiz: C:\Global Automation\AutomationGlobal\AutomationGlobal\.env
+#
+# ==========================================
+
+# ==========================================
+# SERVIDOR
+# ==========================================
+NODE_ENV=development
+PORT=5000
+
+# ==========================================
+# BANCO DE DADOS - SUPABASE
+# ==========================================
+# Obter em: https://app.supabase.com → Settings → Database
+
+# Connection String (Pooler - Connection pooling)
+DATABASE_URL=postgresql://postgres.[PROJECT]:[PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres
+# <-- SUBSTITUIR [PROJECT] e [PASSWORD]
+
+# Supabase API
+SUPABASE_URL=https://[PROJECT].supabase.co
+# <-- SUBSTITUIR [PROJECT]
+
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# <-- SUBSTITUIR com Anon Key do Supabase
+
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# <-- SUBSTITUIR com Service Role Key do Supabase
+
+# Connection String (mesma do DATABASE_URL)
+SUPABASE_CONNECTION_STRING=postgresql://postgres.[PROJECT]:[PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres
+# <-- SUBSTITUIR [PROJECT] e [PASSWORD]
+
+# ==========================================
+# SEGURANÇA E AUTENTICAÇÃO
+# ==========================================
+# Gerar chave segura em: https://generate-secret.vercel.app/32
+JWT_SECRET=sua-chave-jwt-super-secreta-aqui-minimo-32-caracteres
+# <-- SUBSTITUIR com chave aleatória forte
+
+BCRYPT_ROUNDS=12
+
+# ==========================================
+# REDIS (Cache e Filas)
+# ==========================================
+# OPCIONAL - Sistema funciona sem Redis (usa memória)
+REDIS_URL=redis://localhost:6379
+CELERY_BROKER_URL=redis://localhost:6379
+CELERY_RESULT_BACKEND=redis://localhost:6379
+
+# ==========================================
+# INTELIGÊNCIA ARTIFICIAL (OPCIONAL)
+# ==========================================
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+
+AI_DEFAULT_MODEL=gpt-5
+AI_FALLBACK_MODEL=claude-sonnet-4-20250514
+AI_MAX_TOKENS=4096
+AI_TIMEOUT=30000
+
+# ==========================================
+# RATE LIMITING
+# ==========================================
+RATE_LIMIT_WINDOW=900000
+RATE_LIMIT_MAX_REQUESTS=1000
+
+# ==========================================
+# LOGGING
+# ==========================================
+LOG_LEVEL=INFO
+DEBUG=true
+FRONTEND_URL=http://localhost:5000
+

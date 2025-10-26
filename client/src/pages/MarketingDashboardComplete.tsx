@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { 
@@ -26,7 +26,7 @@ import {
   Upload,
   Send,
   Clock,
-  Link,
+  Link as LinkIcon,
   Image,
   Edit,
   Save,
@@ -560,10 +560,23 @@ function AIInsightCard({ insight, theme = 'dark' }: { insight: AIInsight; theme?
   );
 }
 
-function MarketingSidebar({ 
-  activeTab, 
-  setActiveTab 
-}: { 
+// Mapa de IDs das abas para rotas
+const tabToRoute: Record<string, string> = {
+  'dashboard': '/marketing',
+  'campaigns': '/marketing/campaigns',
+  'content': '/marketing/blog',
+  'automation': '/marketing/automation',
+  'analytics': '/marketing/analytics',
+  'audience': '/marketing/audience',
+  'reports': '/marketing/reports',
+  'billing': '/marketing/billing',
+  'settings': '/marketing/settings'
+};
+
+function MarketingSidebar({
+  activeTab,
+  setActiveTab
+}: {
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) {
@@ -597,20 +610,20 @@ function MarketingSidebar({
 
       {/* Navigation */}
       <div className="flex-1 p-4">
-        <div className="space-y-2">
+        <div className="space-y-8">
           {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={cn(
-                "w-full p-3 rounded-lg text-left flex items-center gap-3 marketing-nav-item text-sm",
-                activeTab === item.id && "active",
-                theme === 'dark' ? 'text-white' : 'text-gray-900'
-              )}
-            >
-              <item.icon className="w-4 h-4" />
-              <span className="font-medium">{item.label}</span>
-            </button>
+            <Link key={item.id} href={tabToRoute[item.id] || '/marketing'}>
+              <a
+                className={cn(
+                  "w-full p-3 rounded-lg text-left flex items-center gap-3 marketing-nav-item text-sm block mb-8",
+                  activeTab === item.id && "active",
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="font-medium">{item.label}</span>
+              </a>
+            </Link>
           ))}
         </div>
       </div>
@@ -636,15 +649,24 @@ function MarketingSidebar({
   );
 }
 
-function MarketingDashboardCompleteInner() {
+interface MarketingDashboardCompleteInnerProps {
+  initialTab?: string;
+}
+
+function MarketingDashboardCompleteInner({ initialTab = 'dashboard' }: MarketingDashboardCompleteInnerProps) {
   const { id } = useParams<{ id: string }>();
   const { theme } = useMarketingTheme();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d'>('30d');
   const [selectedAutomation, setSelectedAutomation] = useState<string | null>(null);
-  
+
   // Use um ID padrão para demonstração se não fornecido
   const organizationId = id || '123e4567-e89b-12d3-a456-426614174000';
+
+  // Atualizar activeTab quando initialTab mudar (quando rota mudar)
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Mock data baseado no framework solicitado
   const metricsData: MarketingMetrics = {
@@ -4052,10 +4074,10 @@ function MarketingDashboardHome({
   );
 }
 
-export default function MarketingDashboardComplete() {
+export default function MarketingDashboardComplete({ initialTab = 'dashboard' }: { initialTab?: string }) {
   return (
     <MarketingThemeProvider>
-      <MarketingDashboardCompleteInner />
+      <MarketingDashboardCompleteInner initialTab={initialTab} />
     </MarketingThemeProvider>
   );
 }

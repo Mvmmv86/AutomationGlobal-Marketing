@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { storage } from '../storage';
 import { z } from 'zod';
-import { requireAuth } from '../middleware/auth';
-import type { AuthenticatedRequest } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth-unified';
+import type { AuthenticatedRequest } from '../middleware/auth-unified';
 
 const router = Router();
 

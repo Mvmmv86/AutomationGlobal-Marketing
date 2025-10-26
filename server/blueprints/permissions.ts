@@ -1,20 +1,9 @@
 // server/blueprints/permissions.ts
 import express from 'express';
-import { PermissionService, USER_ROLES, ACTIONS, RESOURCES } from '../services/permission-service';
-import { requireAuth } from '../middleware/auth-middleware';
-import { extractTenantContext } from '../middleware/tenant-middleware';
-// Simple error class for permissions
-class AppError extends Error {
-  constructor(
-    public message: string,
-    public statusCode: number = 500,
-    public code?: string,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
+import { PermissionService, USER_ROLES, ACTIONS, RESOURCES } from '../services/permission-service.js';
+import { requireAuth } from '../middleware/auth-unified.js';
+import { extractTenantContext } from '../middleware/tenant-middleware.js';
+import { AppError } from '../middleware/validation.js';
 
 const router = express.Router();
 

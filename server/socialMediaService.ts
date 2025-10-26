@@ -10,26 +10,29 @@ import crypto from "crypto";
  */
 
 export class SocialMediaService {
-  // Encrypt sensitive tokens
+  // Encrypt sensitive tokens (FIXED: using createCipheriv instead of deprecated createCipher)
   private encryptToken(token: string): string {
     const algorithm = 'aes-256-gcm';
-    const key = process.env.ENCRYPTION_KEY || 'default-key-change-in-production';
+    const key = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY || 'default-key-change-in-production').digest();
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher(algorithm, key);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
     let encrypted = cipher.update(token, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    return `${iv.toString('hex')}:${encrypted}`;
+    const authTag = cipher.getAuthTag();
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
 
-  // Decrypt sensitive tokens  
+  // Decrypt sensitive tokens (FIXED: using createDecipheriv with auth tag)
   private decryptToken(encryptedToken: string): string {
     try {
       const algorithm = 'aes-256-gcm';
-      const key = process.env.ENCRYPTION_KEY || 'default-key-change-in-production';
-      const [ivHex, encrypted] = encryptedToken.split(':');
+      const key = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY || 'default-key-change-in-production').digest();
+      const [ivHex, authTagHex, encrypted] = encryptedToken.split(':');
       const iv = Buffer.from(ivHex, 'hex');
-      const decipher = crypto.createDecipher(algorithm, key);
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      const authTag = Buffer.from(authTagHex, 'hex');
+      const decipher = crypto.createDecipheriv(algorithm, key, iv);
+      decipher.setAuthTag(authTag);
+      let decrypted = decipher.update(encrypted, 'utf8', 'utf8');
       decrypted += decipher.final('utf8');
       return decrypted;
     } catch (error) {
@@ -50,7 +53,7 @@ export class SocialMediaService {
 
       try {
         const response = await fetch(
-          `https://graph.facebook.com/v18.0/oauth/access_token?` +
+          `https://graph.facebook.com/v19.0/oauth/access_token?` +
           `client_id=${appId}&` +
           `client_secret=${appSecret}&` +
           `code=${code}`
@@ -630,7 +633,7 @@ export class SocialMediaService {
       }
 
       // Step 1: Create media container
-      const containerUrl = `https://graph.facebook.com/v18.0/me/media`;
+      const containerUrl = `https://graph.facebook.com/v19.0/me/media`;
       const containerResponse = await fetch(containerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -644,7 +647,7 @@ export class SocialMediaService {
       }
 
       // Step 2: Publish the media
-      const publishUrl = `https://graph.facebook.com/v18.0/me/media_publish`;
+      const publishUrl = `https://graph.facebook.com/v19.0/me/media_publish`;
       const publishPayload = {
         creation_id: containerResult.id,
         access_token: accessToken

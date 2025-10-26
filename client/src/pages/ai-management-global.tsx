@@ -149,14 +149,14 @@ interface LoadBalancingConfig {
   };
 }
 
-// Mock data para desenvolvimento
+// Mock data para desenvolvimento (sem credenciais reais)
 const mockProviders: AIProvider[] = [
   {
     id: 'openai-1',
     name: 'OpenAI Primary',
     type: 'openai',
     status: 'active',
-    apiKey: 'sk-proj-*****************************',
+    apiKey: '••••••••••••••••••••••••••••••••',
     models: [
       {
         id: 'gpt-4',
@@ -209,7 +209,7 @@ const mockProviders: AIProvider[] = [
     name: 'Anthropic Claude',
     type: 'anthropic',
     status: 'active',
-    apiKey: 'sk-ant-*****************************',
+    apiKey: '••••••••••••••••••••••••••••••••',
     models: [
       {
         id: 'claude-3-sonnet',

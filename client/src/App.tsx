@@ -49,28 +49,22 @@ function Router() {
       <Route path="/ai-management" component={AIManagementGlobal} />
       <Route path="/ai-management-org" component={AIManagementByOrganization} />
       
-      {/* Marketing Organization Dashboard - Main marketing interface with social media integration */}
-      <Route path="/marketing/:id" component={MarketingDashboardComplete} />
-      <Route path="/marketing" component={() => <MarketingDashboardComplete />} />
-      <Route path="/marketing-complete/:id" component={MarketingDashboardComplete} />
-      <Route path="/marketing-complete" component={() => <MarketingDashboardComplete />} />
-      
-      {/* Campaigns Dashboard - Facebook Ads integration and management */}
-      <Route path="/campaigns" component={CampaignsDashboard} />
-      <Route path="/campaigns-dashboard" component={CampaignsDashboard} />
-      
-      {/* Automation Dashboard - Central hub for all automations */}
-      <Route path="/automation" component={AutomationDashboard} />
-      <Route path="/automation-dashboard" component={AutomationDashboard} />
-      
-      {/* Blog Automation - Intelligent content generation system */}
+      {/* Marketing Organization Dashboard - Rotas separadas para cada seção */}
+      <Route path="/marketing" component={() => <MarketingDashboardComplete initialTab="dashboard" />} />
+      <Route path="/marketing/campaigns" component={() => <MarketingDashboardComplete initialTab="campaigns" />} />
+      <Route path="/marketing/blog" component={() => <MarketingDashboardComplete initialTab="content" />} />
+      <Route path="/marketing/automation" component={() => <MarketingDashboardComplete initialTab="automation" />} />
+      <Route path="/marketing/analytics" component={() => <MarketingDashboardComplete initialTab="analytics" />} />
+      <Route path="/marketing/audience" component={() => <MarketingDashboardComplete initialTab="audience" />} />
+      <Route path="/marketing/reports" component={() => <MarketingDashboardComplete initialTab="reports" />} />
+      <Route path="/marketing/billing" component={() => <MarketingDashboardComplete initialTab="billing" />} />
+      <Route path="/marketing/settings" component={() => <MarketingDashboardComplete initialTab="settings" />} />
+
+      {/* Automation Routes */}
       <Route path="/automation/content" component={BlogAutomationEnhanced} />
-      <Route path="/blog" component={BlogAutomationEnhanced} />
-      <Route path="/blog-automation" component={BlogAutomationEnhanced} />
-      <Route path="/blog-automation-enhanced" component={BlogAutomationEnhanced} />
-      <Route path="/blog-enhanced" component={BlogAutomationEnhanced} />
-      <Route path="/blog-original" component={BlogAutomation} />
-      
+      <Route path="/automation/blog" component={BlogAutomation} />
+      <Route path="/automation" component={AutomationDashboard} />
+
       {/* Test Pages - Keep for development */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/database-test" component={DatabaseTest} />

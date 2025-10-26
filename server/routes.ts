@@ -3,10 +3,9 @@ import { createServer, type Server } from "http";
 import { authService } from "./services/auth";
 import { organizationService } from "./services/organizations";
 import { aiService } from "./services/ai";
-import { requireAuth, requireOrganization, requirePermission } from "./middleware/auth";
+import { requireAuth, requireOrganization, requirePermission } from "./middleware/auth-unified";
 import { loadOrganizationContext, requireActiveOrganization } from "./middleware/tenant";
-import type { AuthenticatedRequest } from "./middleware/auth";
-import type { TenantRequest } from "./middleware/tenant";
+import type { AuthenticatedRequest } from "./middleware/auth-unified";
 import { storage, db } from "./storage";
 import { securityManager } from "./database/security-policies";
 import { cacheManager } from "./cache/cache-manager";
@@ -14,7 +13,7 @@ import { queueManager } from "./queue/queue-manager";
 import { socialMediaService } from "./socialMediaService";
 import * as schema from "../shared/schema";
 import { desc, eq, sql } from "drizzle-orm";
-import { socialMediaPosts } from "../shared/schema";
+import { socialMediaPosts, socialMediaAccounts } from "../shared/schema";
 import marketingMetricsRoutes from "./routes/marketing-metrics";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -971,7 +970,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Authentication Routes
+  // Authentication Routes - DEPRECATED
+  // Estas rotas foram movidas para auth-unified.ts blueprint
+  // Comentado para evitar conflito com novo sistema unificado
+  /*
   app.post('/api/auth/register', async (req, res) => {
     try {
       const { user, tokens } = await authService.register(req.body);
@@ -1009,6 +1011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(403).json({ message: (error as any).message });
     }
   });
+  */
 
   // User Routes
   app.get('/api/user/profile', requireAuth, async (req: AuthenticatedRequest, res) => {
@@ -1215,20 +1218,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Register blueprint routes - AUTH BLUEPRINT (Legacy)
-  const authBlueprint = await import('./blueprints/auth.js');
-  app.use('/api/auth', authBlueprint.default);
-  console.log('✅ Auth blueprint registered at /api/auth');
+  // Register AUTH UNIFIED Blueprint (Sistema consolidado de autenticação)
+  const authUnifiedBlueprint = await import('./blueprints/auth-unified.js');
+  app.use('/api/auth', authUnifiedBlueprint.default);
+  console.log('✅ Auth Unified blueprint registered at /api/auth');
 
-  // Register Auth V2 Blueprint (Advanced Authentication)
-  const authV2Blueprint = await import('./blueprints/auth-v2.js');
-  app.use('/api/auth/v2', authV2Blueprint.default);
-  console.log('✅ Auth V2 blueprint registered at /api/auth/v2');
-
-  // Register Auth Local Blueprint (Local-only Authentication)
-  const authLocalBlueprint = await import('./blueprints/auth-local.js');
-  app.use('/api/auth/local', authLocalBlueprint.default);
-  console.log('✅ Auth Local blueprint registered at /api/auth/local');
+  // DEPRECATED: Auth blueprints antigos (manter temporariamente para compatibilidade)
+  // TODO: Remover após migração completa do frontend
+  // const authBlueprint = await import('./blueprints/auth.js');
+  // app.use('/api/auth/legacy', authBlueprint.default);
+  // const authV2Blueprint = await import('./blueprints/auth-v2.js');
+  // app.use('/api/auth/v2', authV2Blueprint.default);
+  // const authLocalBlueprint = await import('./blueprints/auth-local.js');
+  // app.use('/api/auth/local', authLocalBlueprint.default);
 
   // Register Organizations Blueprint (Multi-tenant System)
   const organizationsBlueprint = await import('./blueprints/organizations.js');
@@ -1852,7 +1854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'x-organization-id': '550e8400-e29b-41d4-a716-446655440001'
+              'x-organization-id': '8c46a511-7a39-42cb-8e46-0b7866d21737'
             },
             body: JSON.stringify({
               content,
@@ -2691,10 +2693,10 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     const appId = process.env.FACEBOOK_APP_ID;
     const redirectUri = `${req.protocol}://${req.headers.host}/api/auth/facebook/callback`;
     
-    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+    const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?` +
       `client_id=${appId}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `scope=pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish&` +
+      `scope=email,public_profile,pages_show_list,pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,ads_management,ads_read,business_management,read_insights&` +
       `response_type=code&` +
       `state=${Date.now()}`;
     
@@ -2822,7 +2824,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // GET - List campaigns
   app.get('/api/social-media/campaigns', async (req: Request, res) => {
     try {
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // TODO: Get from context
       
       const campaigns = await db
         .select()
@@ -2855,7 +2857,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // POST - Create campaign
   app.post('/api/social-media/campaigns', async (req: Request, res) => {
     try {
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // TODO: Get from context
       const userId = '550e8400-e29b-41d4-a716-446655440002'; // TODO: Get from context
       
       const campaignData = {
@@ -2881,7 +2883,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   app.get('/api/social-media/campaigns/:id', async (req: Request, res) => {
     try {
       const { id } = req.params;
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // TODO: Get from context
       
       const [campaign] = await db
         .select()
@@ -2918,7 +2920,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   app.put('/api/social-media/campaigns/:id', async (req: Request, res) => {
     try {
       const { id } = req.params;
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // TODO: Get from context
       
       const [campaign] = await db
         .update(schema.socialMediaCampaigns)
@@ -2946,7 +2948,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   app.delete('/api/social-media/campaigns/:id', async (req: Request, res) => {
     try {
       const { id } = req.params;
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // TODO: Get from context
       
       // Check if campaign has posts
       const posts = await db
@@ -2999,8 +3001,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // Conectar conta Facebook OAuth (simplificado para desenvolvimento)
   app.post('/api/facebook/connect', async (req: Request, res) => {
     try {
-      const { accessToken, userId = '550e8400-e29b-41d4-a716-446655440002' } = req.body;
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+      const { accessToken, userId = 'b3953e4d-f407-47b1-878d-2d328ad0fdd1' } = req.body; // novousuario@teste.com
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // Minha Empresa
 
       console.log('🔗 Conectando conta Facebook...');
 
@@ -3058,7 +3060,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       
       // Dados absolutamente mínimos e seguros
       const simpleCampaign = {
-        organizationId: '550e8400-e29b-41d4-a716-446655440001',
+        organizationId: '8c46a511-7a39-42cb-8e46-0b7866d21737',
         name: String(name || 'Nova Campanha'),
         type: String(type || 'awareness'),
         status: 'active',
@@ -3112,7 +3114,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // Status de integração Facebook
   app.get('/api/facebook/integration-status', async (req: Request, res) => {
     try {
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737';
       
       // Verificar se há conta Facebook conectada
       const [facebookAccount] = await db
@@ -3155,7 +3157,7 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // POST - Criar dados demo para teste
   app.post('/api/demo/create-connected-accounts', async (req: Request, res) => {
     try {
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737';
       const userId = '550e8400-e29b-41d4-a716-446655440002';
 
       console.log('🎭 Criando contas demo para teste...');
@@ -3227,7 +3229,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // GET - Buscar contas conectadas (Para NewCampaignWizard)
   app.get('/api/social-media/connected-accounts', async (req: Request, res) => {
     try {
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001'; // TODO: Get from context
+      // TODO: Get from authenticated session - usando organização "Minha Empresa" por enquanto
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // Minha Empresa
       
       console.log('🔍 Buscando contas conectadas...');
       
@@ -3256,8 +3259,9 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   app.get('/api/social-media/connect/:platform', async (req: Request, res) => {
     try {
       const { platform } = req.params;
-      const organizationId = '550e8400-e29b-41d4-a716-446655440001';
-      const userId = '550e8400-e29b-41d4-a716-446655440002';
+      // TODO: Get from authenticated session - usando organização "Minha Empresa" por enquanto
+      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // Minha Empresa
+      const userId = 'b3953e4d-f407-47b1-878d-2d328ad0fdd1'; // novousuario@teste.com
 
       console.log(`🔗 Conectando conta ${platform}...`);
 
@@ -3324,8 +3328,15 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // Blog Niches routes (temporary without auth for testing)
   app.get('/api/blog/niches', async (req, res) => {
     try {
-      // For testing, use the first available organization ID
-      const niches = await storage.getBlogNiches('550e8400-e29b-41d4-a716-446655440000');
+      // Get first organization from DB for testing
+      const orgs = await db.select().from(schema.organizations).limit(1);
+      if (orgs.length === 0) {
+        return res.status(400).json({ success: false, message: 'No organization found. Please create an organization first.' });
+      }
+
+      console.log('🔍 Getting niches for organization:', orgs[0].id);
+      const niches = await storage.getBlogNiches(orgs[0].id);
+      console.log('📊 Found niches:', niches.length);
       res.json({ success: true, data: niches });
     } catch (error) {
       console.error('Error getting blog niches:', error);
@@ -3347,13 +3358,27 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
           .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
       };
 
+      // Get first organization from DB for testing
+      const orgs = await db.select().from(schema.organizations).limit(1);
+      if (orgs.length === 0) {
+        return res.status(400).json({ success: false, message: 'No organization found. Please create an organization first.' });
+      }
+
+      // Get first user from DB for testing
+      const users = await db.select().from(schema.users).limit(1);
+      if (users.length === 0) {
+        return res.status(400).json({ success: false, message: 'No user found. Please create a user first.' });
+      }
+
+      console.log('✨ Creating niche for organization:', orgs[0].id);
       const nicheData = {
         ...req.body,
         slug: generateSlug(req.body.name),
-        organizationId: '550e8400-e29b-41d4-a716-446655440000',
-        createdBy: '550e8400-e29b-41d4-a716-446655440001'
+        organizationId: orgs[0].id,
+        createdBy: users[0].id
       };
       const niche = await storage.createBlogNiche(nicheData);
+      console.log('✅ Niche created:', niche.id);
       res.json({ success: true, data: niche });
     } catch (error) {
       console.error('Error creating blog niche:', error);
@@ -3562,17 +3587,21 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
       const trendTerms = trends.slice(0, 5).map(t => t.term);
       if (trendTerms.length > 0) {
         const articles = await newsSearchService.searchNews(trendTerms, niche, 15);
-        
+
         if (articles.length > 0) {
-          const articlesData = articles.map(article => {
+          const articlesData = articles.map((article, index) => {
             // Validate publishedAt date
             let publishedAt = article.publishedAt;
             if (!publishedAt || isNaN(new Date(publishedAt).getTime())) {
               publishedAt = new Date();
             }
-            
+
+            // Associate article with a trend term - use the term that was being searched
+            const trendTerm = trendTerms[Math.floor(index / Math.ceil(articles.length / trendTerms.length))] || trendTerms[0];
+
             return {
               nicheId,
+              trendTerm: trendTerm, // FIXED: Campo correto é trendTerm (camelCase)
               title: article.title,
               description: article.description,
               content: article.content,
@@ -3655,6 +3684,180 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     } catch (error) {
       console.error('Error getting blog post:', error);
       res.status(500).json({ success: false, message: 'Failed to get blog post' });
+    }
+  });
+
+  // DEBUG: Get all posts directly from database
+  app.get('/api/blog/debug/posts/:nicheId', async (req, res) => {
+    try {
+      const { nicheId } = req.params;
+      const posts = await db.select().from(schema.generatedBlogPosts)
+        .where(eq(schema.generatedBlogPosts.nicheId, nicheId));
+      console.log('📊 DEBUG: Posts encontrados no banco:', posts.length);
+      if (posts.length > 0) {
+        console.log('📝 Primeiro post:', JSON.stringify(posts[0], null, 2));
+      }
+      res.json({ success: true, count: posts.length, data: posts });
+    } catch (error) {
+      console.error('Error in debug route:', error);
+      res.status(500).json({ success: false, message: 'Debug failed', error: String(error) });
+    }
+  });
+
+  // Templates routes - Manage draft/published posts
+  app.get('/api/blog/templates/:nicheId', async (req, res) => {
+    try {
+      const { nicheId } = req.params;
+      const { status } = req.query; // Filter by status: 'draft', 'published', or all
+
+      let query = db.select().from(schema.generatedBlogPosts)
+        .where(eq(schema.generatedBlogPosts.nicheId, nicheId))
+        .$dynamic();
+
+      if (status && (status === 'draft' || status === 'published')) {
+        query = query.where(eq(schema.generatedBlogPosts.status, status as string));
+      }
+
+      const templates = await query.orderBy(desc(schema.generatedBlogPosts.createdAt));
+
+      res.json({ success: true, data: templates });
+    } catch (error) {
+      console.error('Error getting templates:', error);
+      res.status(500).json({ success: false, message: 'Failed to get templates' });
+    }
+  });
+
+  // Publish a template (change status from draft to published)
+  app.put('/api/blog/templates/:postId/publish', async (req, res) => {
+    try {
+      const { postId } = req.params;
+
+      const [updatedPost] = await db.update(schema.generatedBlogPosts)
+        .set({
+          status: 'published',
+          publishedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(schema.generatedBlogPosts.id, postId))
+        .returning();
+
+      if (!updatedPost) {
+        return res.status(404).json({ success: false, message: 'Template not found' });
+      }
+
+      console.log('📢 Post publicado:', postId);
+      res.json({ success: true, data: updatedPost });
+    } catch (error) {
+      console.error('Error publishing template:', error);
+      res.status(500).json({ success: false, message: 'Failed to publish template' });
+    }
+  });
+
+  // Delete a template
+  app.delete('/api/blog/templates/:postId', async (req, res) => {
+    try {
+      const { postId } = req.params;
+
+      await db.delete(schema.generatedBlogPosts)
+        .where(eq(schema.generatedBlogPosts.id, postId));
+
+      console.log('🗑️ Template deletado:', postId);
+      res.json({ success: true, message: 'Template deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete template' });
+    }
+  });
+
+  // Automation schedules routes
+  app.get('/api/blog/schedules/:organizationId', async (req, res) => {
+    try {
+      const { organizationId } = req.params;
+
+      const schedules = await db.select().from(schema.blogAutomationSchedules)
+        .where(eq(schema.blogAutomationSchedules.organizationId, organizationId))
+        .orderBy(desc(schema.blogAutomationSchedules.createdAt));
+
+      res.json({ success: true, data: schedules });
+    } catch (error) {
+      console.error('Error getting schedules:', error);
+      res.status(500).json({ success: false, message: 'Failed to get schedules' });
+    }
+  });
+
+  // Create automation schedule
+  app.post('/api/blog/schedules', async (req, res) => {
+    try {
+      const { organizationId, nicheIds, executionTime, daysOfWeek, timezone, createdBy } = req.body;
+
+      if (!organizationId || !nicheIds || !executionTime || !daysOfWeek) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields: organizationId, nicheIds, executionTime, daysOfWeek'
+        });
+      }
+
+      const [schedule] = await db.insert(schema.blogAutomationSchedules).values({
+        organizationId,
+        nicheIds,
+        executionTime,
+        daysOfWeek,
+        timezone: timezone || 'America/Sao_Paulo',
+        isActive: true,
+        createdBy
+      }).returning();
+
+      console.log('⏰ Agendamento criado:', schedule.id);
+      res.json({ success: true, data: schedule });
+    } catch (error) {
+      console.error('Error creating schedule:', error);
+      res.status(500).json({ success: false, message: 'Failed to create schedule' });
+    }
+  });
+
+  // Update automation schedule
+  app.put('/api/blog/schedules/:scheduleId', async (req, res) => {
+    try {
+      const { scheduleId } = req.params;
+      const { nicheIds, executionTime, daysOfWeek, timezone, isActive } = req.body;
+
+      const updateData: any = { updatedAt: new Date() };
+      if (nicheIds !== undefined) updateData.nicheIds = nicheIds;
+      if (executionTime !== undefined) updateData.executionTime = executionTime;
+      if (daysOfWeek !== undefined) updateData.daysOfWeek = daysOfWeek;
+      if (timezone !== undefined) updateData.timezone = timezone;
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      const [updatedSchedule] = await db.update(schema.blogAutomationSchedules)
+        .set(updateData)
+        .where(eq(schema.blogAutomationSchedules.id, scheduleId))
+        .returning();
+
+      if (!updatedSchedule) {
+        return res.status(404).json({ success: false, message: 'Schedule not found' });
+      }
+
+      console.log('✏️ Agendamento atualizado:', scheduleId);
+      res.json({ success: true, data: updatedSchedule });
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      res.status(500).json({ success: false, message: 'Failed to update schedule' });
+    }
+  });
+
+  // Delete automation schedule
+  app.delete('/api/blog/schedules/:scheduleId', async (req, res) => {
+    try {
+      const { scheduleId } = req.params;
+
+      await db.delete(schema.blogAutomationSchedules)
+        .where(eq(schema.blogAutomationSchedules.id, scheduleId));
+
+      console.log('🗑️ Agendamento deletado:', scheduleId);
+      res.json({ success: true, message: 'Schedule deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting schedule:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete schedule' });
     }
   });
 

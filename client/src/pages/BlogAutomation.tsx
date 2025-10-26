@@ -572,38 +572,46 @@ export default function BlogAutomation() {
 
                 {/* Tabs for Posts and Runs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="glass-3d border-white/10 w-full">
-                    <TabsTrigger 
-                      value="trends" 
+                  <TabsList className="glass-3d border-white/10 w-full grid grid-cols-5">
+                    <TabsTrigger
+                      value="trends"
                       className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
                       data-testid="tab-trends"
                     >
                       <TrendingUp className="w-4 h-4 mr-2" />
                       Tendências ({trends.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="news" 
+                    <TabsTrigger
+                      value="news"
                       className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
                       data-testid="tab-news"
                     >
                       <Search className="w-4 h-4 mr-2" />
                       Notícias ({newsArticles.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="posts" 
+                    <TabsTrigger
+                      value="templates"
                       className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
-                      data-testid="tab-posts"
+                      data-testid="tab-templates"
                     >
                       <FileText className="w-4 h-4 mr-2" />
-                      Posts Gerados
+                      Templates ({posts.length})
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="runs" 
+                    <TabsTrigger
+                      value="runs"
                       className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
                       data-testid="tab-runs"
                     >
                       <BarChart3 className="w-4 h-4 mr-2" />
-                      Histórico de Execuções
+                      Histórico
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="schedule"
+                      className="data-[state=active]:bg-purple-500/30 data-[state=active]:text-purple-300"
+                      data-testid="tab-schedule"
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Agendamento
                     </TabsTrigger>
                   </TabsList>
 
@@ -955,7 +963,7 @@ export default function BlogAutomation() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="posts" className="space-y-4">
+                  <TabsContent value="templates" className="space-y-4">
                     {isLoadingPosts ? (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
@@ -964,42 +972,53 @@ export default function BlogAutomation() {
                       <div className="text-center py-12">
                         <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
                         <h3 className="text-lg font-semibold text-gray-300 mb-2">
-                          Nenhum post gerado ainda
+                          Nenhum template ainda
                         </h3>
                         <p className="text-gray-400 mb-4">
-                          Execute a automação para gerar seu primeiro post
+                          Execute a automação para gerar templates de blog posts
                         </p>
                       </div>
                     ) : (
-                      posts.map((post: BlogPost) => (
-                        <Card key={post.id} className="glass-3d-light border-white/10" data-testid={`post-card-${post.id}`}>
-                          <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg text-white line-clamp-2">
-                                {post.title}
-                              </CardTitle>
-                              <div className="flex items-center space-x-2">
-                                <Badge 
-                                  className={`${
-                                    post.status === 'published' 
-                                      ? 'bg-green-500/20 text-green-300 border-green-500/30' 
-                                      : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
-                                  }`}
-                                >
-                                  {post.status === 'published' ? 'Publicado' : 'Rascunho'}
-                                </Badge>
-                                <div className="flex items-center text-sm text-gray-400">
-                                  <Clock className="w-4 h-4 mr-1" />
-                                  {post.readingTime} min
+                      <div className="grid grid-cols-1 gap-4">
+                        {posts.map((post: BlogPost) => (
+                          <Card key={post.id} className="glass-3d-light border-white/10 hover:scale-[1.01] transition-all duration-300" data-testid={`template-card-${post.id}`}>
+                            {post.featuredImageUrl && (
+                              <div className="w-full h-48 overflow-hidden rounded-t-xl">
+                                <img
+                                  src={post.featuredImageUrl}
+                                  alt={post.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <CardHeader>
+                              <div className="flex items-start justify-between gap-4">
+                                <CardTitle className="text-lg text-white line-clamp-2 flex-1">
+                                  {post.title}
+                                </CardTitle>
+                                <div className="flex flex-col items-end gap-2">
+                                  <Badge
+                                    className={`${
+                                      post.status === 'published'
+                                        ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                                        : 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+                                    }`}
+                                  >
+                                    {post.status === 'published' ? 'Publicado' : 'Rascunho'}
+                                  </Badge>
+                                  <div className="flex items-center text-sm text-gray-400">
+                                    <Clock className="w-4 h-4 mr-1" />
+                                    {post.readingTime} min
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-gray-300 mb-4 line-clamp-3">{post.summary}</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex flex-wrap gap-2">
-                                {post.tags.slice(0, 3).map((tag, index) => (
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-gray-300 mb-4 line-clamp-3">{post.summary}</p>
+
+                              {/* Tags */}
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {post.tags.slice(0, 5).map((tag, index) => (
                                   <span
                                     key={index}
                                     className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-lg"
@@ -1008,13 +1027,43 @@ export default function BlogAutomation() {
                                   </span>
                                 ))}
                               </div>
-                              <span className="text-sm text-gray-400">
-                                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
+
+                              {/* Metadata */}
+                              <div className="flex items-center justify-between mb-4 pt-4 border-t border-white/10">
+                                <span className="text-sm text-gray-400">
+                                  Gerado {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                                </span>
+                                {post.status === 'published' && post.publishedAt && (
+                                  <span className="text-sm text-green-400">
+                                    Publicado {formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-2">
+                                {post.status === 'draft' && (
+                                  <Button
+                                    className="glass-button-3d bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 flex-1"
+                                    size="sm"
+                                  >
+                                    <Check className="w-4 h-4 mr-2" />
+                                    Publicar
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  className="glass-3d-light border-white/20 text-gray-300 hover:bg-white/5"
+                                  size="sm"
+                                >
+                                  <FileText className="w-4 h-4 mr-2" />
+                                  Ver Post
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     )}
                   </TabsContent>
 
@@ -1085,6 +1134,80 @@ export default function BlogAutomation() {
                         </Card>
                       ))
                     )}
+                  </TabsContent>
+
+                  <TabsContent value="schedule" className="space-y-4">
+                    <Card className="glass-3d border-white/10">
+                      <CardHeader>
+                        <CardTitle className="flex items-center text-xl text-purple-400">
+                          <Clock className="w-5 h-5 mr-2" />
+                          Agendamento Automático
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-300 mb-6">
+                          Configure a automação para rodar automaticamente nos dias e horários especificados.
+                          O sistema irá gerar novos posts automaticamente com base nas tendências mais recentes.
+                        </p>
+
+                        <div className="glass-3d-light rounded-xl p-6 space-y-6">
+                          {/* Time Picker */}
+                          <div>
+                            <Label htmlFor="execution-time" className="text-gray-200 mb-2 block">
+                              Horário de Execução
+                            </Label>
+                            <Input
+                              id="execution-time"
+                              type="time"
+                              className="glass-3d-light border-white/20 text-white"
+                              defaultValue="09:00"
+                            />
+                          </div>
+
+                          {/* Days of Week */}
+                          <div>
+                            <Label className="text-gray-200 mb-3 block">Dias da Semana</Label>
+                            <div className="grid grid-cols-7 gap-2">
+                              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, index) => (
+                                <Button
+                                  key={index}
+                                  variant="outline"
+                                  className="glass-3d-light border-white/20 text-gray-300 hover:bg-purple-500/30 hover:text-purple-300 hover:border-purple-500/50"
+                                  size="sm"
+                                >
+                                  {day}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Active Toggle */}
+                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                            <div>
+                              <h4 className="text-white font-semibold">Ativar Agendamento</h4>
+                              <p className="text-sm text-gray-400">
+                                A automação rodará automaticamente nos horários configurados
+                              </p>
+                            </div>
+                            <Button
+                              className="glass-button-3d bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0"
+                            >
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              Ativar
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Existing Schedules */}
+                        <div className="mt-6">
+                          <h3 className="text-lg font-semibold text-white mb-4">Agendamentos Ativos</h3>
+                          <div className="text-center py-8 text-gray-400">
+                            <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <p>Nenhum agendamento configurado ainda</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                 </Tabs>
               </div>

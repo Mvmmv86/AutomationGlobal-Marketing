@@ -5,26 +5,23 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodError } from 'zod';
+import { AppError } from '../errors/index.js';
 
-/**
- * Custom Application Error Class
- */
-export class AppError extends Error {
-  public statusCode: number;
-  public isOperational: boolean;
-  public code?: string;
-  public details?: any;
-
-  constructor(statusCode: number, message: string, code?: string, details?: any) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-    this.code = code;
-    this.details = details;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+// Re-export all error classes for easy importing from middleware
+export {
+  AppError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  ValidationError,
+  ConflictError,
+  DatabaseError,
+  ExternalServiceError,
+  RateLimitError,
+  TimeoutError,
+  BadRequestError,
+  InternalServerError
+} from '../errors/index.js';
 
 /**
  * Request Validation Middleware

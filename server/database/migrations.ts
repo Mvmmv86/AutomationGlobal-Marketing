@@ -106,6 +106,11 @@ export class DatabaseMigrations {
     await this.createOrganizationIntegrationsTable();
     await this.createActivityLogsTable();
     await this.createSystemNotificationsTable();
+    await this.createBlogNichesTable();
+    await this.createTrendingTopicsTable();
+    await this.createNewsArticlesTable();
+    await this.createBlogPostsTable();
+    await this.createGeneratedBlogPostsTable();
   }
 
   private async createUsersTable(): Promise<void> {
@@ -352,6 +357,152 @@ export class DatabaseMigrations {
       )
     `;
     console.log('✅ Created table: system_notifications');
+  }
+
+  private async createBlogNichesTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS blog_niches (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        organization_id UUID NOT NULL REFERENCES organizations(id),
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        description TEXT,
+        keywords JSONB DEFAULT '[]'::jsonb,
+        language TEXT DEFAULT 'pt',
+        region TEXT DEFAULT 'BR',
+        is_active BOOLEAN DEFAULT true,
+        min_articles_for_news_mode INTEGER DEFAULT 3,
+        max_posts_per_day INTEGER DEFAULT 5,
+        schedule_cron TEXT DEFAULT '0 */4 * * *',
+        last_processed_at TIMESTAMP,
+        created_by UUID NOT NULL REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✅ Created table: blog_niches');
+  }
+
+  private async createTrendingTopicsTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS trending_topics (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        niche_id VARCHAR NOT NULL REFERENCES blog_niches(id),
+        term TEXT NOT NULL,
+        source TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        score INTEGER DEFAULT 1,
+        metadata JSONB DEFAULT '{}'::jsonb,
+        collected_at TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✅ Created table: trending_topics');
+  }
+
+  private async createNewsArticlesTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS news_articles (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        niche_id VARCHAR NOT NULL REFERENCES blog_niches(id),
+        trend_term TEXT,
+        title TEXT NOT NULL,
+        description TEXT,
+        content TEXT,
+        url TEXT NOT NULL UNIQUE,
+        source_url TEXT,
+        source_name TEXT,
+        author TEXT,
+        image_url TEXT,
+        published_at TIMESTAMP,
+        language TEXT DEFAULT 'pt',
+        relevance_score INTEGER DEFAULT 0,
+        sentiment_score DECIMAL(3, 2),
+        is_used BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
+    // Add missing columns if they don't exist (for existing tables)
+    try {
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS trend_term TEXT`;
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS source_url TEXT`;
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS source_name TEXT`;
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS author TEXT`;
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'pt'`;
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS sentiment_score DECIMAL(3, 2)`;
+      await this.sql`ALTER TABLE news_articles ADD COLUMN IF NOT EXISTS is_used BOOLEAN DEFAULT false`;
+      console.log('✅ Added missing columns to news_articles (if needed)');
+    } catch (error) {
+      // Columns might already exist, ignore error
+      console.log('ℹ️  news_articles columns already exist or skipped');
+    }
+
+    // Add UNIQUE constraint to url column if it doesn't exist
+    try {
+      await this.sql`
+        ALTER TABLE news_articles
+        ADD CONSTRAINT news_articles_url_unique UNIQUE (url)
+      `;
+      console.log('✅ Added UNIQUE constraint to url column');
+    } catch (error) {
+      // Constraint might already exist, ignore error
+      console.log('ℹ️  UNIQUE constraint on url already exists or skipped');
+    }
+
+    console.log('✅ Created table: news_articles');
+  }
+
+  private async createBlogPostsTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        niche_id VARCHAR NOT NULL REFERENCES blog_niches(id),
+        title TEXT NOT NULL,
+        slug TEXT NOT NULL,
+        content TEXT NOT NULL,
+        summary TEXT,
+        featured_image_url TEXT,
+        keywords JSONB DEFAULT '[]'::jsonb,
+        status TEXT DEFAULT 'draft',
+        generation_mode TEXT DEFAULT 'news',
+        source_articles JSONB DEFAULT '[]'::jsonb,
+        source_trends JSONB DEFAULT '[]'::jsonb,
+        scheduled_for TIMESTAMP,
+        published_at TIMESTAMP,
+        created_by UUID NOT NULL REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✅ Created table: blog_posts');
+  }
+
+  private async createGeneratedBlogPostsTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS generated_blog_posts (
+        id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        niche_id VARCHAR NOT NULL REFERENCES blog_niches(id),
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        summary TEXT,
+        mode TEXT NOT NULL,
+        source_data JSONB NOT NULL,
+        tags JSONB DEFAULT '[]'::jsonb,
+        featured_image_url TEXT,
+        wordpress_post_id TEXT,
+        status TEXT DEFAULT 'draft',
+        published_at TIMESTAMP,
+        publication_url TEXT,
+        content_hash TEXT NOT NULL,
+        metadata JSONB DEFAULT '{}'::jsonb,
+        reading_time INTEGER,
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✅ Created table: generated_blog_posts');
   }
 
   private async createForeignKeys(): Promise<void> {

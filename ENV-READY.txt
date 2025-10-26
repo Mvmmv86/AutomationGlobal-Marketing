@@ -1,0 +1,74 @@
+# ==========================================
+# 🚀 AUTOMATION GLOBAL v4.0 - ENVIRONMENT
+# ==========================================
+# ⚠️ COPIE ESTE CONTEÚDO PARA O ARQUIVO .env
+# ⚠️ SUBSTITUA OS VALORES MARCADOS COM [...]
+# ==========================================
+
+NODE_ENV=development
+PORT=5000
+
+# ==========================================
+# 🗄️ BANCO DE DADOS - SUPABASE
+# ==========================================
+# Project ID encontrado: zqzxaulmzwymkybctnzw
+# Dashboard: https://supabase.com/dashboard/project/zqzxaulmzwymkybctnzw
+
+# ⚠️ PASSO 1: Vá em Settings → Database no Supabase
+# ⚠️ PASSO 2: Copie sua senha do banco ou resete se necessário
+# ⚠️ PASSO 3: Substitua [PASSWORD] abaixo pela senha real
+
+DATABASE_URL=postgresql://postgres.zqzxaulmzwymkybctnzw:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+
+# ⚠️ PASSO 4: Vá em Settings → API no Supabase
+# ⚠️ PASSO 5: Copie as keys abaixo:
+
+SUPABASE_URL=https://zqzxaulmzwymkybctnzw.supabase.co
+SUPABASE_ANON_KEY=[COLE_ANON_PUBLIC_KEY_AQUI]
+SUPABASE_SERVICE_KEY=[COLE_SERVICE_ROLE_SECRET_AQUI]
+
+SUPABASE_CONNECTION_STRING=postgresql://postgres.zqzxaulmzwymkybctnzw:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+
+# ==========================================
+# 🔐 SEGURANÇA - JWT
+# ==========================================
+JWT_SECRET=automation-global-super-secret-key-2025-production-ready
+
+# ==========================================
+# 🤖 IA - OPENAI & ANTHROPIC
+# ==========================================
+OPENAI_API_KEY=[COLE_SUA_KEY_OPENAI_AQUI]
+ANTHROPIC_API_KEY=[COLE_SUA_KEY_ANTHROPIC_AQUI]
+
+# ==========================================
+# 📦 REDIS (opcional - tem fallback in-memory)
+# ==========================================
+REDIS_URL=redis://localhost:6379
+
+# ==========================================
+# ⚙️ CELERY (opcional - background jobs)
+# ==========================================
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+
+# ==========================================
+# 🚦 RATE LIMITING
+# ==========================================
+RATE_LIMIT_WINDOW=900000
+RATE_LIMIT_MAX_REQUESTS=1000
+
+# ==========================================
+# 🤖 AI CONFIGURATION
+# ==========================================
+AI_DEFAULT_MODEL=gpt-5
+AI_FALLBACK_MODEL=claude-sonnet-4-20250514
+AI_MAX_TOKENS=4096
+AI_TIMEOUT=30000
+
+# ==========================================
+# 📊 LOGGING
+# ==========================================
+LOG_LEVEL=INFO
+DEBUG=false
+ENVIRONMENT=development
+

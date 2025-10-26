@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { healthCheckService } from '../services/health-check-service';
 import { loggingService } from '../services/logging-service';
 import { rateLimitService } from '../services/rate-limit-service';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth-unified';
 
 const router = Router();
 

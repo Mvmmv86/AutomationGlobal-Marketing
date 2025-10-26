@@ -59,29 +59,50 @@ export class RateLimitService {
   private redis: Redis;
   private useInMemory: boolean = false;
   private inMemoryStore: Map<string, { count: number; resetTime: number }> = new Map();
+  private hasFallenBack: boolean = false; // Flag para evitar logs duplicados
 
   constructor() {
     try {
       this.redis = new Redis({
         host: 'localhost',
         port: 6379,
-        retryDelayOnFailure: 100,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true
+        retryStrategy: (times: number) => {
+          // Desistir após 3 tentativas
+          if (times > 3) {
+            if (!this.hasFallenBack) {
+              console.warn('⚠️ Redis not available for rate limiting, using in-memory store');
+              this.hasFallenBack = true;
+            }
+            this.useInMemory = true;
+            return null; // Para as tentativas de reconexão
+          }
+          return Math.min(times * 100, 2000);
+        },
+        maxRetriesPerRequest: 1,
+        lazyConnect: true,
+        connectionTimeout: 3000,
+        commandTimeout: 2000,
+        enableOfflineQueue: false,
+        enableReadyCheck: false
       });
 
-      this.redis.on('error', (err) => {
-        console.warn('⚠️ Redis not available for rate limiting, using in-memory store:', err.message);
+      // Silenciar eventos de erro duplicados
+      this.redis.on('error', () => {
+        // Silenciar completamente - já tratamos no retryStrategy
         this.useInMemory = true;
       });
 
       this.redis.on('connect', () => {
         console.log('✅ Redis connected for rate limiting');
         this.useInMemory = false;
+        this.hasFallenBack = false;
       });
 
     } catch (error) {
-      console.warn('⚠️ Redis initialization failed, using in-memory rate limiting');
+      if (!this.hasFallenBack) {
+        console.warn('⚠️ Redis initialization failed, using in-memory rate limiting');
+        this.hasFallenBack = true;
+      }
       this.useInMemory = true;
     }
   }
@@ -181,7 +202,7 @@ export class RateLimitService {
       return { allowed, count: count + 1, remaining, resetTime };
 
     } catch (error) {
-      console.warn('Redis rate limit check failed, falling back to in-memory:', error.message);
+      // Silenciar erro - fallback automático
       this.useInMemory = true;
       return this.checkRateLimitInMemory(key, config, now);
     }

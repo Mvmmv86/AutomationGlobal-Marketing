@@ -1,6 +1,6 @@
 // server/blueprints/organizations.ts
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth-middleware.js';
+import { requireAuth } from '../middleware/auth-unified.js';
 import { 
   extractTenantContext, 
   requireTenant, 
