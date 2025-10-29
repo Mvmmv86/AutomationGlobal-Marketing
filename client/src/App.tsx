@@ -28,7 +28,6 @@ import AIManagementByOrganization from "@/pages/ai-management-by-organization";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import CampaignsDashboard from "@/pages/CampaignsDashboard";
 import BlogAutomation from "@/pages/BlogAutomation";
-import BlogAutomationEnhanced from "@/pages/BlogAutomationEnhanced";
 import AutomationDashboard from "@/pages/AutomationDashboard";
 import NotFound from "@/pages/not-found";
 
@@ -61,7 +60,6 @@ function Router() {
       <Route path="/marketing/settings" component={() => <MarketingDashboardComplete initialTab="settings" />} />
 
       {/* Automation Routes */}
-      <Route path="/automation/content" component={BlogAutomationEnhanced} />
       <Route path="/automation/blog" component={BlogAutomation} />
       <Route path="/automation" component={AutomationDashboard} />
 
