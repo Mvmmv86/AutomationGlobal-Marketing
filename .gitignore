@@ -44,3 +44,7 @@ create-*.js
 
 # Scripts temporários
 setup-*.sh
+
+# Replit configuration (legacy)
+.replit
+replit.nix
