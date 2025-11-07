@@ -12,7 +12,17 @@
       "Bash(timeout:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run check:*)",
+      "Bash(nul)",
+      "Bash(node -c:*)",
+      "Bash(npm run dev:check:*)",
+      "Bash(node -r esbuild-register test-social-integration.ts:*)",
+      "Bash(npx tsx:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
