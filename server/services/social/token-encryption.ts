@@ -165,9 +165,4 @@ export class TokenEncryptionService {
 export const tokenEncryption = new TokenEncryptionService();
 
 // Helper: Gerar nova chave se executado diretamente
-if (require.main === module) {
-  console.log('\n🔑 Generated TOKEN_ENCRYPTION_KEY:');
-  console.log(TokenEncryptionService.generateEncryptionKey());
-  console.log('\n📝 Add this to your .env file:');
-  console.log(`TOKEN_ENCRYPTION_KEY=${TokenEncryptionService.generateEncryptionKey()}\n`);
-}
+// Removido: require.main não funciona em ES modules

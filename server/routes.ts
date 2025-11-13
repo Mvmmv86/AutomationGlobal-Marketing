@@ -15,6 +15,8 @@ import * as schema from "../shared/schema";
 import { desc, eq, sql } from "drizzle-orm";
 import { socialMediaPosts, socialMediaAccounts } from "../shared/schema";
 import marketingMetricsRoutes from "./routes/marketing-metrics";
+import socialRoutes from "./routes/social/index";
+import socialAuthRoutes from "./routes/social/social-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -1194,6 +1196,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/permissions', permissionsBlueprint);
   console.log('✅ Permissions blueprint registered at /api/permissions');
 
+  // AI Management routes (Admin only)
+  const aiManagementRoutes = await import('./routes/admin/ai-management.js');
+  app.use('/api/admin/ai', aiManagementRoutes.default);
+  console.log('✅ AI Management routes registered at /api/admin/ai');
+
+  // Automations routes
+  const automationsRoutes = await import('./routes/automations.js');
+  app.use('/api/automations', automationsRoutes.default);
+  console.log('✅ Automations routes registered at /api/automations');
+
+  // Audience routes
+  const audienceRoutes = await import('./routes/audience.js');
+  app.use('/api/audience', audienceRoutes.default);
+  console.log('✅ Audience routes registered at /api/audience');
+
+  // Campaigns routes
+  const campaignsRoutes = await import('./routes/campaigns.js');
+  app.use('/api/campaigns', campaignsRoutes.default);
+  console.log('✅ Campaigns routes registered at /api/campaigns');
+
   // Register Organization Auth routes (Independent Login System)
   const organizationAuthRoutes = await import('./routes/organization-auth');
   app.use('/api/org-auth', organizationAuthRoutes.default);
@@ -1603,119 +1625,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Social Media Routes
-  // Get social media accounts for organization
-  app.get('/api/organizations/:id/social-media/accounts', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
-    async (req: TenantRequest, res) => {
-      try {
-        const { id } = req.params;
-        
-        if (req.organization?.type !== 'marketing') {
-          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
-        }
-        
-        const accounts = await storage.getSocialMediaAccounts(id);
-        res.json(accounts);
-      } catch (error: any) {
-        res.status(500).json({ error: error.message });
-      }
-    }
-  );
-
-  // Connect social media account
-  app.post('/api/organizations/:id/social-media/connect', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
-    async (req: TenantRequest, res) => {
-      try {
-        const { id } = req.params;
-        const { platform, accessToken, accountId } = req.body;
-        
-        if (req.organization?.type !== 'marketing') {
-          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
-        }
-        
-        const account = await socialMediaService.connectAccount({
-          organizationId: id,
-          platform,
-          accessToken,
-          accountId
-        });
-        
-        res.json(account);
-      } catch (error: any) {
-        res.status(500).json({ error: error.message });
-      }
-    }
-  );
-
-  // Get posts for organization
-  app.get('/api/organizations/:id/social-media/posts', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
-    async (req: TenantRequest, res) => {
-      try {
-        const { id } = req.params;
-        const { accountId, status } = req.query as { accountId?: string, status?: string };
-        
-        if (req.organization?.type !== 'marketing') {
-          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
-        }
-        
-        let posts;
-        if (status) {
-          posts = await storage.getPostsByStatus(id, status);
-        } else {
-          posts = await storage.getSocialMediaPosts(id, accountId);
-        }
-        
-        res.json(posts);
-      } catch (error: any) {
-        res.status(500).json({ error: error.message });
-      }
-    }
-  );
-
-  // Create and publish post
-  app.post('/api/organizations/:id/social-media/posts', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
-    async (req: TenantRequest, res) => {
-      try {
-        const { id } = req.params;
-        const { accountId, content, mediaUrls, scheduledAt, platforms } = req.body;
-        
-        if (req.organization?.type !== 'marketing') {
-          return res.status(403).json({ error: 'Access denied. Organization must be of type marketing.' });
-        }
-        
-        const post = await socialMediaService.createPost({
-          organizationId: id,
-          accountId,
-          content,
-          mediaUrls,
-          scheduledAt,
-          platforms
-        });
-        
-        res.json(post);
-      } catch (error: any) {
-        res.status(500).json({ error: error.message });
-      }
-    }
-  );
+  // Social Media Routes - MIGRADAS PARA /api/social/*
+  // Ver: server/routes/social/index.ts e server/routes/social/social-auth.ts
+  // As rotas antigas (/api/organizations/:id/social-media/*) foram removidas
+  // Use as novas rotas: /api/social/accounts, /api/social/posts, /api/social/auth/*
 
   // Get content templates
-  app.get('/api/organizations/:id/social-media/templates', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
+  // ==================== TEMPLATES (SISTEMA ANTIGO - MANTIDO) ====================
+  // NOTA: Templates NÃO foram implementadas na Semana 2
+  // Estas rotas usam storage.getContentTemplates (sistema antigo)
+  // TODO: Migrar para sistema novo quando necessário
+
+  app.get('/api/organizations/:id/social-media/templates',
+    requireAuth,
+    loadOrganizationContext,
+    requireActiveOrganization,
     async (req: TenantRequest, res) => {
       try {
         const { id } = req.params;
@@ -1733,112 +1657,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Endpoint for saving posts (draft or published) usando Drizzle ORM + INTEGRAÇÃO FACEBOOK
-  app.post('/api/social-media/posts', async (req: Request, res) => {
-    try {
-      const { content, mediaItems, selectedAccounts, mediaType, status, publishMode, scheduledAt } = req.body;
-      
-      console.log('📥 DADOS RECEBIDOS NO BACKEND:', {
-        content: content?.substring(0, 50),
-        mediaType,
-        status,
-        publishMode,
-        scheduledAt,
-        selectedAccounts,
-        body: JSON.stringify(req.body, null, 2)
-      });
-      
-      // Determinar status final baseado no publishMode e scheduledAt
-      let finalStatus = status || 'draft';
-      if (publishMode === 'auto') {
-        finalStatus = 'published';
-      } else if (publishMode === 'schedule' && scheduledAt) {
-        finalStatus = 'scheduled';
-      }
-      
-      console.log('💾 Salvando post:', { 
-        content: content.substring(0, 50), 
-        mediaType, 
-        status: status,
-        publishMode: publishMode,
-        scheduledAt: scheduledAt,
-        finalStatus: finalStatus,
-        logica: `publishMode === 'schedule' && scheduledAt ? 'scheduled' : publishMode === 'auto' ? 'published' : status`
-      });
-      
-      // Salvar no banco usando Drizzle ORM
-      const [savedPost] = await db.insert(socialMediaPosts).values({
-        organizationId: '00000000-0000-0000-0000-000000000000', // Default organization ID
-        content: content,
-        mediaItems: mediaItems || [],
-        selectedAccounts: selectedAccounts || [],
-        platforms: selectedAccounts || [],
-        mediaType: mediaType || 'feed',
-        status: finalStatus,
-        publishMode: publishMode || 'manual',
-        publishedAt: finalStatus === 'published' ? new Date() : null,
-        scheduledAt: (finalStatus === 'scheduled' && scheduledAt) ? new Date(scheduledAt) : null,
-        analytics: {
-          likes: Math.floor(Math.random() * 100),
-          comments: Math.floor(Math.random() * 50),
-          shares: Math.floor(Math.random() * 25)
-        },
-        createdBy: '00000000-0000-0000-0000-000000000000' // Default user ID
-      }).returning();
-      
-      console.log('✅ Post salvo com sucesso:', { id: savedPost.id, status: finalStatus });
-      
-      // Mensagem baseada no status final
-      let message = 'Rascunho salvo com sucesso';
-      if (finalStatus === 'published') {
-        message = 'Post publicado com sucesso!';
-      } else if (finalStatus === 'scheduled') {
-        message = 'Post agendado!';
-      }
-      
-      // 🎯 INTEGRAÇÃO AUTOMÁTICA COM FACEBOOK - INVISÍVEL PARA O USUÁRIO
-      let facebookStatus = null;
-      if (finalStatus === 'published' && selectedAccounts?.includes('facebook')) {
-        try {
-          console.log('🚀 Publicando automaticamente no Facebook...');
-          
-          const facebookResponse = await fetch('http://localhost:5000/api/facebook/posts/publish', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'x-organization-id': '8c46a511-7a39-42cb-8e46-0b7866d21737'
-            },
-            body: JSON.stringify({
-              content,
-              mediaUrls: mediaItems?.map(item => item.url).filter(Boolean) || [],
-              platforms: ['facebook', 'instagram'].filter(p => selectedAccounts?.includes(p)),
-              campaignId: null
-            })
-          });
-
-          if (facebookResponse.ok) {
-            const fbResult = await facebookResponse.json();
-            facebookStatus = '✅ Publicado no Facebook/Instagram';
-            console.log('✅ Post publicado no Facebook:', fbResult.published);
-          }
-        } catch (fbError) {
-          console.warn('⚠️ Falha na publicação Facebook:', fbError.message);
-          facebookStatus = '⚠️ Falha no Facebook (salvo localmente)';
-        }
-      }
-
-      res.json({ 
-        success: true, 
-        message: facebookStatus ? `${message} ${facebookStatus}` : message,
-        id: savedPost.id,
-        status: finalStatus,
-        facebook: facebookStatus
-      });
-    } catch (error: any) {
-      console.error('❌ Erro ao salvar post:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
+  // ROTA REMOVIDA (DUPLICADA) - Migrada para /api/social/posts
+  // Ver: server/routes/social/index.ts linha 181
+  // Toda a lógica de criação de posts agora está no novo sistema
 
   // Simple AI optimization endpoint (working version)
   app.post('/api/social-media/optimize-content', async (req: Request, res) => {
@@ -2211,214 +2032,8 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   });
 
   // Analytics endpoint for REAL performance data - NO MOCK DATA
-  app.get('/api/social-media/analytics', async (req: Request, res) => {
-    try {
-      console.log('📊 Buscando analytics REAIS do banco de dados...');
-      
-      // Query SQL direta usando as colunas corretas da tabela
-      const query = `
-        SELECT id, content, status, platforms, created_at, likes, comments, shares, media_type 
-        FROM social_media_posts 
-        ORDER BY created_at DESC
-      `;
-      
-      const result = await db.execute(query);
-      const posts = result.rows || [];
-      console.log(`📈 Encontrados ${posts.length} posts reais para análise`);
-      
-      // Calcular métricas REAIS baseadas nos posts salvos
-      let instagramMetrics = { likes: 0, followers: 0, posts: 0, engagement: 0 };
-      let facebookMetrics = { likes: 0, followers: 0, posts: 0, engagement: 0 };
-      
-      // Buscar contas conectadas
-      const accounts = await storage.getSocialMediaAccounts();
-      console.log(`🔗 Encontradas ${accounts.length} contas conectadas`);
-      
-      // Calcular followers reais das contas conectadas
-      accounts.forEach(account => {
-        if (account.platform === 'instagram') {
-          instagramMetrics.followers += account.followers || 0;
-        } else if (account.platform === 'facebook') {
-          facebookMetrics.followers += account.followers || 0;
-        }
-      });
-      
-      // Analisar performance dos posts
-      let oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      let oldInstagramLikes = 0, oldFacebookLikes = 0;
-      let recentInstagramLikes = 0, recentFacebookLikes = 0;
-      let totalReach = 0;
-      let allHashtags: string[] = [];
-      
-      posts.forEach((post: any) => {
-        const postDate = new Date(post.created_at);
-        const isRecent = postDate > oneWeekAgo;
-        
-        // Obter plataforma correta
-        let platform = 'instagram';
-        if (typeof post.platforms === 'string') {
-          try {
-            const platforms = JSON.parse(post.platforms);
-            platform = platforms[0] || 'instagram';
-          } catch (e) {
-            platform = 'instagram';
-          }
-        }
-        
-        if (platform === 'instagram') {
-          instagramMetrics.posts++;
-          const likes = post.likes || 0;
-          instagramMetrics.likes += likes;
-          
-          if (isRecent) recentInstagramLikes += likes;
-          else oldInstagramLikes += likes;
-          
-        } else if (platform === 'facebook') {
-          facebookMetrics.posts++;
-          const likes = post.likes || 0;
-          facebookMetrics.likes += likes;
-          
-          if (isRecent) recentFacebookLikes += likes;
-          else oldFacebookLikes += likes;
-        }
-        
-        // Somar reach real
-        totalReach += post.reach || 0;
-        
-        // Extrair hashtags do conteúdo
-        if (post.content) {
-          const hashtags = post.content.match(/#\w+/g);
-          if (hashtags) {
-            allHashtags.push(...hashtags);
-          }
-        }
-      });
-      
-      // Calcular engagement real
-      if (instagramMetrics.followers > 0) {
-        instagramMetrics.engagement = ((instagramMetrics.likes / instagramMetrics.followers) * 100);
-      }
-      if (facebookMetrics.followers > 0) {
-        facebookMetrics.engagement = ((facebookMetrics.likes / facebookMetrics.followers) * 100);
-      }
-      
-      // Calcular crescimento semanal
-      const instagramGrowth = oldInstagramLikes > 0 ? 
-        (((recentInstagramLikes - oldInstagramLikes) / oldInstagramLikes) * 100) : 0;
-      const facebookGrowth = oldFacebookLikes > 0 ? 
-        (((recentFacebookLikes - oldFacebookLikes) / oldFacebookLikes) * 100) : 0;
-      
-      // Encontrar hashtag mais popular
-      const hashtagCount: {[key: string]: number} = {};
-      allHashtags.forEach(tag => {
-        hashtagCount[tag] = (hashtagCount[tag] || 0) + 1;
-      });
-      
-      const topHashtag = Object.keys(hashtagCount).length > 0 ? 
-        Object.keys(hashtagCount).reduce((a, b) => hashtagCount[a] > hashtagCount[b] ? a : b) : '';
-      
-      // Calcular engagement total
-      const totalLikes = instagramMetrics.likes + facebookMetrics.likes;
-      const totalFollowers = instagramMetrics.followers + facebookMetrics.followers;
-      const totalEngagement = totalFollowers > 0 ? ((totalLikes / totalFollowers) * 100) : 0;
-      
-      // Analisar melhor horário baseado nos posts
-      const hourlyPerformance: {[hour: string]: number} = {};
-      posts.forEach(post => {
-        if (post.scheduledAt || post.createdAt) {
-          const hour = new Date(post.scheduledAt || post.createdAt).getHours();
-          const performance = (post.likes || 0) + (post.comments || 0) + (post.shares || 0);
-          hourlyPerformance[hour] = (hourlyPerformance[hour] || 0) + performance;
-        }
-      });
-      
-      const bestHour = Object.keys(hourlyPerformance).length > 0 ?
-        Object.keys(hourlyPerformance).reduce((a, b) => 
-          hourlyPerformance[a] > hourlyPerformance[b] ? a : b) : '';
-      
-      const bestPerformingTime = bestHour ? 
-        `${bestHour.padStart(2, '0')}:00-${(parseInt(bestHour) + 2).toString().padStart(2, '0')}:00` : 
-        'Sem dados suficientes';
-      
-      // Estrutura final com dados 100% reais
-      const analytics = {
-        instagram: {
-          likes: instagramMetrics.likes,
-          followers: instagramMetrics.followers,
-          engagement: instagramMetrics.engagement.toFixed(1),
-          lastWeekGrowth: Math.max(0, instagramGrowth).toFixed(1),
-          posts: instagramMetrics.posts
-        },
-        facebook: {
-          likes: facebookMetrics.likes,
-          followers: facebookMetrics.followers,
-          engagement: facebookMetrics.engagement.toFixed(1),
-          lastWeekGrowth: Math.max(0, facebookGrowth).toFixed(1),
-          posts: facebookMetrics.posts
-        },
-        overall: {
-          totalEngagement: totalEngagement.toFixed(1),
-          totalReach: totalReach,
-          bestPerformingTime: bestPerformingTime,
-          topHashtag: topHashtag || 'Nenhum encontrado',
-          totalPosts: posts.length,
-          totalAccounts: accounts.length
-        }
-      };
-      
-      console.log('✅ Analytics REAIS calculados:', {
-        totalPosts: posts.length,
-        totalAccounts: accounts.length,
-        instagramLikes: instagramMetrics.likes,
-        facebookLikes: facebookMetrics.likes,
-        totalReach: totalReach
-      });
-      
-      res.json({
-        success: true,
-        data: analytics,
-        dataSource: posts.length > 0 ? 'Dados reais dos seus posts' : 'Sem dados - conecte suas contas',
-        lastUpdated: new Date().toISOString()
-      });
-      
-    } catch (error: any) {
-      console.error('❌ Erro ao buscar analytics REAIS:', error);
-      
-      // Em caso de erro, retornar tudo zerado - SEM DADOS FALSOS
-      res.json({
-        success: true,
-        data: {
-          instagram: {
-            likes: 0,
-            followers: 0,
-            engagement: "0.0",
-            lastWeekGrowth: "0.0",
-            posts: 0
-          },
-          facebook: {
-            likes: 0,
-            followers: 0,
-            engagement: "0.0",
-            lastWeekGrowth: "0.0",
-            posts: 0
-          },
-          overall: {
-            totalEngagement: "0.0",
-            totalReach: 0,
-            bestPerformingTime: "Sem dados",
-            topHashtag: "Nenhum",
-            totalPosts: 0,
-            totalAccounts: 0
-          }
-        },
-        dataSource: 'Erro - dados zerados para não iludir',
-        lastUpdated: new Date().toISOString(),
-        error: 'Falha ao carregar dados reais'
-      });
-    }
-  });
+  // ROTA REMOVIDA (DUPLICADA) - Analytics está disponível via socialMediaService
+  // Ver: linha 2532 - app.get('/api/social-media/analytics', socialMediaService.getAnalytics...)
 
   // Get content statistics endpoint (NOVO)
   app.get('/api/social-media/content-stats', async (req, res) => {
@@ -2589,10 +2204,11 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
 
 
   // Create content template
-  app.post('/api/organizations/:id/social-media/templates', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
+  // POST template (mesma categoria de templates acima)
+  app.post('/api/organizations/:id/social-media/templates',
+    requireAuth,
+    loadOrganizationContext,
+    requireActiveOrganization,
     async (req: TenantRequest, res) => {
       try {
         const { id } = req.params;
@@ -2617,11 +2233,16 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
     }
   );
 
+  // ==================== INSIGHTS (SISTEMA ANTIGO - MANTIDO) ====================
+  // NOTA: Insights agregados NÃO foram implementados na Semana 2
+  // Sistema novo tem métricas específicas: /api/social/metrics/account/:accountId
+  // TODO: Consolidar insights no sistema novo quando necessário
+
   // Get social media insights
-  app.get('/api/organizations/:id/social-media/insights', 
-    requireAuth, 
-    loadOrganizationContext, 
-    requireActiveOrganization, 
+  app.get('/api/organizations/:id/social-media/insights',
+    requireAuth,
+    loadOrganizationContext,
+    requireActiveOrganization,
     async (req: TenantRequest, res) => {
       try {
         const { id } = req.params;
@@ -2710,67 +2331,26 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   });
 
   // Endpoint para buscar posts agendados para o calendário editorial
-  app.get('/api/social-media/scheduled-posts', async (req: Request, res) => {
-    try {
-      console.log('📅 Buscando posts agendados para calendário editorial...');
-      
-      // Buscar posts com status 'scheduled' e scheduledAt não nulo
-      const scheduledPosts = await db
-        .select({
-          id: socialMediaPosts.id,
-          title: socialMediaPosts.title,
-          content: socialMediaPosts.content,
-          status: socialMediaPosts.status,
-          scheduledAt: socialMediaPosts.scheduledAt,
-          platforms: socialMediaPosts.platforms,
-          selectedAccounts: socialMediaPosts.selectedAccounts,
-          createdAt: socialMediaPosts.createdAt,
-          publishMode: socialMediaPosts.publishMode
-        })
-        .from(socialMediaPosts)
-        .where(eq(socialMediaPosts.status, 'scheduled'))
-        .orderBy(socialMediaPosts.scheduledAt);
+  // ROTA REMOVIDA (DUPLICADA) - Migrada para /api/social/posts?status=scheduled
+  // Ver: server/routes/social/index.ts linha 111
+  // Use: GET /api/social/posts?organizationId=xxx&status=scheduled
 
-      console.log(`📋 Encontrados ${scheduledPosts.length} posts agendados`);
-      console.log('📋 Posts agendados:', scheduledPosts.map(p => ({ 
-        id: p.id.substring(0, 8), 
-        status: p.status, 
-        scheduledAt: p.scheduledAt,
-        publishMode: p.publishMode
-      })));
+  // Social Media Management API Routes - REMOVIDAS (DUPLICADAS)
+  // Rotas antigas de accounts e posts foram MIGRADAS para /api/social/*
+  // Templates, analytics e suggestions ainda usam sistema antigo temporariamente
 
-      const formattedPosts = scheduledPosts.map(post => ({
-        id: post.id,
-        title: post.title || post.content?.substring(0, 50) + '...',
-        content: post.content,
-        date: post.scheduledAt ? new Date(post.scheduledAt).toISOString().split('T')[0] : null,
-        time: post.scheduledAt ? new Date(post.scheduledAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null,
-        platform: Array.isArray(post.platforms) && post.platforms.length > 0 ? post.platforms[0] : 'Instagram',
-        status: 'agendado',
-        scheduledAt: post.scheduledAt
-      }));
-
-      res.json({ success: true, data: formattedPosts });
-    } catch (error: any) {
-      console.error('❌ Erro ao buscar posts agendados:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Social Media Management API Routes
-  app.post('/api/social-media/accounts/connect', socialMediaService.connectAccount.bind(socialMediaService));
-  app.get('/api/social-media/accounts', socialMediaService.getAccounts.bind(socialMediaService));
-  
-  app.post('/api/social-media/posts', socialMediaService.createPost.bind(socialMediaService));
-  app.get('/api/social-media/posts', socialMediaService.getPosts.bind(socialMediaService));
-  app.post('/api/social-media/posts/:postId/publish', socialMediaService.publishPost.bind(socialMediaService));
-  
+  // MANTIDAS (funcionalidades específicas não duplicadas):
   app.get('/api/social-media/templates', socialMediaService.getTemplates.bind(socialMediaService));
   app.post('/api/social-media/templates', socialMediaService.createTemplate.bind(socialMediaService));
-  
+
   app.get('/api/social-media/analytics', socialMediaService.getAnalytics.bind(socialMediaService));
   app.get('/api/social-media/best-times', socialMediaService.getBestPostingTimes.bind(socialMediaService));
   app.get('/api/social-media/suggestions', socialMediaService.generateContentSuggestions.bind(socialMediaService));
+
+  // ==================== CAMPAIGNS (SISTEMA ANTIGO - MANTIDO) ====================
+  // NOTA: Campaigns NÃO foram implementadas na Semana 2
+  // Estas rotas usam a tabela social_media_campaigns (sistema antigo)
+  // TODO: Migrar para sistema novo quando necessário
 
   // Social Media Campaigns API Routes
   // GET - List campaigns
@@ -3179,96 +2759,30 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // ==================== CONNECTED ACCOUNTS ENDPOINTS ====================
   
   // GET - Buscar contas conectadas (Para NewCampaignWizard)
-  app.get('/api/social-media/connected-accounts', async (req: Request, res) => {
-    try {
-      // TODO: Get from authenticated session - usando organização "Minha Empresa" por enquanto
-      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // Minha Empresa
-      
-      console.log('🔍 Buscando contas conectadas...');
-      
-      const accounts = await db
-        .select({
-          id: schema.socialMediaAccounts.id,
-          platform: schema.socialMediaAccounts.platform,
-          name: schema.socialMediaAccounts.accountName,
-          username: schema.socialMediaAccounts.accountHandle,
-          profileImage: sql<string>`null`, // Pode ser adicionado no futuro
-          isConnected: sql<boolean>`true`
-        })
-        .from(schema.socialMediaAccounts)
-        .where(eq(schema.socialMediaAccounts.organizationId, organizationId))
-        .where(eq(schema.socialMediaAccounts.isActive, true));
+  // ROTA REMOVIDA (DUPLICADA) - Migrada para /api/social/accounts
+  // Ver: server/routes/social/index.ts linha 66
+  // Use: GET /api/social/accounts?organizationId=xxx
 
-      console.log(`✅ Encontradas ${accounts.length} contas conectadas`);
-      res.json(accounts);
-    } catch (error: any) {
-      console.error('❌ Erro ao buscar contas conectadas:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
+  // ROTA REMOVIDA (DUPLICADA) - Migrada para OAuth flow
+  // Ver: server/routes/social/social-auth.ts (linhas 20-36 para Facebook, 147-162 para YouTube)
+  // Use: GET /api/social/auth/facebook/connect?organizationId=xxx
+  // Use: GET /api/social/auth/youtube/connect?organizationId=xxx
 
-  // GET - Conectar nova conta via OAuth (Mock para desenvolvimento)
-  app.get('/api/social-media/connect/:platform', async (req: Request, res) => {
-    try {
-      const { platform } = req.params;
-      // TODO: Get from authenticated session - usando organização "Minha Empresa" por enquanto
-      const organizationId = '8c46a511-7a39-42cb-8e46-0b7866d21737'; // Minha Empresa
-      const userId = 'b3953e4d-f407-47b1-878d-2d328ad0fdd1'; // novousuario@teste.com
+  // ==================== MARKETING ROUTES ====================
 
-      console.log(`🔗 Conectando conta ${platform}...`);
-
-      // Simular conta conectada para desenvolvimento
-      const demoAccounts = {
-        facebook: {
-          accountId: `demo_fb_${Date.now()}`,
-          accountName: 'Página Facebook Demo',
-          accountHandle: 'facebook_demo'
-        },
-        instagram: {
-          accountId: `demo_ig_${Date.now()}`,
-          accountName: 'Instagram Business Demo', 
-          accountHandle: 'instagram_demo'
-        }
-      };
-
-      const accountData = demoAccounts[platform as keyof typeof demoAccounts];
-      if (!accountData) {
-        return res.status(400).json({ error: 'Plataforma não suportada' });
-      }
-
-      const [account] = await db.insert(schema.socialMediaAccounts).values({
-        organizationId,
-        platform: platform as any,
-        accountId: accountData.accountId,
-        accountName: accountData.accountName,
-        accountHandle: accountData.accountHandle,
-        accessToken: `demo_token_${Date.now()}`,
-        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 dias
-        isActive: true,
-        accountData: {
-          name: accountData.accountName,
-          username: accountData.accountHandle,
-          platform: platform,
-          demo: true
-        },
-        createdBy: userId,
-      }).returning();
-
-      console.log(`✅ Conta ${platform} conectada:`, account);
-      
-      // Redirecionar de volta para a página de campanhas
-      res.redirect('/?connected=' + platform);
-    } catch (error: any) {
-      console.error(`❌ Erro ao conectar conta ${req.params.platform}:`, error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // ==================== MARKETING ROUTES ==================== 
-  
   // Register Marketing Metrics routes
   app.use('/api/marketing', marketingMetricsRoutes);
   console.log('✅ Marketing metrics routes registered at /api/marketing');
+
+  // ==================== SOCIAL MEDIA ROUTES (SEMANA 2) ====================
+
+  // Register Social Media routes (OAuth authentication)
+  app.use('/api/social/auth', socialAuthRoutes);
+  console.log('✅ Social Media Auth routes registered at /api/social/auth');
+
+  // Register Social Media CRUD routes (accounts, posts, metrics)
+  app.use('/api/social', socialRoutes);
+  console.log('✅ Social Media routes registered at /api/social');
 
   // ==================== BLOG AUTOMATION ROUTES ====================
   

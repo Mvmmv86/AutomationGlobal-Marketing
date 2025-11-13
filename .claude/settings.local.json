@@ -22,7 +22,22 @@
       "Bash(npm run dev:check:*)",
       "Bash(node -r esbuild-register test-social-integration.ts:*)",
       "Bash(npx tsx:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git config:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git rm:*)",
+      "Bash(del:*)",
+      "Bash(node check-supabase-tables.js:*)",
+      "Bash(npm install:*)",
+      "Bash(cat:*)",
+      "Bash(node check-supabase-api.js:*)",
+      "Bash(psql:*)",
+      "Bash(node run-migration-direct.js:*)",
+      "Bash(node:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(exit 0)",
+      "Bash(ping:*)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import NewCampaignWizard from '@/components/NewCampaignWizard';
-import { 
-  Play, 
-  Pause, 
-  Eye, 
-  RefreshCw, 
-  Settings, 
-  Facebook, 
+import {
+  Play,
+  Pause,
+  Eye,
+  RefreshCw,
+  Settings,
+  Facebook,
   Instagram,
   TrendingUp,
   Calendar,
@@ -49,17 +49,32 @@ export default function CampaignsDashboard() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showNewCampaignWizard, setShowNewCampaignWizard] = useState(false);
 
-  // Buscar campanhas REAIS do banco
+  // Buscar campanhas REAIS do banco usando nova API
   const { data: campaignsResponse, isLoading: loadingCampaigns, refetch: refetchCampaigns } = useQuery<{
     success: boolean;
-    data: Campaign[];
-    total: number;
+    data: {
+      campaigns: any[];
+    };
   }>({
-    queryKey: ['/api/social-media/campaigns'],
+    queryKey: ['/api/campaigns'],
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
-  const campaigns: Campaign[] = campaignsResponse?.data || [];
+  // Mapear resposta do backend (snake_case) para interface frontend (camelCase)
+  const campaigns: Campaign[] = (campaignsResponse?.data?.campaigns || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description,
+    type: c.type,
+    status: c.status,
+    isConnectedToFacebook: !!c.facebook_campaign_id,
+    facebookCampaignId: c.facebook_campaign_id,
+    facebookStatus: c.facebook_status,
+    facebookObjective: c.facebook_objective,
+    lastSyncAt: c.last_sync_at,
+    createdAt: c.created_at,
+    postsCount: c.posts_count || 0,
+  }));
 
   // Calcular estatísticas REAIS
   const stats: CampaignStats = {
@@ -70,18 +85,19 @@ export default function CampaignsDashboard() {
   };
 
   // Mutation para sincronizar campanha individual
+  // TODO: Implementar endpoint de sync quando necessário
   const syncCampaignMutation = useMutation({
     mutationFn: async (campaignId: string) => {
-      const response = await fetch(`/api/social-media/campaigns/${campaignId}/sync`, {
-        method: 'PUT',
+      const response = await fetch(`/api/campaigns/${campaignId}/sync`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Falha ao sincronizar');
+        throw new Error(error.message || 'Falha ao sincronizar');
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -90,11 +106,11 @@ export default function CampaignsDashboard() {
         description: data.message || "Campanha sincronizada com Facebook",
         variant: "default",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "❌ Erro na Sincronização", 
+        title: "❌ Erro na Sincronização",
         description: error.message,
         variant: "destructive",
       });
@@ -110,7 +126,7 @@ export default function CampaignsDashboard() {
       });
       return;
     }
-    
+
     syncCampaignMutation.mutate(campaign.id);
   };
 
@@ -147,8 +163,8 @@ export default function CampaignsDashboard() {
           </div>
           <div className="flex gap-3">
             <Link href="/marketing">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="glass-button-3d"
                 data-testid="button-back-marketing"
               >
@@ -164,7 +180,7 @@ export default function CampaignsDashboard() {
               <RefreshCw className={`w-4 h-4 mr-2 ${loadingCampaigns ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
-            <Button 
+            <Button
               className="glass-button-3d gradient-purple-blue"
               onClick={() => setShowNewCampaignWizard(true)}
               data-testid="button-new-campaign"
@@ -264,8 +280,8 @@ export default function CampaignsDashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {campaigns.map((campaign) => (
-              <Card 
-                key={campaign.id} 
+              <Card
+                key={campaign.id}
                 className="glass-3d border-0 hover:scale-105 transition-all duration-300"
                 data-testid={`card-campaign-${campaign.id}`}
               >
@@ -280,8 +296,8 @@ export default function CampaignsDashboard() {
                   </div>
                   {campaign.description && (
                     <CardDescription className="text-gray-300 text-sm opacity-80">
-                      {campaign.description.length > 80 
-                        ? `${campaign.description.substring(0, 80)}...` 
+                      {campaign.description.length > 80
+                        ? `${campaign.description.substring(0, 80)}...`
                         : campaign.description}
                     </CardDescription>
                   )}
@@ -293,7 +309,7 @@ export default function CampaignsDashboard() {
                     <h4 className="text-white font-bold text-sm flex items-center bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
                       📊 Dados do Facebook
                     </h4>
-                    
+
                     {campaign.isConnectedToFacebook ? (
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center text-green-400">
@@ -307,7 +323,7 @@ export default function CampaignsDashboard() {
                         )}
                         {campaign.facebookStatus && (
                           <div className="text-gray-300 opacity-75 flex items-center">
-                            • Status FB: 
+                            • Status FB:
                             <Badge className="ml-2 text-xs bg-blue-500/20 text-blue-400">
                               {campaign.facebookStatus}
                             </Badge>
@@ -315,7 +331,7 @@ export default function CampaignsDashboard() {
                         )}
                         {campaign.facebookObjective && (
                           <div className="text-gray-300 opacity-75 flex items-center">
-                            • Objetivo: 
+                            • Objetivo:
                             <span className="ml-1 flex items-center">
                               {getObjectiveIcon(campaign.facebookObjective)}
                               <span className="ml-1">{campaign.facebookObjective}</span>
@@ -358,14 +374,14 @@ export default function CampaignsDashboard() {
                   <div className="flex gap-2 pt-3">
                     <Button
                       size="sm"
-                      variant="secondary" 
+                      variant="secondary"
                       className="glass-button-3d flex-1"
                       data-testid={`button-view-posts-${campaign.id}`}
                     >
                       <Eye className="w-3 h-3 mr-1" />
                       Ver Posts
                     </Button>
-                    
+
                     {campaign.isConnectedToFacebook && (
                       <Button
                         size="sm"
@@ -378,7 +394,7 @@ export default function CampaignsDashboard() {
                         <RefreshCw className={`w-3 h-3 ${syncCampaignMutation.isPending ? 'animate-spin' : ''}`} />
                       </Button>
                     )}
-                    
+
                     <Button
                       size="sm"
                       variant="secondary"

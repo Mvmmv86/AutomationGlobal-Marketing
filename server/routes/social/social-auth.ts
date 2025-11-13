@@ -84,12 +84,12 @@ router.get('/facebook/callback', async (req, res) => {
       }
     }
 
-    // Redirecionar para frontend com os dados
-    const redirectUrl = `/app/settings?tab=social&accounts=${encodeURIComponent(JSON.stringify(accountsToConnect))}`;
+    // Redirecionar para frontend (callback page)
+    const redirectUrl = `/app/social/callback?success=facebook-connected&platform=facebook&accounts=${encodeURIComponent(JSON.stringify(accountsToConnect))}`;
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('Facebook OAuth callback error:', error);
-    res.redirect('/app/settings?tab=social&error=' + encodeURIComponent(error.message));
+    res.redirect('/app/social/callback?error=' + encodeURIComponent(error.message));
   }
 });
 
@@ -192,11 +192,11 @@ router.get('/youtube/callback', async (req, res) => {
       refreshToken
     );
 
-    // Redirecionar para frontend
-    res.redirect(`/app/settings?tab=social&success=youtube-connected&accountId=${accountId}`);
+    // Redirecionar para frontend (callback page)
+    res.redirect(`/app/social/callback?success=youtube-connected&platform=youtube&accountId=${accountId}`);
   } catch (error: any) {
     console.error('YouTube OAuth callback error:', error);
-    res.redirect('/app/settings?tab=social&error=' + encodeURIComponent(error.message));
+    res.redirect('/app/social/callback?error=' + encodeURIComponent(error.message));
   }
 });
 

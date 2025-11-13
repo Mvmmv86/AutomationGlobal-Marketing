@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
-import { 
-  Bot, 
-  Mail, 
-  MessageSquare, 
-  Target, 
-  HeadphonesIcon, 
+import {
+  Bot,
+  Mail,
+  MessageSquare,
+  Target,
+  HeadphonesIcon,
   ShoppingCart,
   Calendar,
   Zap,
@@ -24,6 +24,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface AutomationCard {
   id: string;
@@ -131,8 +133,185 @@ const automationCards: AutomationCard[] = [
 export default function AutomationDashboard() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const categories = ['all', 'Marketing', 'Vendas', 'Suporte'];
+
+  // Obter organizationId e token
+  const organizationId = localStorage.getItem('organizationId') || '';
+  const token = localStorage.getItem('token') || '';
+
+  // =====================================================
+  // REACT QUERY - INTEGRAÇÃO COM API REAL
+  // =====================================================
+
+  // 1. Listar automações
+  const { data: automationsData, isLoading: loadingAutomations } = useQuery({
+    queryKey: ['automations', organizationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/automations?organizationId=${organizationId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch automations');
+      const result = await response.json();
+      return result.data.automations;
+    },
+    placeholderData: automationCards, // Fallback para mock
+    refetchInterval: 30000, // Auto-refresh a cada 30s
+  });
+
+  // 2. Obter estatísticas da organização
+  const { data: statsData } = useQuery({
+    queryKey: ['automation-stats', organizationId],
+    queryFn: async () => {
+      const response = await fetch(`/api/automations/stats/organization`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      const result = await response.json();
+      return result.data.stats;
+    },
+    refetchInterval: 60000, // Auto-refresh a cada 60s
+  });
+
+  // 3. Ativar automação
+  const activateMutation = useMutation({
+    mutationFn: async (automationId: string) => {
+      const response = await fetch(`/api/automations/${automationId}/activate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to activate automation');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Automação ativada com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['automations'] });
+      queryClient.invalidateQueries({ queryKey: ['automation-stats'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao ativar automação',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 4. Pausar automação
+  const pauseMutation = useMutation({
+    mutationFn: async (automationId: string) => {
+      const response = await fetch(`/api/automations/${automationId}/pause`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to pause automation');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Automação pausada com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['automations'] });
+      queryClient.invalidateQueries({ queryKey: ['automation-stats'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao pausar automação',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 5. Executar automação manualmente
+  const executeMutation = useMutation({
+    mutationFn: async (automationId: string) => {
+      const response = await fetch(`/api/automations/${automationId}/execute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      if (!response.ok) throw new Error('Failed to execute automation');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Automação iniciada!',
+        description: `ID da execução: ${data.data.executionId}`
+      });
+      queryClient.invalidateQueries({ queryKey: ['automations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao executar automação',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // 6. Mapear dados da API para formato do componente
+  const mapAutomationToCard = (automation: any): AutomationCard => {
+    const typeToIcon: Record<string, any> = {
+      'content': Bot,
+      'email': Mail,
+      'social': MessageSquare,
+      'leads': Target,
+      'support': HeadphonesIcon,
+      'sales': ShoppingCart
+    };
+
+    const typeToGradient: Record<string, string> = {
+      'content': 'from-purple-500 to-blue-500',
+      'email': 'from-green-500 to-teal-500',
+      'social': 'from-pink-500 to-red-500',
+      'leads': 'from-orange-500 to-amber-500',
+      'support': 'from-blue-500 to-cyan-500',
+      'sales': 'from-violet-500 to-purple-500'
+    };
+
+    const typeToCategory: Record<string, string> = {
+      'content': 'Marketing',
+      'email': 'Marketing',
+      'social': 'Marketing',
+      'leads': 'Vendas',
+      'support': 'Suporte',
+      'sales': 'Vendas'
+    };
+
+    return {
+      id: automation.id,
+      title: automation.name,
+      description: automation.description || 'Sem descrição',
+      icon: typeToIcon[automation.type] || Bot,
+      status: automation.status,
+      category: typeToCategory[automation.type] || 'Marketing',
+      metrics: {
+        executions: automation.stats_30d?.executions_30d || 0,
+        successRate: automation.stats_30d?.success_rate_30d || 0,
+        lastRun: automation.last_execution_at
+          ? new Date(automation.last_execution_at).toLocaleString('pt-BR')
+          : 'Nunca executado'
+      },
+      gradient: typeToGradient[automation.type] || 'from-purple-500 to-blue-500'
+    };
+  };
+
+  // Usar dados da API se disponível, senão usar mock
+  const automations = automationsData?.map(mapAutomationToCard) || automationCards;
 
   const handleSelectAutomation = (automationId: string) => {
     if (automationId === 'content-automation') {
@@ -143,9 +322,17 @@ export default function AutomationDashboard() {
     }
   };
   
-  const filteredCards = selectedCategory === 'all' 
-    ? automationCards 
-    : automationCards.filter(card => card.category === selectedCategory);
+  const filteredCards = selectedCategory === 'all'
+    ? automations
+    : automations.filter(card => card.category === selectedCategory);
+
+  // Estatísticas gerais (usar da API se disponível)
+  const stats = {
+    activeAutomations: statsData?.active_automations || automations.filter(a => a.status === 'active').length,
+    executionsToday: statsData?.executions_today || 0,
+    successRate: statsData?.overall_success_rate || 95,
+    timeSaved: Math.floor((statsData?.time_saved_minutes_30d || 0) / 60) // converter para horas
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -193,7 +380,15 @@ export default function AutomationDashboard() {
           </div>
         </div>
 
+        {/* Loading State */}
+        {loadingAutomations && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-white/60">Carregando automações...</div>
+          </div>
+        )}
+
         {/* Estatísticas Globais */}
+        {!loadingAutomations && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className={cn(glassCardClass, "p-4")}>
             <div className="flex items-center gap-3">
@@ -202,7 +397,7 @@ export default function AutomationDashboard() {
               </div>
               <div>
                 <div className="text-sm text-white/60">Automações Ativas</div>
-                <div className="text-xl font-bold text-white">1</div>
+                <div className="text-xl font-bold text-white">{stats.activeAutomations}</div>
               </div>
             </div>
           </div>
@@ -214,7 +409,7 @@ export default function AutomationDashboard() {
               </div>
               <div>
                 <div className="text-sm text-white/60">Execuções Hoje</div>
-                <div className="text-xl font-bold text-white">0</div>
+                <div className="text-xl font-bold text-white">{stats.executionsToday}</div>
               </div>
             </div>
           </div>
@@ -226,7 +421,7 @@ export default function AutomationDashboard() {
               </div>
               <div>
                 <div className="text-sm text-white/60">Taxa de Sucesso</div>
-                <div className="text-xl font-bold text-white">95%</div>
+                <div className="text-xl font-bold text-white">{stats.successRate}%</div>
               </div>
             </div>
           </div>
@@ -238,11 +433,12 @@ export default function AutomationDashboard() {
               </div>
               <div>
                 <div className="text-sm text-white/60">Tempo Economizado</div>
-                <div className="text-xl font-bold text-white">0h</div>
+                <div className="text-xl font-bold text-white">{stats.timeSaved}h</div>
               </div>
             </div>
           </div>
         </div>
+        )}
 
         {/* Filtros por Categoria */}
         <div className="flex items-center gap-3">
@@ -253,7 +449,7 @@ export default function AutomationDashboard() {
               onClick={() => setSelectedCategory(category)}
               className={cn(
                 "transition-all duration-300",
-                selectedCategory === category 
+                selectedCategory === category
                   ? "glass-button-3d gradient-purple-blue text-white"
                   : "border-white/30 text-white/70 hover:text-white hover:bg-white/10"
               )}
@@ -266,6 +462,7 @@ export default function AutomationDashboard() {
       </div>
 
       {/* Grid de Cards de Automação */}
+      {!loadingAutomations && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCards.map((automation) => (
           <div 
@@ -343,6 +540,7 @@ export default function AutomationDashboard() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Card de Nova Automação */}
       <div className={cn(glassCardClass, "border-dashed border-white/20")}>
@@ -358,7 +556,7 @@ export default function AutomationDashboard() {
               Configure um novo fluxo automatizado personalizado para suas necessidades
             </p>
           </div>
-          <Button 
+          <Button
             className="glass-button-3d gradient-purple-blue"
             data-testid="button-create-custom-automation"
           >

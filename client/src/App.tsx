@@ -25,6 +25,8 @@ import ClientLogin from "@/app/pages/ClientLogin";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import BlogAutomation from "@/pages/BlogAutomation";
 import AutomationDashboard from "@/pages/AutomationDashboard";
+import AudienceDashboard from "@/pages/AudienceDashboard";
+import SocialMediaCallback from "@/pages/SocialMediaCallback";
 
 // ============================================
 // SHARED/UTILITY PAGES
@@ -109,6 +111,9 @@ function Router() {
       ======================================== */}
       <Route path="/login" component={ClientLogin} />
 
+      {/* OAuth Callback (não precisa de guard - redireciona automaticamente) */}
+      <Route path="/app/social/callback" component={SocialMediaCallback} />
+
       {/* Main Dashboard with Tabs - All Protected */}
       <Route path="/app/dashboard" component={() => (
         <AppGuard>
@@ -174,6 +179,12 @@ function Router() {
       <Route path="/app/automation-builder" component={() => (
         <AppGuard>
           <AutomationDashboard />
+        </AppGuard>
+      )} />
+
+      <Route path="/app/audience-manager" component={() => (
+        <AppGuard>
+          <AudienceDashboard />
         </AppGuard>
       )} />
 
