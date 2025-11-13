@@ -13,6 +13,10 @@ import { rateLimitService } from "./services/rate-limit-service";
 import { loggingService } from "./services/logging-service";
 import healthRoutes from "./routes/health-simple";
 
+// Social Media Workers (Semana 2)
+import { scheduledPostsWorker } from "./services/workers/scheduled-posts-worker";
+import { metricsSyncWorker } from "./services/workers/metrics-sync-worker";
+
 // Apply logging middleware first
 app.use(loggingService.createRequestMiddleware());
 
@@ -121,6 +125,22 @@ app.use((req, res, next) => {
     console.log(`\n🚀 Automation Global v4.0 ONLINE!`);
     console.log(`📍 Local: http://localhost:${port}`);
     console.log(`🌍 Network: http://0.0.0.0:${port}`);
+
+    // Iniciar workers de social media
+    console.log(`\n📱 Starting Social Media Workers...`);
+    scheduledPostsWorker.start();
+    metricsSyncWorker.start();
+
     console.log(`\n✅ Pressione Ctrl+C para parar\n`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    scheduledPostsWorker.stop();
+    metricsSyncWorker.stop();
+    server.close(() => {
+      console.log('Process terminated');
+    });
   });
 })();

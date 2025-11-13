@@ -129,17 +129,27 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Buscar contas conectadas
+  // Buscar contas conectadas (NOVA API - Semana 2)
   const { data: connectedAccounts = [], isLoading: accountsLoading } = useQuery<ConnectedAccount[]>({
-    queryKey: ['/api/social-media/connected-accounts'],
+    queryKey: ['social-accounts'],
+    queryFn: async () => {
+      const organizationId = localStorage.getItem('organizationId') || '550e8400-e29b-41d4-a716-446655440001';
+      const response = await fetch(`/api/social/accounts?organizationId=${organizationId}`);
+      const data = await response.json();
+      return data.accounts || [];
+    },
     enabled: isOpen
   });
 
-  // Mutation para conectar conta
+  // Mutation para conectar conta (NOVA API - Semana 2 OAuth)
   const connectAccountMutation = useMutation({
     mutationFn: async (platform: string) => {
-      // Redirecionar para OAuth do Facebook/Instagram
-      window.location.href = `/api/social-media/connect/${platform}`;
+      const organizationId = localStorage.getItem('organizationId') || '550e8400-e29b-41d4-a716-446655440001';
+      // Obter URL de autorização OAuth
+      const response = await fetch(`/api/social/auth/${platform}/connect?organizationId=${organizationId}`);
+      const { authUrl } = await response.json();
+      // Redirecionar para OAuth
+      window.location.href = authUrl;
     },
     onError: (error: any) => {
       toast({
@@ -153,43 +163,46 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
   // Mutation para criar campanha e post
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Mapear objetivo para tipo do enum
-      const getTypeFromObjective = (objective: string) => {
-        const mapping: Record<string, string> = {
-          'traffic': 'traffic',
-          'engagement': 'engagement', 
-          'leads': 'leads',
-          'sales': 'sales',
-          'awareness': 'awareness',
-          'brand_awareness': 'brand_awareness',
-          'reach': 'reach',
-          'conversion': 'conversion'
-        };
-        return mapping[objective] || 'traffic'; // Default para traffic
-      };
-
-      // Primeiro criar a campanha
-      const campaignResponse = await apiRequest('POST', '/api/social-media/campaigns', {
-        name: data.name,
-        type: getTypeFromObjective(data.objective),
-        objective: data.objective,
-        description: data.description,
-        accountId: data.selectedAccount
+      // Primeiro criar a campanha usando nova API
+      const campaignResponse = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          type: 'social_media', // Tipo fixo para campanhas de redes sociais
+          objective: data.objective,
+          status: 'draft' // Começa como draft
+        })
       });
 
-      const campaignData = await campaignResponse.json();
-      
-      console.log('🎯 Resposta da campanha:', campaignData);
-      console.log('🎯 ID da campanha:', campaignData.data?.id);
+      if (!campaignResponse.ok) {
+        const error = await campaignResponse.json();
+        throw new Error(error.message || 'Falha ao criar campanha');
+      }
 
-      // Depois criar o post
+      const campaignData = await campaignResponse.json();
+
+      console.log('🎯 Resposta da campanha:', campaignData);
+      console.log('🎯 ID da campanha:', campaignData.data?.campaign?.id);
+
+      // Depois criar o post (NOVA API - Semana 2)
+      const organizationId = localStorage.getItem('organizationId') || '550e8400-e29b-41d4-a716-446655440001';
+      const userId = JSON.parse(localStorage.getItem('user') || '{}').id;
+      const selectedAccount = connectedAccounts.find((acc: any) => acc.id === data.selectedAccount);
+      const campaignId = campaignData.data?.campaign?.id;
+
       const postPayload: any = {
-        campaignId: campaignData.data?.id,
-        platform: getAccountPlatform(data.selectedAccount),
-        accountId: data.selectedAccount,
+        organizationId,
+        socialAccountId: data.selectedAccount,
+        platform: selectedAccount?.platform || getAccountPlatform(data.selectedAccount),
+        postType: 'post',
         content: data.postContent,
-        mediaType: data.mediaType,
-        status: 'draft'
+        createdBy: userId,
+        metadata: {
+          campaignId, // Salvar campaignId como metadata
+          campaignName: data.name
+        }
       };
 
       if (data.mediaFile) {
@@ -197,22 +210,26 @@ export default function NewCampaignWizard({ isOpen, onClose }: NewCampaignWizard
         const base64 = await fileToBase64(data.mediaFile);
         // Comprimir imagem para reduzir tamanho (igual ao editor)
         const compressedBase64 = await compressImage(base64, 800, 0.7);
-        postPayload.mediaUrl = compressedBase64;
+        postPayload.mediaUrls = [compressedBase64];
       }
 
-      const postResponse = await apiRequest('POST', '/api/social-media/posts', postPayload);
+      const postResponse = await fetch('/api/social/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postPayload)
+      });
 
       return { campaign: campaignData, post: await postResponse.json() };
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/social-media/posts'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social/posts'] });
+
       toast({
         title: "🎉 Campanha Criada!",
         description: `Campanha "${campaignData.name}" e post criados com sucesso!`
       });
-      
+
       handleClose();
     },
     onError: (error: any) => {

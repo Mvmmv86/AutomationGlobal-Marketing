@@ -111,6 +111,8 @@ export class DatabaseMigrations {
     await this.createNewsArticlesTable();
     await this.createBlogPostsTable();
     await this.createGeneratedBlogPostsTable();
+    await this.createCampaignsTable();
+    await this.createCampaignPostsTable();
   }
 
   private async createUsersTable(): Promise<void> {
@@ -503,6 +505,101 @@ export class DatabaseMigrations {
       )
     `;
     console.log('✅ Created table: generated_blog_posts');
+  }
+
+  private async createCampaignsTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS campaigns (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        type TEXT NOT NULL DEFAULT 'social_media',
+        status TEXT NOT NULL DEFAULT 'draft',
+
+        -- Configurações gerais
+        objective TEXT,
+        target_audience TEXT,
+        budget_total DECIMAL(10,2),
+        budget_daily DECIMAL(10,2),
+
+        -- Datas
+        start_date TIMESTAMP,
+        end_date TIMESTAMP,
+
+        -- Social Media Integration
+        facebook_campaign_id TEXT,
+        facebook_status TEXT,
+        facebook_objective TEXT,
+        facebook_account_id TEXT,
+        last_sync_at TIMESTAMP,
+
+        -- Configurações de conteúdo
+        content_settings JSONB DEFAULT '{}'::jsonb,
+
+        -- Métricas
+        impressions INTEGER DEFAULT 0,
+        clicks INTEGER DEFAULT 0,
+        conversions INTEGER DEFAULT 0,
+        spend DECIMAL(10,2) DEFAULT 0,
+
+        -- Metadata
+        metadata JSONB DEFAULT '{}'::jsonb,
+
+        -- Auditoria
+        created_by UUID NOT NULL REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✅ Created table: campaigns');
+  }
+
+  private async createCampaignPostsTable(): Promise<void> {
+    await this.sql`
+      CREATE TABLE IF NOT EXISTS campaign_posts (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+
+        -- Conteúdo
+        content TEXT NOT NULL,
+        media_urls JSONB DEFAULT '[]'::jsonb,
+        hashtags TEXT[],
+
+        -- Social Media
+        platform TEXT NOT NULL,
+        post_type TEXT DEFAULT 'post',
+
+        -- Agendamento
+        scheduled_for TIMESTAMP,
+        published_at TIMESTAMP,
+
+        -- IDs externos
+        platform_post_id TEXT,
+        facebook_post_id TEXT,
+        instagram_post_id TEXT,
+
+        -- Status
+        status TEXT DEFAULT 'draft',
+        error_message TEXT,
+
+        -- Métricas
+        impressions INTEGER DEFAULT 0,
+        likes INTEGER DEFAULT 0,
+        comments INTEGER DEFAULT 0,
+        shares INTEGER DEFAULT 0,
+        clicks INTEGER DEFAULT 0,
+
+        -- Metadata
+        metadata JSONB DEFAULT '{}'::jsonb,
+
+        -- Auditoria
+        created_by UUID NOT NULL REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    console.log('✅ Created table: campaign_posts');
   }
 
   private async createForeignKeys(): Promise<void> {

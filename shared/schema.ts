@@ -1358,3 +1358,221 @@ export type InsertBlogSettings = z.infer<typeof insertBlogSettingsSchema>;
 
 export type BlogAutomationSchedule = typeof blogAutomationSchedules.$inferSelect;
 export type InsertBlogAutomationSchedule = z.infer<typeof insertBlogAutomationScheduleSchema>;
+
+// =============================================================================
+// SEMANA 2: SOCIAL MEDIA INTEGRATIONS - FACEBOOK, INSTAGRAM, YOUTUBE
+// Tabelas para publicação + coleta completa de dados e métricas
+// =============================================================================
+
+// Plataformas suportadas
+export const socialPlatformEnum = pgEnum('social_platform', ['facebook', 'instagram', 'youtube']);
+export const socialPostStatusEnum = pgEnum('social_post_status', ['draft', 'scheduled', 'publishing', 'published', 'failed']);
+export const socialPostTypeEnum = pgEnum('social_post_type', ['post', 'story', 'video', 'reel', 'short', 'carousel']);
+export const socialSyncTypeEnum = pgEnum('social_sync_type', ['posts', 'metrics', 'account', 'comments', 'followers']);
+export const socialSyncStatusEnum = pgEnum('social_sync_status', ['success', 'failed', 'partial']);
+
+// TABELA 1: Contas sociais conectadas (OAuth)
+export const socialAccounts = pgTable("social_accounts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+
+  // Dados da plataforma
+  platform: socialPlatformEnum("platform").notNull(),
+  accountId: varchar("account_id", { length: 255 }).notNull(), // ID na rede social
+  accountName: varchar("account_name", { length: 255 }).notNull(),
+  accountUsername: varchar("account_username", { length: 255 }),
+  accountAvatarUrl: text("account_avatar_url"),
+
+  // OAuth tokens (DEVEM ser criptografados na aplicação antes de salvar)
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+
+  // Status
+  isActive: boolean("is_active").default(true),
+  lastSyncAt: timestamp("last_sync_at"),
+
+  // Metadados flexíveis por plataforma
+  // Facebook: { page_id, page_access_token, etc }
+  // Instagram: { business_account_id, ig_user_id, etc }
+  // YouTube: { channel_id, channel_title, etc }
+  metadata: jsonb("metadata").default({}),
+
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// TABELA 2: Posts publicados ou agendados
+export const socialPosts = pgTable("social_posts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  socialAccountId: uuid("social_account_id").references(() => socialAccounts.id, { onDelete: 'cascade' }).notNull(),
+
+  // Tipo e plataforma
+  platform: socialPlatformEnum("platform").notNull(),
+  postType: socialPostTypeEnum("post_type").notNull(),
+
+  // Conteúdo
+  content: text("content"), // Texto/descrição
+  mediaUrls: jsonb("media_urls").default('[]'), // Array de URLs
+  hashtags: jsonb("hashtags").default('[]'), // Array de hashtags
+
+  // Agendamento
+  scheduledFor: timestamp("scheduled_for"), // NULL = publicar imediatamente
+  publishedAt: timestamp("published_at"),
+
+  // Status e erro
+  platformPostId: varchar("platform_post_id", { length: 255 }), // ID na rede social após publicar
+  status: socialPostStatusEnum("status").default('draft'),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+
+  // Metadados específicos por plataforma
+  metadata: jsonb("metadata").default({}),
+
+  // Auditoria
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// TABELA 3: Métricas coletadas das redes sociais
+export const socialMetrics = pgTable("social_metrics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  socialAccountId: uuid("social_account_id").references(() => socialAccounts.id, { onDelete: 'cascade' }).notNull(),
+  socialPostId: uuid("social_post_id").references(() => socialPosts.id, { onDelete: 'cascade' }), // NULL para métricas da conta
+
+  // Identificação
+  platform: socialPlatformEnum("platform").notNull(),
+  metricType: varchar("metric_type", { length: 100 }).notNull(), // likes, comments, views, reach, impressions, etc.
+  value: decimal("value", { precision: 15, scale: 2 }).notNull(),
+
+  // Quando foi coletada
+  collectedAt: timestamp("collected_at").defaultNow(),
+
+  // Metadados (breakdown por idade, gênero, localização, device, etc.)
+  metadata: jsonb("metadata").default({}),
+
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// TABELA 4: Logs de sincronização
+export const socialSyncLogs = pgTable("social_sync_logs", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  socialAccountId: uuid("social_account_id").references(() => socialAccounts.id, { onDelete: 'set null' }),
+
+  // Tipo de sincronização
+  syncType: socialSyncTypeEnum("sync_type").notNull(),
+
+  // Resultado
+  status: socialSyncStatusEnum("status").notNull(),
+  itemsProcessed: integer("items_processed").default(0),
+  errors: jsonb("errors").default('[]'),
+
+  // Timing
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  durationMs: integer("duration_ms"), // Duração em milissegundos
+
+  // Metadados
+  metadata: jsonb("metadata").default({}),
+
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// TABELA 5: Comentários coletados
+export const socialComments = pgTable("social_comments", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: 'cascade' }).notNull(),
+  socialPostId: uuid("social_post_id").references(() => socialPosts.id, { onDelete: 'cascade' }).notNull(),
+
+  // Dados do comentário
+  platform: socialPlatformEnum("platform").notNull(),
+  platformCommentId: varchar("platform_comment_id", { length: 255 }).notNull(),
+  parentCommentId: uuid("parent_comment_id"), // Para respostas (self-reference)
+
+  // Autor
+  authorId: varchar("author_id", { length: 255 }), // ID do autor na rede social
+  authorName: varchar("author_name", { length: 255 }),
+  authorUsername: varchar("author_username", { length: 255 }),
+  authorAvatarUrl: text("author_avatar_url"),
+
+  // Conteúdo
+  content: text("content").notNull(),
+
+  // Metadados
+  likesCount: integer("likes_count").default(0),
+  repliedByUs: boolean("replied_by_us").default(false),
+  isHidden: boolean("is_hidden").default(false),
+
+  // Timestamps
+  publishedAt: timestamp("published_at"),
+  collectedAt: timestamp("collected_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// =============================================================================
+// ÍNDICES PARA PERFORMANCE
+// =============================================================================
+
+// Constraints únicos compostos (uma organização não pode ter a mesma conta 2x)
+// ALTER TABLE já aplicado na migration SQL
+
+// =============================================================================
+// SCHEMAS E TYPES
+// =============================================================================
+
+export const insertSocialAccountSchema = createInsertSchema(socialAccounts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastSyncAt: true,
+});
+
+export const insertSocialPostSchema = createInsertSchema(socialPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  publishedAt: true,
+  platformPostId: true,
+});
+
+export const insertSocialMetricSchema = createInsertSchema(socialMetrics).omit({
+  id: true,
+  createdAt: true,
+  collectedAt: true,
+});
+
+export const insertSocialSyncLogSchema = createInsertSchema(socialSyncLogs).omit({
+  id: true,
+  createdAt: true,
+  startedAt: true,
+  completedAt: true,
+  durationMs: true,
+});
+
+export const insertSocialCommentSchema = createInsertSchema(socialComments).omit({
+  id: true,
+  createdAt: true,
+  collectedAt: true,
+  publishedAt: true,
+});
+
+// Types
+export type SocialAccount = typeof socialAccounts.$inferSelect;
+export type InsertSocialAccount = z.infer<typeof insertSocialAccountSchema>;
+
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type InsertSocialPost = z.infer<typeof insertSocialPostSchema>;
+
+export type SocialMetric = typeof socialMetrics.$inferSelect;
+export type InsertSocialMetric = z.infer<typeof insertSocialMetricSchema>;
+
+export type SocialSyncLog = typeof socialSyncLogs.$inferSelect;
+export type InsertSocialSyncLog = z.infer<typeof insertSocialSyncLogSchema>;
+
+export type SocialComment = typeof socialComments.$inferSelect;
+export type InsertSocialComment = z.infer<typeof insertSocialCommentSchema>;

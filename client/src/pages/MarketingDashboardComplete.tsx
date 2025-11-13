@@ -61,6 +61,11 @@ import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingTh
 import CampaignsDashboard from "./CampaignsDashboard";
 import AutomationDashboard from "./AutomationDashboard";
 
+// Helper function to get organizationId from localStorage
+const getOrganizationId = (): string => {
+  return localStorage.getItem('organizationId') || '550e8400-e29b-41d4-a716-446655440001';
+};
+
 // Função para comprimir imagens e reduzir tamanho do payload
 const compressImage = (base64String: string, maxWidth: number = 800, quality: number = 0.8): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -158,9 +163,9 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     { id: 'templates', label: 'Templates', icon: Activity }
   ];
 
-  // Buscar estatísticas reais via API
+  // Buscar estatísticas reais via API - MIGRADO para API NOVA (Semana 2)
   const { data: statsResponse, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/social-media/content-stats'],
+    queryKey: [`/api/social/stats?organizationId=${getOrganizationId()}`],
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
@@ -217,9 +222,9 @@ function ContentManagement({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   ];
 
-  // Buscar dados reais dos posts via API
+  // Buscar dados reais dos posts via API - MIGRADO para API NOVA (Semana 2)
   const { data: postsResponse, isLoading: postsLoading } = useQuery({
-    queryKey: ['/api/social-media/recent-posts'],
+    queryKey: [`/api/social/posts?organizationId=${getOrganizationId()}&limit=5`],
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
@@ -912,10 +917,11 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [lastContentForSuggestions, setLastContentForSuggestions] = useState('');
 
   // Queries para campanhas
+  // API ANTIGA - aguardando migração para Semana 2
   const { data: campaigns = [], refetch: refetchCampaigns } = useQuery({
     queryKey: ['/api/social-media/campaigns'],
     queryFn: async () => {
-      const response = await fetch('/api/social-media/campaigns');
+      const response = await fetch('/api/social-media/campaigns'); // API ANTIGA - aguardando migração
       if (!response.ok) throw new Error('Failed to fetch campaigns');
       const data = await response.json();
       return data.data || [];
@@ -926,9 +932,9 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
       console.log('🎯 Criando campanha INTEGRADA com Facebook Ads Manager:', campaignData);
-      
-      // TEMPORÁRIO: Usar rota alternativa que funciona
-      const response = await fetch('/api/social-media/campaigns/simple', {
+
+      // API ANTIGA - aguardando migração para Semana 2
+      const response = await fetch('/api/social-media/campaigns/simple', { // API ANTIGA - aguardando migração
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -958,7 +964,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       await refetchCampaigns();
       
       // Invalida o cache do react-query para garantir atualização
-      queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] }); // API ANTIGA - aguardando migração
       
       setShowCampaignModal(false);
       setCampaignName('');
@@ -991,10 +997,11 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
 
     try {
-      const response = await fetch('/api/social-media/generate-suggestions', {
+      // API ANTIGA - aguardando migração para Semana 2
+      const response = await fetch('/api/social-media/generate-suggestions', { // API ANTIGA - aguardando migração
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           content: userContent,
           platform: selectedPlatform || 'instagram'
         })
@@ -1093,15 +1100,12 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
-  // Carregar contas conectadas da API
+  // Carregar contas conectadas da API - MIGRADO para API NOVA (Semana 2)
   const loadConnectedAccounts = async () => {
     setIsLoadingAccounts(true);
     try {
-      const response = await fetch('/api/social-media/accounts', {
-        headers: {
-          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001'
-        }
-      });
+      const organizationId = getOrganizationId();
+      const response = await fetch(`/api/social/accounts?organizationId=${organizationId}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -1148,17 +1152,16 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
+  // MIGRADO para API NOVA (Semana 2)
   const handleConnectAccountWithToken = async (platform: string, accessToken: string) => {
     try {
-      const response = await fetch('/api/social-media/accounts/connect', {
+      const organizationId = getOrganizationId();
+      const response = await fetch(`/api/social/auth/${platform}/connect?organizationId=${organizationId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001',
-          'x-user-id': '550e8400-e29b-41d4-a716-446655440002'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          platform,
           accessToken,
           accountData: {} // Será preenchido pela validação do token
         })
@@ -1185,18 +1188,16 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
-  // Fallback para conexão manual (Instagram)
+  // Fallback para conexão manual (Instagram) - MIGRADO para API NOVA (Semana 2)
   const handleConnectAccount = async (platform: string, accessToken: string, accountData: any) => {
     try {
-      const response = await fetch('/api/social-media/accounts/connect', {
+      const organizationId = getOrganizationId();
+      const response = await fetch(`/api/social/auth/${platform}/connect?organizationId=${organizationId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001',
-          'x-user-id': '550e8400-e29b-41d4-a716-446655440002'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          platform,
           accessToken,
           accountData
         })
@@ -1256,6 +1257,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         })
       );
 
+      const organizationId = getOrganizationId();
       const draftData = {
         content,
         mediaItems: compressedMediaItems, // Usando imagens comprimidas
@@ -1263,15 +1265,15 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         mediaType: compressedMediaItems.length > 0 ? compressedMediaItems[0].mediaType : 'feed',
         status: 'draft',
         publishMode: 'manual',
-        campaignId: selectedCampaign === "none" ? null : selectedCampaign // Inclui o ID da campanha selecionada
+        campaignId: selectedCampaign === "none" ? null : selectedCampaign, // Inclui o ID da campanha selecionada
+        organizationId
       };
 
-      const response = await fetch('/api/social-media/posts', {
+      // MIGRADO para API NOVA (Semana 2)
+      const response = await fetch('/api/social/posts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001',
-          'x-user-id': '550e8400-e29b-41d4-a716-446655440002'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(draftData)
       });
@@ -1324,6 +1326,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         })
       );
 
+      const organizationId = getOrganizationId();
       const postData = {
         title: content.slice(0, 50) + (content.length > 50 ? '...' : ''),
         content,
@@ -1334,14 +1337,15 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
         publishMode,
         scheduledAt: publishMode === 'schedule' ? scheduleDate : null,
         status: publishMode === 'draft' ? 'draft' : publishMode === 'schedule' ? 'scheduled' : 'published', // Para publishMode === 'now', definir como published para que o backend processe
-        campaignId: selectedCampaign === "none" ? null : selectedCampaign // Inclui o ID da campanha selecionada
+        campaignId: selectedCampaign === "none" ? null : selectedCampaign, // Inclui o ID da campanha selecionada
+        organizationId
       };
 
-      const response = await fetch('/api/social-media/posts', {
+      // MIGRADO para API NOVA (Semana 2)
+      const response = await fetch('/api/social/posts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001' // TODO: Get from context
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(postData)
       });
@@ -1393,12 +1397,13 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
+  // MIGRADO para API NOVA (Semana 2)
   const handlePublishPost = async (postId: string) => {
     try {
-      const response = await fetch(`/api/social-media/posts/${postId}/publish`, {
+      const response = await fetch(`/api/social/posts/${postId}/publish`, {
         method: 'POST',
         headers: {
-          'x-organization-id': '550e8400-e29b-41d4-a716-446655440001' // TODO: Get from context
+          'Content-Type': 'application/json'
         }
       });
       const result = await response.json();
@@ -1420,9 +1425,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
 
     setIsOptimizing(true);
-    
+
     try {
-      const response = await fetch('/api/social-media/optimize-content', {
+      // API ANTIGA - aguardando migração para Semana 2
+      const response = await fetch('/api/social-media/optimize-content', { // API ANTIGA - aguardando migração
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1465,9 +1471,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   };
 
   // Função para buscar dados de analytics
+  // API ANTIGA - aguardando migração para Semana 2
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('/api/social-media/analytics');
+      const response = await fetch('/api/social-media/analytics'); // API ANTIGA - aguardando migração
       if (response.ok) {
         const result = await response.json();
         setAnalyticsData(result.data);
@@ -1478,10 +1485,11 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
   };
 
-  // Função para buscar posts recentes REAIS
+  // Função para buscar posts recentes REAIS - MIGRADO para API NOVA (Semana 2)
   const fetchRecentPosts = async () => {
     try {
-      const response = await fetch('/api/social-media/recent-posts');
+      const organizationId = getOrganizationId();
+      const response = await fetch(`/api/social/posts?organizationId=${organizationId}&limit=5`);
       const data = await response.json();
       if (data.success) {
         setRecentPosts(data.data);
@@ -2759,9 +2767,9 @@ function EditorialCalendar({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [viewMode, setViewMode] = useState('month');
   const [selectedDayModal, setSelectedDayModal] = useState<{ date: Date; posts: any[] } | null>(null);
 
-  // Buscar posts agendados reais do banco de dados
+  // Buscar posts agendados reais do banco de dados - MIGRADO para API NOVA (Semana 2)
   const { data: scheduledPostsResponse, isLoading } = useQuery({
-    queryKey: ['/api/social-media/scheduled-posts'],
+    queryKey: [`/api/social/posts?status=scheduled&organizationId=${getOrganizationId()}`],
     refetchInterval: 30000, // Atualizar a cada 30s
   });
 

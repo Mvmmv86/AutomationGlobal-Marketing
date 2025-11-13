@@ -99,50 +99,36 @@ export function SocialMediaManager() {
   const loadData = async () => {
     try {
       setLoading(true);
-      
-      // Load connected accounts
-      const accountsRes = await fetch('/api/social-media/accounts', {
-        headers: {
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        }
-      });
+
+      // Pegar organizationId do localStorage (salvo no login)
+      const organizationId = localStorage.getItem('organizationId');
+
+      if (!organizationId) {
+        toast({
+          title: 'Erro',
+          description: 'Organização não encontrada. Faça login novamente.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Load connected accounts (NOVA API - Semana 2)
+      const accountsRes = await fetch(`/api/social/accounts?organizationId=${organizationId}`);
       const accountsData = await accountsRes.json();
-      if (accountsData.success) {
-        setAccounts(accountsData.accounts);
-      }
+      setAccounts(accountsData.accounts || []);
 
-      // Load posts
-      const postsRes = await fetch('/api/social-media/posts', {
-        headers: {
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        }
-      });
+      // Load posts (NOVA API - Semana 2)
+      const postsRes = await fetch(`/api/social/posts?organizationId=${organizationId}`);
       const postsData = await postsRes.json();
-      if (postsData.success) {
-        setPosts(postsData.posts);
-      }
+      setPosts(postsData.posts || []);
 
-      // Load templates
-      const templatesRes = await fetch('/api/social-media/templates', {
-        headers: {
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        }
-      });
+      // Load templates (API ANTIGA - ainda não migrada)
+      const templatesRes = await fetch('/api/social-media/templates');
       const templatesData = await templatesRes.json();
-      if (templatesData.success) {
-        setTemplates(templatesData.templates);
-      }
+      setTemplates(templatesData.templates || []);
 
-      // Load analytics
-      const analyticsRes = await fetch('/api/social-media/analytics', {
-        headers: {
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        }
-      });
+      // Load analytics (API ANTIGA - ainda não migrada)
+      const analyticsRes = await fetch('/api/social-media/analytics');
       const analyticsData = await analyticsRes.json();
       if (analyticsData.success) {
         setAnalytics(analyticsData);
@@ -162,35 +148,40 @@ export function SocialMediaManager() {
 
   const connectAccount = async () => {
     try {
-      const response = await fetch('/api/social-media/accounts/connect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        },
-        body: JSON.stringify({
-          platform: newAccount.platform,
-          accessToken: newAccount.accessToken || null, // null for manual mode
-          accountData: {
-            name: newAccount.accountName,
-            username: newAccount.accountHandle
-          }
-        })
-      });
+      // Pegar organizationId do localStorage
+      const organizationId = localStorage.getItem('organizationId');
 
-      const data = await response.json();
-      
-      if (data.success) {
+      if (!organizationId) {
         toast({
-          title: 'Sucesso',
-          description: `Conta ${newAccount.platform} conectada com sucesso!`
+          title: 'Erro',
+          description: 'Organização não encontrada. Faça login novamente.',
+          variant: 'destructive'
         });
-        setNewAccount({ platform: '', accountName: '', accountHandle: '', accessToken: '' });
-        loadData();
-      } else {
-        throw new Error(data.error || 'Falha ao conectar conta');
+        return;
       }
+
+      // Validar plataforma
+      const platform = newAccount.platform.toLowerCase();
+      if (!['facebook', 'youtube'].includes(platform)) {
+        toast({
+          title: 'Erro',
+          description: 'Selecione uma plataforma válida (Facebook ou YouTube)',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // 1. Obter URL de autorização OAuth (NOVA API - Semana 2)
+      const authResponse = await fetch(
+        `/api/social/auth/${platform}/connect?organizationId=${organizationId}`
+      );
+      const { authUrl } = await authResponse.json();
+
+      // 2. Redirecionar usuário para autorização OAuth
+      // Após autorização, o backend vai salvar a conta automaticamente
+      // e redirecionar para /app/social/callback
+      window.location.href = authUrl;
+
     } catch (error: any) {
       toast({
         title: 'Erro',
@@ -202,22 +193,55 @@ export function SocialMediaManager() {
 
   const createPost = async () => {
     try {
-      const response = await fetch('/api/social-media/posts', {
+      // Pegar organizationId e userId do localStorage
+      const organizationId = localStorage.getItem('organizationId');
+      const userStr = localStorage.getItem('user');
+      const userId = userStr ? JSON.parse(userStr).id : null;
+
+      if (!organizationId || !userId) {
+        toast({
+          title: 'Erro',
+          description: 'Organização ou usuário não encontrado. Faça login novamente.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Buscar dados da conta selecionada para obter a plataforma
+      const selectedAccount = accounts.find(a => a.id === newPost.accountId);
+      if (!selectedAccount) {
+        toast({
+          title: 'Erro',
+          description: 'Selecione uma conta válida',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Criar post usando NOVA API - Semana 2
+      const response = await fetch('/api/social/posts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        },
-        body: JSON.stringify(newPost)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId,
+          socialAccountId: newPost.accountId,
+          platform: selectedAccount.platform, // facebook, instagram ou youtube
+          postType: 'post', // ou 'story', 'video', 'reel'
+          content: newPost.content,
+          scheduledFor: newPost.scheduledAt || null, // ISO string ou null
+          createdBy: userId,
+          metadata: {
+            title: newPost.title
+          }
+        })
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
+      const { post } = await response.json();
+
+      if (post) {
         toast({
           title: 'Sucesso',
-          description: 'Post criado com sucesso!'
+          description: newPost.scheduledAt ? 'Post agendado com sucesso!' : 'Post criado com sucesso!'
         });
         setNewPost({
           title: '',
@@ -228,7 +252,7 @@ export function SocialMediaManager() {
         });
         loadData();
       } else {
-        throw new Error(data.error || 'Falha ao criar post');
+        throw new Error('Falha ao criar post');
       }
     } catch (error: any) {
       toast({
@@ -241,24 +265,21 @@ export function SocialMediaManager() {
 
   const publishPost = async (postId: string) => {
     try {
-      const response = await fetch(`/api/social-media/posts/${postId}/publish`, {
-        method: 'POST',
-        headers: {
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        }
+      // Publicar post usando NOVA API - Semana 2
+      const response = await fetch(`/api/social/posts/${postId}/publish`, {
+        method: 'POST'
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
+      const { success } = await response.json();
+
+      if (success) {
         toast({
           title: 'Sucesso',
-          description: data.mode === 'manual' ? 'Post marcado como publicado' : 'Post publicado nas redes sociais!'
+          description: 'Post publicado com sucesso!'
         });
         loadData();
       } else {
-        throw new Error(data.error || 'Falha ao publicar post');
+        throw new Error('Falha ao publicar post');
       }
     } catch (error: any) {
       toast({
@@ -271,12 +292,8 @@ export function SocialMediaManager() {
 
   const generateSuggestions = async () => {
     try {
-      const response = await fetch('/api/social-media/suggestions?topic=marketing&platform=facebook', {
-        headers: {
-          'x-organization-id': 'test-org',
-          'x-user-id': 'test-user'
-        }
-      });
+      // API ANTIGA (socialMediaService) - funcional, sem necessidade de migração
+      const response = await fetch('/api/social-media/suggestions?topic=marketing&platform=facebook');
       const data = await response.json();
       if (data.success) {
         setSuggestions(data.suggestions);

@@ -383,12 +383,206 @@ export default function AIManagementGlobal() {
   const [showModelDialog, setShowModelDialog] = useState(false);
   const [showQuotaDialog, setShowQuotaDialog] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Simulação de dados (em produção, viria da API)
-  const providers = mockProviders;
-  const usageStats = mockUsageStats;
-  const quotas = mockQuotas;
-  const loadBalancing = mockLoadBalancing;
+  // =====================================================
+  // QUERIES: Buscar dados reais da API
+  // =====================================================
+
+  // 1. Listar Providers
+  const { data: providersData, isLoading: loadingProviders, refetch: refetchProviders } = useQuery({
+    queryKey: ['ai-providers'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/ai/providers', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch providers');
+      const result = await response.json();
+      return result.data.providers;
+    },
+    placeholderData: mockProviders,
+    refetchInterval: 30000, // Auto-refresh a cada 30s
+  });
+
+  // 2. Usage Stats
+  const { data: usageStatsData, isLoading: loadingStats } = useQuery({
+    queryKey: ['ai-usage-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/ai/usage-stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      const result = await response.json();
+      return result.data.stats;
+    },
+    placeholderData: mockUsageStats,
+    refetchInterval: 60000, // Auto-refresh a cada 1min
+  });
+
+  // 3. Quotas
+  const { data: quotasData, isLoading: loadingQuotas } = useQuery({
+    queryKey: ['ai-quotas'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/ai/quotas', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch quotas');
+      const result = await response.json();
+      return result.data.quotas;
+    },
+    placeholderData: mockQuotas,
+    refetchInterval: 60000,
+  });
+
+  // 4. Load Balancing Config
+  const { data: loadBalancingData, isLoading: loadingLB } = useQuery({
+    queryKey: ['ai-load-balancing'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/ai/load-balancing', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch load balancing config');
+      const result = await response.json();
+      return result.data.config;
+    },
+    placeholderData: mockLoadBalancing,
+  });
+
+  // =====================================================
+  // MUTATIONS: Criar/Atualizar/Deletar
+  // =====================================================
+
+  // Criar Provider
+  const createProviderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/admin/ai/providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create provider');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Provider criado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['ai-providers'] });
+      setShowProviderDialog(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao criar provider', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Atualizar Provider
+  const updateProviderMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/admin/ai/providers/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update provider');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Provider atualizado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['ai-providers'] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao atualizar provider', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Deletar Provider
+  const deleteProviderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/admin/ai/providers/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to delete provider');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Provider deletado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['ai-providers'] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao deletar provider', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Criar Model
+  const createModelMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/admin/ai/models', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create model');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Model criado com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['ai-providers'] });
+      setShowModelDialog(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao criar model', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Atualizar Quota
+  const updateQuotaMutation = useMutation({
+    mutationFn: async ({ organizationId, data }: { organizationId: string; data: any }) => {
+      const response = await fetch(`/api/admin/ai/quotas/${organizationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update quota');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Quota atualizada com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['ai-quotas'] });
+      setShowQuotaDialog(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Erro ao atualizar quota', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // =====================================================
+  // DADOS FINAIS (com fallback para mock)
+  // =====================================================
+  const providers = providersData || mockProviders;
+  const usageStats = usageStatsData || mockUsageStats;
+  const quotas = quotasData || mockQuotas;
+  const loadBalancing = loadBalancingData || mockLoadBalancing;
 
   // Cálculos derivados
   const totalProviders = providers.length;

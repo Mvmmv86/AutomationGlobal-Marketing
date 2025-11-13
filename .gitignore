@@ -32,6 +32,7 @@ Thumbs.db
 .local/
 *.tmp
 *.temp
+nul
 
 # Test files
 test-*.js
