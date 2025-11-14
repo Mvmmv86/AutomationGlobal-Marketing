@@ -917,11 +917,10 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const [lastContentForSuggestions, setLastContentForSuggestions] = useState('');
 
   // Queries para campanhas
-  // API ANTIGA - aguardando migração para Semana 2
   const { data: campaigns = [], refetch: refetchCampaigns } = useQuery({
-    queryKey: ['/api/social-media/campaigns'],
+    queryKey: ['/api/campaigns'],
     queryFn: async () => {
-      const response = await fetch('/api/social-media/campaigns'); // API ANTIGA - aguardando migração
+      const response = await fetch('/api/campaigns');
       if (!response.ok) throw new Error('Failed to fetch campaigns');
       const data = await response.json();
       return data.data || [];
@@ -932,9 +931,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
       console.log('🎯 Criando campanha INTEGRADA com Facebook Ads Manager:', campaignData);
-
-      // API ANTIGA - aguardando migração para Semana 2
-      const response = await fetch('/api/social-media/campaigns/simple', { // API ANTIGA - aguardando migração
+      const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -964,7 +961,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
       await refetchCampaigns();
       
       // Invalida o cache do react-query para garantir atualização
-      queryClient.invalidateQueries({ queryKey: ['/api/social-media/campaigns'] }); // API ANTIGA - aguardando migração
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
       
       setShowCampaignModal(false);
       setCampaignName('');
@@ -997,8 +994,7 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     }
 
     try {
-      // API ANTIGA - aguardando migração para Semana 2
-      const response = await fetch('/api/social-media/generate-suggestions', { // API ANTIGA - aguardando migração
+      const response = await fetch('/api/social-media/generate-suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1427,29 +1423,40 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
     setIsOptimizing(true);
 
     try {
-      // API ANTIGA - aguardando migração para Semana 2
-      const response = await fetch('/api/social-media/optimize-content', { // API ANTIGA - aguardando migração
+      const response = await fetch('/api/social-media/optimize-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           content: content,
-          platform: selectedPlatform
+          platform: selectedPlatform || 'instagram',
+          goal: 'engajamento',
+          language: 'português'
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        setContent(result.data.optimizedContent);
-        
+
+        // Handle new API response format (Semana 2)
+        const optimizedContent = result.optimizedContent || result.data?.optimizedContent;
+        const improvements = result.improvements || [];
+
+        setContent(optimizedContent);
+
+        // Show improvements in toast
+        const improvementsText = improvements.length > 0
+          ? improvements.join(', ')
+          : 'Conteúdo otimizado com sucesso!';
+
         toast({
-          title: result.data.aiPowered ? "🤖 IA Real Conectada!" : "🚀 Conteúdo Otimizado!",
-          description: result.data.optimizationType,
+          title: "✨ Conteúdo otimizado com IA!",
+          description: improvementsText,
           variant: "default",
         });
-        
-        console.log('🤖 Otimização IA:', result.data);
+
+        console.log('🤖 Otimização IA:', result);
       } else {
         throw new Error('Erro ao otimizar conteúdo');
       }
@@ -1471,10 +1478,9 @@ function ContentEditor({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
   };
 
   // Função para buscar dados de analytics
-  // API ANTIGA - aguardando migração para Semana 2
-  const fetchAnalytics = async () => {
+      const fetchAnalytics = async () => {
     try {
-      const response = await fetch('/api/social-media/analytics'); // API ANTIGA - aguardando migração
+      const response = await fetch('/api/social-media/analytics');
       if (response.ok) {
         const result = await response.json();
         setAnalyticsData(result.data);
@@ -3340,6 +3346,27 @@ function MarketingDashboardHome({
     refetchInterval: 10000, // Atualizar a cada 10s para tempo real
   });
 
+  // ===== SOCIAL MEDIA ANALYTICS (Semana 2) =====
+  const { data: socialAnalytics, isLoading: socialAnalyticsLoading } = useQuery({
+    queryKey: ['/api/social-media/analytics', selectedPeriod],
+    queryFn: async () => {
+      const days = parseInt(selectedPeriod.replace('d', ''));
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const params = new URLSearchParams({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      const response = await fetch(`/api/social-media/analytics?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch social analytics');
+      return response.json();
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
   // Estado para o setor selecionado do funil
   const [selectedSector, setSelectedSector] = useState('ecommerce');
   const [showSectorModal, setShowSectorModal] = useState(false);
@@ -3378,6 +3405,20 @@ function MarketingDashboardHome({
     evaluation: 0,
     purchase: 0
   };
+
+  // Social Media Analytics (Semana 2)
+  const socialMetrics = socialAnalytics?.data?.overall || {
+    totalPosts: 0,
+    totalEngagement: 0,
+    totalReach: 0,
+    totalImpressions: 0,
+    engagementRate: 0,
+    averageLikes: 0,
+    averageComments: 0,
+    averageShares: 0
+  };
+
+  const socialByPlatform = socialAnalytics?.data?.byPlatform || [];
 
   return (
     <div className="space-y-8">
@@ -3947,6 +3988,133 @@ function MarketingDashboardHome({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ===== QUARTA LINHA: SOCIAL MEDIA ANALYTICS (Semana 2) ===== */}
+      <div>
+        <h2 className={cn(
+          "text-xl font-bold mb-4 flex items-center gap-2",
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        )}>
+          <Share2 className="w-5 h-5 text-blue-400" />
+          Social Media Analytics
+        </h2>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          {/* Total Posts */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <MessageCircle className="w-4 h-4 text-blue-400" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {socialAnalyticsLoading ? '...' : socialMetrics.totalPosts}
+              </div>
+              <div className="text-xs text-gray-400">Total Posts</div>
+            </div>
+          </div>
+
+          {/* Total Engagement */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <Heart className="w-4 h-4 text-purple-400" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {socialAnalyticsLoading ? '...' : socialMetrics.totalEngagement.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-400">Total Engagement</div>
+            </div>
+          </div>
+
+          {/* Engagement Rate */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-green-500/20">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {socialAnalyticsLoading ? '...' : socialMetrics.engagementRate.toFixed(2) + '%'}
+              </div>
+              <div className="text-xs text-gray-400">Engagement Rate</div>
+            </div>
+          </div>
+
+          {/* Total Reach */}
+          <div className="glass-3d p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2 rounded-lg bg-cyan-500/20">
+                <Users className="w-4 h-4 text-cyan-400" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold text-white">
+                {socialAnalyticsLoading ? '...' : (socialMetrics.totalReach / 1000).toFixed(1) + 'K'}
+              </div>
+              <div className="text-xs text-gray-400">Total Reach</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance by Platform */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {socialAnalyticsLoading ? (
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+              <div className="h-4 bg-gray-600/20 rounded animate-pulse"></div>
+            </div>
+          ) : (
+            socialByPlatform.map((platform: any, index: number) => (
+              <div key={index} className="glass-3d p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    {platform.platform === 'instagram' && <InstagramIcon className="w-5 h-5 text-pink-500" />}
+                    {platform.platform === 'facebook' && <FacebookIcon className="w-5 h-5 text-blue-500" />}
+                    {platform.platform === 'youtube' && <YoutubeIcon className="w-5 h-5 text-red-500" />}
+                    {platform.platform === 'twitter' && <TwitterIcon className="w-5 h-5 text-gray-500" />}
+                    <div>
+                      <div className={cn("font-medium capitalize", theme === 'dark' ? 'text-white' : 'text-gray-900')}>
+                        {platform.platform}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {platform.totalPosts} posts
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-cyan-400">
+                      {platform.engagementRate.toFixed(2)}%
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Engagement
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">Likes:</span>
+                    <span className="text-white">{platform.totalLikes.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">Comments:</span>
+                    <span className="text-white">{platform.totalComments.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400">Shares:</span>
+                    <span className="text-white">{platform.totalShares.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

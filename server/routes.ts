@@ -1216,6 +1216,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/campaigns', campaignsRoutes.default);
   console.log('✅ Campaigns routes registered at /api/campaigns');
 
+  // Social Media Analytics routes
+  const socialAnalyticsRoutes = await import('./routes/social-analytics.js');
+  app.use('/api/social-media', socialAnalyticsRoutes.default);
+  console.log('✅ Social Media Analytics routes registered at /api/social-media');
+
   // Register Organization Auth routes (Independent Login System)
   const organizationAuthRoutes = await import('./routes/organization-auth');
   app.use('/api/org-auth', organizationAuthRoutes.default);
