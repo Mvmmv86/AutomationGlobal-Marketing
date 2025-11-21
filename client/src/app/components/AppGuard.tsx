@@ -40,8 +40,9 @@ export function AppGuard({ children }: AppGuardProps) {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('✅ AppGuard: Usuário autorizado', data.user.email);
+        const result = await response.json();
+        const data = result.data || result; // Suporta ambos os formatos
+        console.log('✅ AppGuard: Usuário autorizado', data.user?.email || 'email não disponível');
         setIsAuthorized(true);
       } else {
         console.log('❌ AppGuard: Token inválido, removendo e redirecionando');

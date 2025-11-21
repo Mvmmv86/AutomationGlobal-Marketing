@@ -38,7 +38,15 @@
       "Bash(exit 0)",
       "Bash(ping:*)",
       "Bash(tasklist:*)",
-      "Read(//c/Users/marcu/automation-marketing/AutomationGlobal-Marketing/**)"
+      "Read(//c/Users/marcu/automation-marketing/AutomationGlobal-Marketing/**)",
+      "Bash(move migrate-marketing-dashboard.js migrate-marketing-dashboard.cjs)",
+      "Bash(python migrate-frontend.py:*)",
+      "Bash(python fix-syntax.py:*)",
+      "Bash(move:*)",
+      "Bash(npm --version:*)",
+      "Bash(cmd //c \"taskkill //F //IM node.exe\")",
+      "Bash(powershell -Command:*)",
+      "Bash(cmd /c \"taskkill /F /PID 38616 /PID 44300 /PID 14852 2>nul || exit 0\")"
     ],
     "deny": [],
     "ask": []

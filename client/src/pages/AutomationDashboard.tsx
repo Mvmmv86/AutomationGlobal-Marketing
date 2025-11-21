@@ -315,7 +315,7 @@ export default function AutomationDashboard() {
 
   const handleSelectAutomation = (automationId: string) => {
     if (automationId === 'content-automation') {
-      setLocation('/automation/content');
+      setLocation('/app/blog');
     } else {
       // Para outras automações, pode expandir aqui
       console.log('Automation selected:', automationId);

@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import NewCampaignWizard from '@/components/NewCampaignWizard';
+import { SocialNetworkFilter } from '@/components/campaigns/SocialNetworkFilter';
+import { SelectNetworkModal } from '@/components/campaigns/SelectNetworkModal';
 import {
   Play,
   Pause,
@@ -27,6 +29,7 @@ interface Campaign {
   description?: string;
   type: string;
   status: string;
+  platform?: string; // Plataforma da campanha (instagram, facebook, google, etc.)
   isConnectedToFacebook: boolean;
   facebookCampaignId?: string;
   facebookStatus?: string;
@@ -48,6 +51,9 @@ export default function CampaignsDashboard() {
   const queryClient = useQueryClient();
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showNewCampaignWizard, setShowNewCampaignWizard] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const [showSelectNetworkModal, setShowSelectNetworkModal] = useState(false);
+  const [selectedNetworkForCampaign, setSelectedNetworkForCampaign] = useState<string | null>(null);
 
   // Buscar campanhas REAIS do banco usando nova API
   const { data: campaignsResponse, isLoading: loadingCampaigns, refetch: refetchCampaigns } = useQuery<{
@@ -67,6 +73,7 @@ export default function CampaignsDashboard() {
     description: c.description,
     type: c.type,
     status: c.status,
+    platform: c.platform, // Adicionar plataforma da campanha
     isConnectedToFacebook: !!c.facebook_campaign_id,
     facebookCampaignId: c.facebook_campaign_id,
     facebookStatus: c.facebook_status,
@@ -76,12 +83,17 @@ export default function CampaignsDashboard() {
     postsCount: c.posts_count || 0,
   }));
 
-  // Calcular estatísticas REAIS
+  // Filtrar campanhas por plataforma selecionada
+  const filteredCampaigns = selectedPlatform
+    ? campaigns.filter(c => c.platform === selectedPlatform)
+    : campaigns;
+
+  // Calcular estatísticas baseadas nas campanhas filtradas
   const stats: CampaignStats = {
-    totalCampaigns: campaigns.length,
-    activeCampaigns: campaigns.filter(c => c.status === 'active').length,
-    pausedCampaigns: campaigns.filter(c => c.status === 'paused').length,
-    facebookConnected: campaigns.filter(c => c.isConnectedToFacebook).length,
+    totalCampaigns: filteredCampaigns.length,
+    activeCampaigns: filteredCampaigns.filter(c => c.status === 'active').length,
+    pausedCampaigns: filteredCampaigns.filter(c => c.status === 'paused').length,
+    facebookConnected: filteredCampaigns.filter(c => c.isConnectedToFacebook).length,
   };
 
   // Mutation para sincronizar campanha individual
@@ -155,10 +167,10 @@ export default function CampaignsDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-2">
-              📊 Campanhas Facebook
+              📊 Campanhas
             </h1>
             <p className="text-gray-300 opacity-75">
-              Gerencie suas campanhas conectadas ao Facebook Ads Manager
+              Gerencie suas campanhas de todas as redes sociais conectadas
             </p>
           </div>
           <div className="flex gap-3">
@@ -182,7 +194,7 @@ export default function CampaignsDashboard() {
             </Button>
             <Button
               className="glass-button-3d gradient-purple-blue"
-              onClick={() => setShowNewCampaignWizard(true)}
+              onClick={() => setShowSelectNetworkModal(true)}
               data-testid="button-new-campaign"
             >
               <Target className="w-4 h-4 mr-2" />
@@ -190,6 +202,14 @@ export default function CampaignsDashboard() {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Filtro por Rede Social */}
+      <div className="mb-8">
+        <SocialNetworkFilter
+          selectedPlatform={selectedPlatform}
+          onPlatformSelect={setSelectedPlatform}
+        />
       </div>
 
       {/* Estatísticas Gerais */}
@@ -279,7 +299,7 @@ export default function CampaignsDashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {campaigns.map((campaign) => (
+            {filteredCampaigns.map((campaign) => (
               <Card
                 key={campaign.id}
                 className="glass-3d border-0 hover:scale-105 transition-all duration-300"
@@ -412,6 +432,16 @@ export default function CampaignsDashboard() {
       </div>
 
       {/* New Campaign Wizard */}
+      {/* Modal de Seleção de Rede Social */}
+      <SelectNetworkModal
+        isOpen={showSelectNetworkModal}
+        onClose={() => setShowSelectNetworkModal(false)}
+        onSelectNetwork={(platform) => {
+          setSelectedNetworkForCampaign(platform);
+          setShowNewCampaignWizard(true);
+        }}
+      />
+
       <NewCampaignWizard
         isOpen={showNewCampaignWizard}
         onClose={() => setShowNewCampaignWizard(false)}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,8 @@ import {
   Copy,
   Eye,
   CheckCircle,
-  CircleX
+  CircleX,
+  ArrowLeft
 } from 'lucide-react';
 import { SiReddit, SiGooglenews } from 'react-icons/si';
 import { formatDistanceToNow } from 'date-fns';
@@ -109,6 +111,7 @@ interface AutomationState {
 }
 
 export default function BlogAutomation() {
+  const [, setLocation] = useLocation();
   const [selectedNiche, setSelectedNiche] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('trends');
   const [isCreateNicheOpen, setIsCreateNicheOpen] = useState(false);
@@ -447,6 +450,14 @@ export default function BlogAutomation() {
         <div className="glass-3d rounded-3xl p-8 border border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => setLocation('/app/automation')}
+                variant="ghost"
+                className="text-gray-300 hover:text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Voltar
+              </Button>
               <div className="w-16 h-16 glass-3d rounded-2xl flex items-center justify-center">
                 <Bot className="w-8 h-8 text-purple-400" />
               </div>

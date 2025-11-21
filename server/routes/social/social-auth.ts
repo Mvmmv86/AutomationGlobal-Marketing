@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import { oauthService } from '../../services/social/oauth-service';
+import { adAccountService } from '../../services/social/ad-account-service';
 
 const router = Router();
 
@@ -60,32 +61,60 @@ router.get('/facebook/callback', async (req, res) => {
     // 3. Listar páginas do usuário
     const pages = await oauthService.getFacebookPages(longLivedToken);
 
-    // 4. Para cada página, verificar se tem Instagram conectado
+    // 4. Para cada página, verificar se tem Instagram conectado e salvar automaticamente
     const accountsToConnect = [];
+    let firstAccountId: number | null = null;
 
     for (const page of pages) {
+      // Salvar conta do Facebook automaticamente
+      const fbAccountId = await oauthService.connectFacebookAccount(
+        organizationId,
+        page.id,
+        page.name,
+        page.access_token
+      );
+
+      if (!firstAccountId) {
+        firstAccountId = fbAccountId;
+      }
+
       accountsToConnect.push({
         type: 'facebook',
         pageId: page.id,
         pageName: page.name,
         pageAccessToken: page.access_token,
+        accountId: fbAccountId
       });
 
       // Verificar Instagram
       const igAccount = await oauthService.getInstagramAccount(page.id, page.access_token);
       if (igAccount) {
+        // Salvar conta do Instagram automaticamente
+        const igAccountId = await oauthService.connectInstagramAccount(
+          organizationId,
+          igAccount.id,
+          igAccount.username,
+          page.access_token,
+          page.id
+        );
+
+        if (!firstAccountId) {
+          firstAccountId = igAccountId;
+        }
+
         accountsToConnect.push({
           type: 'instagram',
           pageId: page.id,
           igUserId: igAccount.id,
           igUsername: igAccount.username,
           pageAccessToken: page.access_token,
+          accountId: igAccountId
         });
       }
     }
 
-    // Redirecionar para frontend (callback page)
-    const redirectUrl = `/app/social/callback?success=facebook-connected&platform=facebook&accounts=${encodeURIComponent(JSON.stringify(accountsToConnect))}`;
+    // Redirecionar para frontend (callback page) com accountId da primeira conta
+    const redirectUrl = `/app/social/callback?success=facebook-connected&platform=facebook&accountId=${firstAccountId}&accounts=${encodeURIComponent(JSON.stringify(accountsToConnect))}`;
     res.redirect(redirectUrl);
   } catch (error: any) {
     console.error('Facebook OAuth callback error:', error);
@@ -132,6 +161,139 @@ router.post('/instagram/save-account', async (req, res) => {
 
     res.json({ success: true, accountId });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================================================
+// META ADS - AD ACCOUNT CONFIGURATION
+// ==========================================================================
+
+/**
+ * GET /api/social/facebook/ad-accounts
+ * Buscar todas as Ad Accounts do usuário conectado
+ */
+router.get('/facebook/ad-accounts', async (req, res) => {
+  try {
+    const { socialAccountId } = req.query;
+
+    if (!socialAccountId) {
+      return res.status(400).json({ error: 'socialAccountId is required' });
+    }
+
+    // Buscar social account para obter o access token
+    const { db } = await import('@db');
+    const { socialAccounts } = await import('@db/schema');
+    const { eq } = await import('drizzle-orm');
+
+    const [account] = await db
+      .select()
+      .from(socialAccounts)
+      .where(eq(socialAccounts.id, parseInt(socialAccountId as string)));
+
+    if (!account) {
+      return res.status(404).json({ error: 'Social account not found' });
+    }
+
+    // Descriptografar o token
+    const { decrypt } = await import('../../lib/encryption');
+    const accessToken = decrypt(account.accessToken);
+
+    // Buscar ad accounts
+    const adAccounts = await adAccountService.getAdAccounts(accessToken);
+
+    res.json({ success: true, data: adAccounts });
+  } catch (error: any) {
+    console.error('Error fetching ad accounts:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/social/facebook/select-ad-account
+ * Salvar Ad Account selecionada no metadata da social account
+ */
+router.post('/facebook/select-ad-account', async (req, res) => {
+  try {
+    const {
+      socialAccountId,
+      adAccountId,
+      adAccountName,
+      currency,
+      timezone,
+      businessId,
+      businessName
+    } = req.body;
+
+    if (!socialAccountId || !adAccountId || !adAccountName) {
+      return res.status(400).json({
+        error: 'socialAccountId, adAccountId, and adAccountName are required'
+      });
+    }
+
+    await adAccountService.saveAdAccountId(
+      parseInt(socialAccountId),
+      adAccountId,
+      adAccountName,
+      currency,
+      timezone,
+      businessId,
+      businessName
+    );
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error saving ad account:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/social/facebook/ad-account-status
+ * Verificar status da Ad Account selecionada
+ */
+router.get('/facebook/ad-account-status', async (req, res) => {
+  try {
+    const { socialAccountId } = req.query;
+
+    if (!socialAccountId) {
+      return res.status(400).json({ error: 'socialAccountId is required' });
+    }
+
+    // Buscar social account para obter access token e ad account id
+    const { db } = await import('@db');
+    const { socialAccounts } = await import('@db/schema');
+    const { eq } = await import('drizzle-orm');
+
+    const [account] = await db
+      .select()
+      .from(socialAccounts)
+      .where(eq(socialAccounts.id, parseInt(socialAccountId as string)));
+
+    if (!account) {
+      return res.status(404).json({ error: 'Social account not found' });
+    }
+
+    // Buscar ad account do metadata
+    const adAccountMetadata = await adAccountService.getAdAccountId(parseInt(socialAccountId as string));
+
+    if (!adAccountMetadata) {
+      return res.status(404).json({ error: 'Ad Account not configured' });
+    }
+
+    // Descriptografar o token
+    const { decrypt } = await import('../../lib/encryption');
+    const accessToken = decrypt(account.accessToken);
+
+    // Verificar status
+    const status = await adAccountService.getAdAccountStatus(
+      accessToken,
+      adAccountMetadata.adAccountId
+    );
+
+    res.json({ success: true, data: { ...status, metadata: adAccountMetadata } });
+  } catch (error: any) {
+    console.error('Error checking ad account status:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -17,6 +17,7 @@ import { socialMediaPosts, socialMediaAccounts } from "../shared/schema";
 import marketingMetricsRoutes from "./routes/marketing-metrics";
 import socialRoutes from "./routes/social/index";
 import socialAuthRoutes from "./routes/social/social-auth";
+import metaAdsRoutes from "./routes/meta-ads/meta-ads-routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Apply middleware globally for API routes
@@ -2788,6 +2789,10 @@ Retorne apenas as 3 sugestões, uma por linha, sem numeração:`;
   // Register Social Media CRUD routes (accounts, posts, metrics)
   app.use('/api/social', socialRoutes);
   console.log('✅ Social Media routes registered at /api/social');
+
+  // Register Meta Ads routes (Campaign creation via Meta Marketing API v24.0)
+  app.use('/api/meta-ads', metaAdsRoutes);
+  console.log('✅ Meta Ads routes registered at /api/meta-ads');
 
   // ==================== BLOG AUTOMATION ROUTES ====================
   

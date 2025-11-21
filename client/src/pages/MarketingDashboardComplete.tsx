@@ -60,6 +60,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MarketingThemeProvider, useMarketingTheme } from "@/context/MarketingThemeContext";
 import CampaignsDashboard from "./CampaignsDashboard";
 import AutomationDashboard from "./AutomationDashboard";
+import { MarketingDashboardHome } from "@/components/dashboard/MarketingDashboardHome";
 
 // Helper function to get organizationId from localStorage
 const getOrganizationId = (): string => {
@@ -567,15 +568,15 @@ function AIInsightCard({ insight, theme = 'dark' }: { insight: AIInsight; theme?
 
 // Mapa de IDs das abas para rotas
 const tabToRoute: Record<string, string> = {
-  'dashboard': '/marketing',
-  'campaigns': '/marketing/campaigns',
-  'content': '/marketing/blog',
-  'automation': '/marketing/automation',
-  'analytics': '/marketing/analytics',
-  'audience': '/marketing/audience',
-  'reports': '/marketing/reports',
-  'billing': '/marketing/billing',
-  'settings': '/marketing/settings'
+  'dashboard': '/app/dashboard',
+  'campaigns': '/app/campaigns',
+  'content': '/app/content',
+  'automation': '/app/automation',
+  'analytics': '/app/analytics',
+  'audience': '/app/audience',
+  'reports': '/app/reports',
+  'billing': '/app/billing',
+  'settings': '/app/settings'
 };
 
 function MarketingSidebar({
@@ -752,11 +753,28 @@ function MarketingDashboardCompleteInner({ initialTab = 'dashboard' }: Marketing
     );
   }
 
+  if (activeTab === 'dashboard') {
+    return (
+      <div className={cn(
+        "min-h-screen flex transition-all duration-500",
+        theme === 'dark'
+          ? "marketing-gradient-bg text-white"
+          : "marketing-gradient-bg light text-gray-900"
+      )}>
+        <MarketingSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+        <div className="flex-1 p-8">
+          <MarketingDashboardHome theme={theme} />
+        </div>
+      </div>
+    );
+  }
+
   if (activeTab === 'automation') {
     return (
       <div className={cn(
         "min-h-screen flex transition-all duration-500",
-        theme === 'dark' 
+        theme === 'dark'
           ? "marketing-gradient-bg text-white" 
           : "marketing-gradient-bg light text-gray-900"
       )}>
@@ -3318,13 +3336,13 @@ function TemplateManager({ theme = 'dark' }: { theme?: 'dark' | 'light' }) {
 }
 
 // =====================================================================
-// MARKETING DASHBOARD HOME CONSOLIDADO - Todas as funcionalidades aqui
+// MARKETING DASHBOARD HOME CONSOLIDADO - VERSÃO ANTIGA (NÃO USAR)
 // =====================================================================
 
-function MarketingDashboardHome({ 
-  theme = 'dark', 
-  selectedPeriod = '30d' 
-}: { 
+function MarketingDashboardHomeOld({
+  theme = 'dark',
+  selectedPeriod = '30d'
+}: {
   theme?: 'dark' | 'light';
   selectedPeriod?: string;
 }) {

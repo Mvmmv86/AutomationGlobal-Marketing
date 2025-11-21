@@ -22,6 +22,7 @@ import AIManagementGlobal from "@/pages/ai-management-global";
 // CLIENT PLATFORM PAGES (Marketing Users)
 // ============================================
 import ClientLogin from "@/app/pages/ClientLogin";
+import ClientRegister from "@/app/pages/ClientRegister";
 import MarketingDashboardComplete from "@/pages/MarketingDashboardComplete";
 import BlogAutomation from "@/pages/BlogAutomation";
 import AutomationDashboard from "@/pages/AutomationDashboard";
@@ -110,6 +111,7 @@ function Router() {
           Access: org_admin, org_manager, org_user, org_viewer
       ======================================== */}
       <Route path="/login" component={ClientLogin} />
+      <Route path="/register" component={ClientRegister} />
 
       {/* OAuth Callback (não precisa de guard - redireciona automaticamente) */}
       <Route path="/app/social/callback" component={SocialMediaCallback} />

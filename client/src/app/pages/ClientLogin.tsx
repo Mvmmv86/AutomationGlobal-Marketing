@@ -36,6 +36,8 @@ export default function ClientLogin() {
     setError(null);
 
     try {
+      console.log('🔐 Tentando fazer login com:', data.email);
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -44,22 +46,35 @@ export default function ClientLogin() {
         body: JSON.stringify(data),
       });
 
+      console.log('📡 Response status:', response.status);
       const result = await response.json();
+      console.log('📦 Response data:', result);
 
       if (!response.ok) {
+        console.error('❌ Erro na resposta:', result);
         throw new Error(result.message || 'Erro ao fazer login');
       }
 
       // Salvar token, dados do usuário e organização
-      localStorage.setItem('token', result.accessToken);
-      localStorage.setItem('refreshToken', result.refreshToken);
-      localStorage.setItem('user', JSON.stringify(result.user));
-      localStorage.setItem('organizationId', result.organization?.id || '');
-      localStorage.setItem('organization', JSON.stringify(result.organization || {}));
+      const responseData = result.data || result; // Suporta ambos os formatos
+      console.log('💾 Salvando dados no localStorage:', {
+        hasToken: !!responseData.accessToken,
+        hasUser: !!responseData.user,
+        hasOrg: !!responseData.organization
+      });
+
+      localStorage.setItem('token', responseData.accessToken);
+      localStorage.setItem('refreshToken', responseData.refreshToken);
+      localStorage.setItem('user', JSON.stringify(responseData.user));
+      localStorage.setItem('organizationId', responseData.organization?.id || '');
+      localStorage.setItem('organization', JSON.stringify(responseData.organization || {}));
+
+      console.log('✅ Login bem-sucedido! Redirecionando...');
 
       // Redirect para dashboard
       setLocation('/app/dashboard');
     } catch (err: any) {
+      console.error('❌ Erro no login:', err);
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
       setIsLoading(false);
